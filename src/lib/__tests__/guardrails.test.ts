@@ -50,10 +50,63 @@ describe('MVP guardrails', () => {
     const m = JSON.parse(readFileSync(join(root, 'public/manifest.webmanifest'), 'utf8'));
     expect(m.permissions).toBeUndefined();
   });
-  it('has no network calls to third parties from app code', () => {
+  it('makes network calls only from the catalog API client', () => {
     const hits = src.filter((f) =>
-      /\bfetch\(|XMLHttpRequest|WebSocket|sendBeacon/.test(readFileSync(f, 'utf8')),
+      /\bfetch\b|XMLHttpRequest|WebSocket|sendBeacon|EventSource/.test(readFileSync(f, 'utf8')),
+    );
+    expect(hits.map((f) => f.slice(root.length + 1))).toEqual(['src/lib/offers/api.ts']);
+  });
+  it('the API client only calls Due’s own public catalog endpoint, without credentials', () => {
+    const api = readFileSync(join(root, 'src/lib/offers/api.ts'), 'utf8');
+    expect(api).toContain("CATALOG_PATH = '/api/public/catalog'");
+    expect(api).toContain("credentials: 'omit'");
+    expect(api).not.toMatch(/https?:\/\/[a-z0-9]/i);
+    expect(api).not.toMatch(/method:\s*'(POST|PUT|PATCH|DELETE)'/);
+  });
+});
+
+// Mock, sample and demo data must never reach production code paths.
+const NO_MOCKS: [string, RegExp][] = [
+  [
+    'imports of sample/demo/mock/fixture modules',
+    /from\s+['"][^'"]*(sample|demo|mock|fixture)[^'"]*['"]/i,
+  ],
+  ['demo labels', /\(demo\)|demo data|demo only|turn on \(demo|\bdemo:/i],
+  [
+    'sample-data wording',
+    /sample data|sample row data|buildSampleData|sampleRelay|removeSampleData/i,
+  ],
+  [
+    'a bundled offer catalog',
+    /buildCatalog|offers\/catalog['"]|snapshotAdapter|research snapshot\)/i,
+  ],
+  ['fake source re-checks', /check sources again/i],
+];
+// The one-time migration must name the legacy flag to remove flagged records.
+const MIGRATION = /lib\/migrate\.ts$/;
+
+describe('no mock or demo data in production code', () => {
+  const files = walk(join(root, 'src')).filter(
+    (f) => !f.includes('__tests__') && /\.(ts|tsx|css|html)$/.test(f),
+  );
+  for (const [name, re] of NO_MOCKS) {
+    it(`src contains no ${name}`, () => {
+      const hits = [...files, join(root, 'index.html')].filter((f) =>
+        re.test(readFileSync(f, 'utf8')),
+      );
+      expect(hits).toEqual([]);
+    });
+  }
+  it('only the migration refers to the legacy isSample flag', () => {
+    const hits = files.filter(
+      (f) => !MIGRATION.test(f) && /isSample/.test(readFileSync(f, 'utf8')),
     );
     expect(hits).toEqual([]);
+  });
+  it('the sample and catalog modules are gone', () => {
+    const names = files.map((f) => f.slice(root.length + 1));
+    expect(names).not.toContain('src/lib/sample.ts');
+    expect(names).not.toContain('src/lib/offers/catalog.ts');
+    expect(names).not.toContain('src/lib/offers/refresh.ts');
   });
 });

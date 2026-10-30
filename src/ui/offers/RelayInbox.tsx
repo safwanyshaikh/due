@@ -4,14 +4,18 @@ import type { Nav } from '../App';
 import { Disclaimer, useCatalog } from './parts';
 import {
   deleteEvent,
-  processForwarded,
+  organisePastedMessage,
   purgeRaw,
-  relayAddress,
   setEventState,
 } from '../../lib/offers/relay';
 import { blankService, upsertService } from '../../lib/offers/services';
-import { PROVIDER_LABEL } from '../../lib/offers/catalog';
-import { RELAY_EXPLAINER, SMS_WHATSAPP_NOTE } from '../../lib/offers/copy';
+import { providerLabel } from '../../lib/offers/labels';
+import {
+  RELAY_LOCAL_NOTE,
+  RELAY_UNAVAILABLE,
+  RELAY_UNAVAILABLE_WHY,
+  SMS_WHATSAPP_NOTE,
+} from '../../lib/offers/copy';
 import { formatINR } from '../../lib/money';
 import type { RelayEventState, UserEvent } from '../../lib/offers/types';
 
@@ -24,7 +28,7 @@ const TABS: [RelayEventState, string][] = [
 
 export function RelayInbox({ nav }: { nav: Nav }) {
   const { data, today, update } = useApp();
-  const catalog = useCatalog(today);
+  const { offers: catalog } = useCatalog();
   const [tab, setTab] = useState<RelayEventState>('needs_confirmation');
   const [paste, setPaste] = useState('');
   const [msg, setMsg] = useState('');
@@ -49,31 +53,14 @@ export function RelayInbox({ nav }: { nav: Nav }) {
     setMsg('Saved to your services.');
   }
 
-  function trySample() {
-    if (relay.status !== 'connected' || !relay.token)
-      return setMsg('Connect Due Relay in Settings first (demo).');
-    const [subject, ...rest] = paste.split('\n');
+  function organise() {
     const now = new Date().toISOString();
-    const r = processForwarded(
-      {
-        messageId: `local-${now}`,
-        to: relayAddress(relay.token),
-        from: 'you@example.com',
-        subject: subject || '(no subject)',
-        body: rest.join('\n'),
-        receivedAt: now,
-      },
-      relay,
-      catalog,
-      now,
-    );
+    const r = organisePastedMessage(paste, relay, catalog, now);
     if (!r.ok)
       return setMsg(
         r.reason === 'duplicate'
           ? 'This message was already added.'
-          : r.reason === 'paused'
-            ? 'Relay is paused.'
-            : 'That address is not yours.',
+          : 'This message could not be organised.',
       );
     update((d) => ({ ...d, relay: { ...d.relay, events: [...d.relay.events, r.event] } }));
     setTab(r.event.state);
@@ -89,11 +76,10 @@ export function RelayInbox({ nav }: { nav: Nav }) {
   return (
     <div className="page">
       <h1>Due Relay inbox</h1>
-      <p className="muted">{RELAY_EXPLAINER}</p>
       <p className="note small">
-        Demo: no email service is connected yet, so nothing arrives automatically. Examples below
-        are marked Demo.
+        <b>Email forwarding: {RELAY_UNAVAILABLE}</b> {RELAY_UNAVAILABLE_WHY}
       </p>
+      <p className="muted">{RELAY_LOCAL_NOTE}</p>
       <div className="seg4" role="tablist" aria-label="Relay review">
         {TABS.map(([k, label]) => (
           <button
@@ -112,16 +98,21 @@ export function RelayInbox({ nav }: { nav: Nav }) {
       </p>
       {msg && <p className="small">{msg}</p>}
       <div className="cards">
-        {list.length === 0 && <p className="muted small emptyline">Nothing here.</p>}
+        {list.length === 0 && (
+          <p className="muted small emptyline">
+            {relay.events.length === 0
+              ? 'No messages yet. Paste one below to organise it in this browser.'
+              : 'Nothing here.'}
+          </p>
+        )}
         {list.map((e) => (
           <article key={e.id} className="item">
             <span className="row">
               <strong>{e.subject}</strong>
-              {e.isSample && <span className="badge soft">Demo</span>}
             </span>
             <span className="muted small">
               {e.classification.replace('_', ' ')} ·{' '}
-              {e.candidate.provider ? PROVIDER_LABEL[e.candidate.provider] : 'provider unknown'}
+              {e.candidate.provider ? providerLabel(e.candidate.provider) : 'provider unknown'}
               {e.candidate.amountPaise != null ? ` · ${formatINR(e.candidate.amountPaise)}` : ''}
               {e.candidate.date ? ` · date ${e.candidate.date}` : ''}
             </span>
@@ -170,10 +161,10 @@ export function RelayInbox({ nav }: { nav: Nav }) {
         ))}
       </div>
       <section className="panel">
-        <h2>Try it with one message</h2>
+        <h2>Organise one message (processed in this browser)</h2>
         <p className="muted small">
-          Paste one bill, renewal, trial or offer email (first line = subject). It is read in this
-          browser only.
+          Paste one bill, renewal, trial or offer email (first line = subject). It is processed in
+          this browser only and is not sent anywhere.
         </p>
         <label className="f" htmlFor="relayPaste">
           Message
@@ -185,7 +176,7 @@ export function RelayInbox({ nav }: { nav: Nav }) {
           />
         </label>
         <div className="actions">
-          <button className="btn quiet" onClick={trySample} disabled={!paste.trim()}>
+          <button className="btn quiet" onClick={organise} disabled={!paste.trim()}>
             Organise this message
           </button>
           <a className="btn quiet" href="#/offers-add">

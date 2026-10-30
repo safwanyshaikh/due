@@ -11,7 +11,7 @@ export function Badge({
   tone = 'plain',
 }: {
   children: ReactNode;
-  tone?: 'plain' | 'warm' | 'calm' | 'sample';
+  tone?: 'plain' | 'warm' | 'calm';
 }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
 }
@@ -71,7 +71,6 @@ export function CommitmentRow({
       </span>
       <span className="row-side">
         <ConfidenceBadge v={c.amountConfidence} />
-        {c.isSample && <Badge tone="sample">Demo data</Badge>}
       </span>
     </button>
   );

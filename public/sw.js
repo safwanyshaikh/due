@@ -1,5 +1,7 @@
 // Minimal offline cache: app shell only. No user data is ever sent to or cached from a server.
-const CACHE = 'planner-shell-v1';
+// API responses (/api/*) are never cached here; the app keeps its own dated copy of the last
+// good catalog response so it can say when data was last updated.
+const CACHE = 'planner-shell-v2';
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])),
@@ -15,7 +17,9 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) return;
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {

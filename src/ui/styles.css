@@ -12,8 +12,6 @@
   --amber-ink: #6b4d06;
   --red-bg: #f8e7e7;
   --red-ink: #8a3333;
-  --sample-bg: #ece9fb;
-  --sample-ink: #4338a0;
   --t-lav-bg: #ece9fb;
   --t-lav-ink: #4338a0;
   --t-green-bg: #e0f3e6;
@@ -48,8 +46,6 @@
     --amber-ink: #f1d58b;
     --red-bg: #3d2224;
     --red-ink: #f0b3b3;
-    --sample-bg: #2a2650;
-    --sample-ink: #cfc9f7;
     --t-lav-bg: #2a2650;
     --t-lav-ink: #cfc9f7;
     --t-green-bg: #163526;
@@ -765,9 +761,18 @@ details.panel summary {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.badge-sample {
-  background: var(--sample-bg);
-  color: var(--sample-ink);
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.onboarding .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
 }
 
 /* forms */

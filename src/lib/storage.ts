@@ -1,4 +1,4 @@
-import { emptyData } from './data';
+import { migrateData } from './migrate';
 import type { AppData } from './types';
 
 export const STORAGE_KEY = 'payables-planner:v1';
@@ -9,7 +9,7 @@ export function loadData(storage: Pick<Storage, 'getItem'> | null = safeLocal())
     if (!raw) return null;
     const parsed = JSON.parse(raw) as AppData;
     if (parsed?.version !== 1 || !Array.isArray(parsed.commitments)) return null;
-    return { ...emptyData(), ...parsed };
+    return migrateData(parsed);
   } catch {
     return null;
   }

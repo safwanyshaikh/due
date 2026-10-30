@@ -1,7 +1,19 @@
 import { useState } from 'react';
 import { useApp } from '../store';
-import { Disclaimer, SourceLink, StatusBadge, priceText, useCatalog, valueText } from './parts';
-import { BENEFIT_LABEL, PROVIDER_LABEL } from '../../lib/offers/catalog';
+import {
+  CatalogStatus,
+  Disclaimer,
+  PENDING_NOTE,
+  PendingBadge,
+  SourceLink,
+  StatusBadge,
+  priceText,
+  useCatalog,
+  valueText,
+} from './parts';
+import { BENEFIT_LABEL, PROVIDER_LABEL, providerLabel } from '../../lib/offers/labels';
+import { CATEGORY_LABEL, SOURCE_STATUS_LABEL, isSecondaryCategory } from '../../lib/offers/sources';
+import { formatDateIST, formatIST } from '../../lib/offers/api';
 import {
   CHECK_TEXT,
   entitlementFor,
@@ -9,8 +21,7 @@ import {
   matchSummary,
   offersForService,
 } from '../../lib/offers/eligibility';
-import { expiryLabel, isStale } from '../../lib/offers/status';
-import { historyFor } from '../../lib/offers/observations';
+import { expiryLabel, isStale, isVerificationPending } from '../../lib/offers/status';
 import { addOfferReminder } from '../../lib/offers/services';
 import { ACCOUNT_NOTE, PAYMENT_NOTE } from '../../lib/offers/copy';
 import { formatDate, isValidISO } from '../../lib/dates';
@@ -19,7 +30,7 @@ const ICON = { confirmed: '✓', missing: '…', provider_only: '↗', may_not_q
 
 export function OfferDetail({ id }: { id: string }) {
   const { data, today, update } = useApp();
-  const catalog = useCatalog(today);
+  const { offers: catalog, phase } = useCatalog();
   const o = catalog.find((x) => x.offerId === id);
   const services = data.services.filter(
     (s) => o && offersForService(s, catalog).some((x) => x.offerId === o.offerId),
@@ -31,8 +42,13 @@ export function OfferDetail({ id }: { id: string }) {
   if (!o)
     return (
       <div className="page">
-        <h1>Not found</h1>
-        <p className="muted">This record isn’t in the catalog.</p>
+        <h1>{phase === 'loading' ? 'Loading…' : 'Not found'}</h1>
+        <p className="muted">
+          {phase === 'loading'
+            ? 'Loading this record from Due’s monitoring service.'
+            : 'This record isn’t in the latest data from Due’s monitoring service.'}
+        </p>
+        <CatalogStatus />
       </div>
     );
   const svc = services.find((s) => s.id === svcId) ?? null;
@@ -42,11 +58,16 @@ export function OfferDetail({ id }: { id: string }) {
     o.offerId === 'vi-movies-tv'
       ? entitlementFor(o, svc)
       : { value: valueText(o), caveat: undefined };
-  const hist = historyFor(data.offerObservations, o.offerId);
-  const primary = o.sources.find((s) => s.kind === 'terms') ?? o.sources[0];
+  const primary =
+    o.sources.find((s) => s.kind === 'terms' && !isSecondaryCategory(s.category)) ??
+    o.sources.find((s) => !isSecondaryCategory(s.category)) ??
+    o.sources[0];
   const toVerify = [
     ...checks.filter((c) => c.state !== 'confirmed').map((c) => c.rule.description),
     ...(o.computedStatus !== 'active' ? ['That the offer is still available for you today'] : []),
+    ...(isVerificationPending(o)
+      ? ['The details themselves: monitoring has not confirmed them']
+      : []),
   ];
   const paymentRelated = o.eligibility.some(
     (r) => r.kind === 'payment_rail' || r.kind === 'min_transaction',
@@ -68,15 +89,25 @@ export function OfferDetail({ id }: { id: string }) {
       <section className="panel">
         <h1>{o.name}</h1>
         <p className="muted">
-          {PROVIDER_LABEL[o.provider]} · {o.productFamily}
+          {providerLabel(o.provider)}
+          {o.productFamily ? ` · ${o.productFamily}` : ''}
         </p>
         <div className="actions">
           <StatusBadge s={o.computedStatus} />
+          <PendingBadge o={o} />
           <span className="badge soft">Confidence: {o.confidence}</span>
           {isStale(o, today) && <span className="badge soft">Needs a refresh</span>}
         </div>
       </section>
 
+      {isVerificationPending(o) && (
+        <div className="strip review" role="status">
+          <span aria-hidden="true">…</span>
+          <span>
+            <b>Verification pending.</b> {PENDING_NOTE}
+          </span>
+        </div>
+      )}
       {o.computedStatus === 'conflicting' && (
         <div className="strip review" role="status">
           <span aria-hidden="true">△</span>
@@ -128,9 +159,9 @@ export function OfferDetail({ id }: { id: string }) {
             </>
           )}
           <dt>Observed</dt>
-          <dd>{formatDate(o.observedAt)}</dd>
-          <dt>Last confirmed</dt>
-          <dd>{formatDate(o.lastConfirmedAt)}</dd>
+          <dd>{o.observedAt ? formatDateIST(o.observedAt) : 'Not reported'}</dd>
+          <dt>Last confirmed by monitoring</dt>
+          <dd>{o.lastConfirmedAt ? formatDateIST(o.lastConfirmedAt) : 'Not yet confirmed'}</dd>
         </dl>
         {o.notes.map((n) => (
           <p key={n} className="muted small">
@@ -155,13 +186,13 @@ export function OfferDetail({ id }: { id: string }) {
           </label>
         ) : (
           <p className="muted small">
-            Add a {PROVIDER_LABEL[o.provider]} service to check what you’ve already told us.{' '}
+            Add a {providerLabel(o.provider)} service to check what you’ve already told us.{' '}
             <a href="#/offers-add">Add a provider or service</a>
           </p>
         )}
         {checks.length === 0 ? (
           <p className="muted small">
-            No conditions are listed in the saved sources. Still verify with the provider.
+            No conditions are listed for this record. Still verify with the provider.
           </p>
         ) : (
           <ul className="checks">
@@ -244,29 +275,35 @@ export function OfferDetail({ id }: { id: string }) {
       </section>
 
       <section className="panel">
-        <h2>Official sources</h2>
-        <ul className="srcs">
-          {o.sources.map((s) => (
-            <li key={s.url}>
-              <SourceLink s={s} />{' '}
-              <span className="muted small">
-                ({s.kind.replace('_', ' ')}, ref {s.ref})
-              </span>
-            </li>
-          ))}
-        </ul>
-        {hist.length > 0 && (
-          <details>
-            <summary>Change history ({hist.length})</summary>
-            <ul>
-              {hist.slice(-10).map((h) => (
-                <li key={h.id} className="small">
-                  {h.observedAt.slice(0, 10)} · {h.changeType} · {h.fact}
-                </li>
-              ))}
-            </ul>
-          </details>
+        <h2>Sources</h2>
+        {o.sources.length === 0 ? (
+          <p className="muted small">No source links were reported for this record.</p>
+        ) : (
+          <ul className="srcs">
+            {o.sources.map((s) => (
+              <li key={s.url}>
+                <SourceLink s={s} />{' '}
+                <span className="muted small">
+                  (
+                  {[
+                    s.category ? (CATEGORY_LABEL[s.category] ?? s.category) : null,
+                    isSecondaryCategory(s.category) ? 'not an official provider page' : null,
+                    s.lastCheckedAt
+                      ? `last checked ${formatIST(s.lastCheckedAt)}`
+                      : 'not checked yet',
+                    s.status && s.status !== 'active'
+                      ? (SOURCE_STATUS_LABEL[s.status] ?? `status: ${s.status}`)
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                  )
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
+        <CatalogStatus compact />
       </section>
       <Disclaimer />
     </div>

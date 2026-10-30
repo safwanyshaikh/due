@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { useApp } from '../store';
 import type { Nav } from '../App';
-import { Disclaimer, SourceLink, StatusBadge, priceText, useCatalog } from './parts';
-import { PROVIDER_LABEL } from '../../lib/offers/catalog';
+import {
+  CatalogStatus,
+  Disclaimer,
+  PendingBadge,
+  SourceLink,
+  StatusBadge,
+  priceText,
+  useCatalog,
+} from './parts';
+import { PROVIDER_LABEL } from '../../lib/offers/labels';
 import {
   cancellationOwner,
   evaluateEligibility,
@@ -21,7 +29,7 @@ import { formatINR } from '../../lib/money';
 
 export function ServiceCard({ id, nav }: { id: string; nav: Nav }) {
   const { data, today, update } = useApp();
-  const catalog = useCatalog(today);
+  const { offers: catalog } = useCatalog();
   const s = data.services.find((x) => x.id === id);
   const [rDate, setRDate] = useState('');
   const [msg, setMsg] = useState('');
@@ -86,7 +94,8 @@ export function ServiceCard({ id, nav }: { id: string; nav: Nav }) {
         )}
         {included.map(({ o }) => (
           <p key={o.offerId}>
-            <a href={`#/offer/${o.offerId}`}>{o.name}</a> <StatusBadge s={o.computedStatus} />
+            <a href={`#/offer/${o.offerId}`}>{o.name}</a> <StatusBadge s={o.computedStatus} />{' '}
+            <PendingBadge o={o} />
           </p>
         ))}
         {unsure.length > 0 && (
@@ -119,9 +128,7 @@ export function ServiceCard({ id, nav }: { id: string; nav: Nav }) {
             plan. Check the terms with the provider.
           </p>
         )}
-        <p className="muted small">
-          Last checked {formatDate(catalog[0].lastConfirmedAt)} (saved public sources).
-        </p>
+        <CatalogStatus compact />
         <div className="actions">
           {verifySrc ? (
             <a
@@ -140,11 +147,14 @@ export function ServiceCard({ id, nav }: { id: string; nav: Nav }) {
         {offers.length > 0 && (
           <p className="small">
             Sources:{' '}
-            {offers.slice(0, 3).map((o) => (
-              <span key={o.offerId}>
-                <SourceLink s={o.sources[0]} />{' '}
-              </span>
-            ))}
+            {offers
+              .filter((o) => o.sources[0])
+              .slice(0, 3)
+              .map((o) => (
+                <span key={o.offerId}>
+                  <SourceLink s={o.sources[0]} />{' '}
+                </span>
+              ))}
           </p>
         )}
       </section>

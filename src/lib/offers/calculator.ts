@@ -1,4 +1,11 @@
-/** Scenario maths on the user's own assumptions. Results are estimates only. */
+/**
+ * Scenario maths on the user's own assumptions. Results are estimates only.
+ * Documented prices and terms are passed in from Due's monitoring service; when it has none,
+ * the result says so instead of using a bundled figure.
+ */
+
+export const NOT_AVAILABLE =
+  'Not available from Due’s monitoring service — check the provider app or site';
 
 export interface ScenarioLine {
   label: string;
@@ -17,8 +24,10 @@ export interface ScenarioResult {
 
 export function airtel699Prime(input: {
   existingPrime: boolean | null;
-  /** What the user would otherwise pay for Prime over the same 56 days. User assumption. */
+  /** What the user would otherwise pay for Prime over the same period. User assumption. */
   avoidedPrimeCostPaise: number | null;
+  /** Recharge price from the monitoring service, if it has one. */
+  documentedPricePaise: number | null;
 }): ScenarioResult {
   const warnings: string[] = [];
   const unresolved = [
@@ -36,9 +45,15 @@ export function airtel699Prime(input: {
   }
   return {
     lines: [
-      { label: 'Recharge price (documented)', paise: 69900, kind: 'documented' },
+      input.documentedPricePaise != null
+        ? {
+            label: 'Recharge price (documented)',
+            paise: input.documentedPricePaise,
+            kind: 'documented',
+          }
+        : { label: `Recharge price: ${NOT_AVAILABLE}`, paise: null, kind: 'note' },
       {
-        label: 'Prime cost you’d otherwise pay for 56 days (your assumption)',
+        label: 'Prime cost you’d otherwise pay for the same period (your assumption)',
         paise: input.avoidedPrimeCostPaise,
         kind: 'user_assumption',
       },
@@ -90,6 +105,9 @@ export function addMonthsISO(date: string, months: number): string {
 export function jioAiCloud(input: {
   numberType: 'jio' | 'non_jio' | null;
   trialStart: string | null;
+  /** Trial terms from the monitoring service, if it has them. */
+  trialMonths: number | null;
+  storageGb: number | null;
 }): ScenarioResult {
   if (input.numberType === 'jio') {
     return {
@@ -101,12 +119,25 @@ export function jioAiCloud(input: {
     };
   }
   if (input.numberType === 'non_jio') {
-    const end = input.trialStart ? addMonthsISO(input.trialStart, 3) : undefined;
+    const months = input.trialMonths;
+    const end = input.trialStart && months ? addMonthsISO(input.trialStart, months) : undefined;
+    const terms = [
+      months ? `${months} months` : null,
+      input.storageGb ? `${input.storageGb} GB` : null,
+    ]
+      .filter(Boolean)
+      .join(', ');
     return {
       lines: [
-        { label: 'One-time trial: 3 months, 50 GB (documented)', paise: 0, kind: 'documented' },
+        terms
+          ? { label: `One-time trial: ${terms} (documented)`, paise: 0, kind: 'documented' }
+          : { label: `Trial terms: ${NOT_AVAILABLE}`, paise: null, kind: 'note' },
         {
-          label: end ? `Trial ends around ${end}` : 'Add a start date to see the trial end',
+          label: end
+            ? `Trial ends around ${end}`
+            : months
+              ? 'Add a start date to see the trial end'
+              : 'Trial length unknown — check the end date in the provider app',
           paise: null,
           kind: 'note',
         },
@@ -130,16 +161,20 @@ export function jioAiCloud(input: {
 export function googleAiTrial(input: {
   plan: 'plus' | 'pro';
   trialEnd: string | null;
+  /** Monthly price of the chosen plan from the monitoring service, if it has one. */
+  documentedPricePaise: number | null;
 }): ScenarioResult {
-  const price = input.plan === 'pro' ? 195000 : 39900;
+  const planName = input.plan === 'pro' ? 'AI Pro' : 'AI Plus';
   return {
     lines: [
-      { label: 'Payment method needed to start (documented)', paise: null, kind: 'note' },
-      {
-        label: `Expected paid renewal, ${input.plan === 'pro' ? 'AI Pro' : 'AI Plus'} per month (documented, can change)`,
-        paise: price,
-        kind: 'documented',
-      },
+      { label: 'A payment method is usually needed to start a trial', paise: null, kind: 'note' },
+      input.documentedPricePaise != null
+        ? {
+            label: `Expected paid renewal, ${planName} per month (documented, can change)`,
+            paise: input.documentedPricePaise,
+            kind: 'documented',
+          }
+        : { label: `${planName} price: ${NOT_AVAILABLE}`, paise: null, kind: 'note' },
       {
         label: input.trialEnd ? `Decide before ${input.trialEnd}` : 'Add your trial end date',
         paise: null,

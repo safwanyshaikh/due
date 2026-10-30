@@ -126,6 +126,7 @@ export type ProcessResult =
 /**
  * Pipeline for an explicitly forwarded message. It only proposes a candidate. Nothing is saved as a
  * service until the user confirms. Sender identity alone is never treated as proof.
+ * Not wired to any mailbox yet: forwarding needs an inbound email service on the server.
  */
 export function processForwarded(
   msg: ForwardedMessage,
@@ -135,6 +136,41 @@ export function processForwarded(
 ): ProcessResult {
   if (state.status === 'paused') return { ok: false, reason: 'paused' };
   if (!verifyForwardingToken(msg.to, state)) return { ok: false, reason: 'bad_token' };
+  return buildEvent(msg, state, catalog, now);
+}
+
+/**
+ * Organises one message the user pasted into this browser. It is processed locally only: nothing is
+ * sent anywhere, and no forwarding address or connection is involved.
+ */
+export function organisePastedMessage(
+  text: string,
+  state: RelayState,
+  catalog: OfferRecord[],
+  now: string,
+): ProcessResult {
+  const [subject, ...rest] = text.split('\n');
+  return buildEvent(
+    {
+      messageId: `local-${now}`,
+      to: '',
+      from: '',
+      subject: subject.trim() || '(no subject)',
+      body: rest.join('\n'),
+      receivedAt: now,
+    },
+    state,
+    catalog,
+    now,
+  );
+}
+
+function buildEvent(
+  msg: ForwardedMessage,
+  state: RelayState,
+  catalog: OfferRecord[],
+  now: string,
+): ProcessResult {
   const fp = fingerprint(`${msg.subject}\n${msg.body}`);
   if (state.events.some((e) => e.messageId === msg.messageId || e.fingerprint === fp))
     return { ok: false, reason: 'duplicate' };
@@ -241,100 +277,4 @@ export class PrivateEventStore {
   list(userId: string): UserEvent[] {
     return [...(this.byUser.get(userId) ?? [])];
   }
-}
-
-export function sampleRelay(now: string): RelayState {
-  const base = {
-    parserVersion: PARSER_VERSION,
-    extractedAt: now,
-    rawPurgeAfter: now,
-    rawExcerpt: null,
-    isSample: true,
-  };
-  const c = (o: Partial<UserEvent['candidate']>): UserEvent['candidate'] => ({
-    provider: null,
-    service: null,
-    amountPaise: null,
-    currency: null,
-    date: null,
-    trialEnd: null,
-    benefit: null,
-    senderDomain: null,
-    links: [],
-    ...o,
-  });
-  return {
-    status: 'not_connected',
-    token: null,
-    retentionDays: 7,
-    events: [
-      {
-        ...base,
-        id: 'demo1',
-        messageId: 'demo-1',
-        fingerprint: 'demo1',
-        receivedAt: now,
-        subject: 'Your Airtel recharge of ₹699 is successful (demo)',
-        classification: 'recharge',
-        candidate: c({
-          provider: 'airtel',
-          service: 'Airtel prepaid ₹699',
-          amountPaise: 69900,
-          currency: 'INR',
-          benefit: 'Prime',
-        }),
-        matchedOfferIds: ['airtel-699-prime'],
-        verification: 'source_supported',
-        state: 'needs_confirmation',
-        confidence: 'medium',
-      },
-      {
-        ...base,
-        id: 'demo2',
-        messageId: 'demo-2',
-        fingerprint: 'demo2',
-        receivedAt: now,
-        subject: 'Google AI Pro trial started (demo)',
-        classification: 'trial',
-        candidate: c({
-          provider: 'google',
-          service: 'Google AI Pro',
-          amountPaise: 195000,
-          currency: 'INR',
-        }),
-        matchedOfferIds: [],
-        verification: 'user_confirmed',
-        state: 'saved',
-        confidence: 'medium',
-      },
-      {
-        ...base,
-        id: 'demo3',
-        messageId: 'demo-3',
-        fingerprint: 'demo3',
-        receivedAt: now,
-        subject: 'Weekend newsletter (demo)',
-        classification: 'irrelevant',
-        candidate: c({}),
-        matchedOfferIds: [],
-        verification: 'unverified',
-        state: 'ignored',
-        confidence: 'low',
-      },
-      {
-        ...base,
-        id: 'demo4',
-        messageId: 'demo-4',
-        fingerprint: 'demo4',
-        receivedAt: now,
-        subject: 'Fwd: (no subject) (demo)',
-        classification: 'irrelevant',
-        candidate: c({}),
-        matchedOfferIds: [],
-        verification: 'unverified',
-        state: 'could_not_identify',
-        confidence: 'low',
-      },
-    ],
-  };
 }

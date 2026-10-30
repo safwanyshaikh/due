@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-10-30T09:00:00Z",
+  "method": "test fixture",
+  "vendors": [
+    {
+      "name": "Fixture Pay",
+      "slug": "fixture-pay",
+      "kind": "vendor",
+      "officialWebsite": "https://pay.fixture.invalid",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://pay.fixture.invalid/ok",
+          "label": "Fixture OK page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "evidence": { "fetchedAt": "2026-10-30T09:00:00Z", "status": "ok", "title": "Fixture title", "excerpt": "Fixture excerpt text", "reason": null }
+        },
+        {
+          "url": "https://pay.fixture.invalid/app",
+          "label": "Fixture JS page",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "evidence": { "fetchedAt": "2026-10-30T09:00:00Z", "status": "js_only", "title": null, "excerpt": null, "reason": "Rendered client-side" }
+        },
+        {
+          "url": "https://pay.fixture.invalid/blocked",
+          "label": "Fixture robots page",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "evidence": { "fetchedAt": "2026-10-30T09:00:00Z", "status": "blocked_by_robots", "title": null, "excerpt": null, "reason": "Disallow: /blocked" }
+        }
+      ],
+      "offerPatterns": [
+        { "pattern": "Fixture cashback pattern", "sourceUrl": "https://pay.fixture.invalid/ok", "fetchedAt": "2026-10-30T09:00:00Z" }
+      ],
+      "partners": [{ "name": "Fixture Partner", "sourceUrl": "https://pay.fixture.invalid/ok" }, "Bare Partner"]
+    },
+    {
+      "name": "Reliance Jio",
+      "slug": "reliance-jio",
+      "kind": "vendor",
+      "officialWebsite": "https://www.jio.com",
+      "sources": [
+        {
+          "url": "https://www.jio.com/google-gemini-offer/",
+          "label": "Duplicate of a registry.json source",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical"
+        }
+      ]
+    }
+  ]
+}

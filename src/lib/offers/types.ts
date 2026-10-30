@@ -2,8 +2,14 @@
 
 export type OfferStatus = 'active' | 'active_verify' | 'expired' | 'conflicting' | 'unknown';
 export type BenefitType =
-  'recurring_entitlement' | 'one_time_reward' | 'trial' | 'bundle' | 'capability';
+  'recurring_entitlement' | 'one_time_reward' | 'trial' | 'bundle' | 'capability' | 'other';
+/** Known provider slugs. Offers from the monitoring service may carry other provider slugs. */
 export type ProviderId = 'jio' | 'airtel' | 'vi' | 'amazon' | 'google' | 'ecosystem';
+/**
+ * research_snapshot / pending: research-derived, not yet confirmed by Due's monitoring service.
+ * verified: confirmed by monitoring and reviewed. rejected records are never shown.
+ */
+export type VerificationStatus = 'research_snapshot' | 'pending' | 'verified' | 'rejected';
 export type SourceKind =
   | 'plan_page'
   | 'terms'
@@ -23,8 +29,12 @@ export interface SourceRef {
   kind: SourceKind;
   /** Descriptive link text, e.g. "Jio Gemini offer terms". */
   label: string;
-  /** Reference number in the Oct 2026 research report. */
-  ref: number;
+  /** Source category as reported by the monitoring service (e.g. terms, pricing, press). */
+  category?: string;
+  /** When Due's monitoring service last checked this source (ISO timestamp), if known. */
+  lastCheckedAt?: string | null;
+  /** Monitoring status of the source (e.g. active, failing, inaccessible), if known. */
+  status?: string;
 }
 
 export type EligibilityKind =
@@ -59,7 +69,8 @@ export interface EligibilityRule {
 
 export interface OfferRecord {
   offerId: string;
-  provider: ProviderId;
+  /** Lower-case provider slug, e.g. "jio". Not limited to ProviderId. */
+  provider: string;
   productFamily: string;
   name: string;
   skuOrPlanCode?: string;
@@ -72,11 +83,13 @@ export interface OfferRecord {
   geography?: string;
   sourceUrls: string[];
   sources: SourceRef[];
-  observedAt: string;
+  /** When the fact was first observed (ISO date or timestamp); null when not reported. */
+  observedAt: string | null;
   sourcePublishedAt?: string;
   officialStartAt?: string;
   officialEndAt?: string;
-  lastConfirmedAt: string;
+  /** When monitoring last confirmed the fact; null when it has not been confirmed yet. */
+  lastConfirmedAt: string | null;
   pageStatus: PageStatus;
   termsStatus: TermsStatus;
   computedStatus: OfferStatus;
@@ -89,6 +102,7 @@ export interface OfferRecord {
   /** Who handles renewal or cancellation, if documented. */
   billingOwner?: string;
   cadence: Cadence;
+  verificationStatus: VerificationStatus;
 }
 
 export type ServiceType =
@@ -132,7 +146,6 @@ export interface UserServiceRecord {
   benefitExpiry?: string | null;
   notes: string;
   createdAt: string;
-  isSample?: boolean;
 }
 
 export interface SourceObservation {
@@ -198,7 +211,6 @@ export interface UserEvent {
   /** Short excerpt kept only until the retention date; null once purged. */
   rawExcerpt: string | null;
   rawPurgeAfter: string;
-  isSample?: boolean;
 }
 
 export interface RelayState {

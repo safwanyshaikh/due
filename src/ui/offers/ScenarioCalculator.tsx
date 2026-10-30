@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../store';
-import { Disclaimer } from './parts';
+import { Disclaimer, PENDING_TEXT, useCatalog } from './parts';
+import { isVerificationPending } from '../../lib/offers/status';
+import type { OfferRecord } from '../../lib/offers/types';
 import {
   airtel699Prime,
   airtelMonthlyCashback,
@@ -62,8 +64,33 @@ function Result({
   );
 }
 
+function num(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+}
+const pricePaise = (o?: OfferRecord) => (o?.price != null ? Math.round(o.price * 100) : null);
+
+function SourceNote({ o }: { o?: OfferRecord }) {
+  if (!o)
+    return (
+      <p className="muted small">
+        Due’s monitoring service has no record for this right now, so no documented figure is used.
+      </p>
+    );
+  return (
+    <p className="muted small">
+      Documented figures come from <a href={`#/offer/${o.offerId}`}>{o.name}</a>
+      {isVerificationPending(o) ? ` (${PENDING_TEXT.toLowerCase()})` : ''}.
+    </p>
+  );
+}
+
 export function ScenarioCalculator() {
   const { update } = useApp();
+  const { offers } = useCatalog();
+  const find = (id: string) => offers.find((o) => o.offerId === id);
+  const airtelPrime = find('airtel-699-prime');
+  const jioTrial = find('jio-aicloud-nonjio-trial');
+  const googlePlan = (p: 'plus' | 'pro') => find(p === 'pro' ? 'google-ai-pro' : 'google-ai-plus');
   const [msg, setMsg] = useState('');
   const remind = (label: string) => (d: string) => {
     update((x) => addOfferReminder(x, 'calc', label, d));
@@ -78,7 +105,7 @@ export function ScenarioCalculator() {
   const [reward, setReward] = useState('');
   const [used, setUsed] = useState(false);
   // jio cloud
-  const [num, setNum] = useState<'' | 'jio' | 'non_jio'>('');
+  const [numberType, setNumberType] = useState<'' | 'jio' | 'non_jio'>('');
   const [start, setStart] = useState('');
   // google
   const [plan, setPlan] = useState<'plus' | 'pro'>('pro');
@@ -97,7 +124,7 @@ export function ScenarioCalculator() {
       {msg && <p className="small">{msg}</p>}
 
       <section className="panel">
-        <h2>Airtel ₹699 recharge with 56 days of Prime</h2>
+        <h2>{airtelPrime?.name ?? 'Airtel recharge with Amazon Prime'}</h2>
         <div className="grid">
           <label className="f" htmlFor="c1">
             Do you already have Prime?
@@ -112,7 +139,7 @@ export function ScenarioCalculator() {
             </select>
           </label>
           <label className="f" htmlFor="c2">
-            What you’d otherwise pay for Prime over 56 days (₹)
+            What you’d otherwise pay for Prime over the same period (₹)
             <small>Your own estimate for the same period.</small>
             <input
               id="c2"
@@ -126,8 +153,10 @@ export function ScenarioCalculator() {
           r={airtel699Prime({
             existingPrime: prime === '' ? null : prime === 'yes',
             avoidedPrimeCostPaise: avoid ? parseRupees(avoid) : null,
+            documentedPricePaise: pricePaise(airtelPrime),
           })}
         />
+        <SourceNote o={airtelPrime} />
       </section>
 
       <section className="panel">
@@ -163,8 +192,7 @@ export function ScenarioCalculator() {
           })}
         />
         <p className="muted small">
-          {PAYMENT_NOTE} The seed data has no public source pinned for this reward; use what your
-          Airtel app shows.
+          {PAYMENT_NOTE} Use the reward your Airtel app shows you; it is personalised.
         </p>
       </section>
 
@@ -173,13 +201,17 @@ export function ScenarioCalculator() {
         <div className="grid">
           <label className="f" htmlFor="c4">
             Your number
-            <select id="c4" value={num} onChange={(e) => setNum(e.target.value as typeof num)}>
+            <select
+              id="c4"
+              value={numberType}
+              onChange={(e) => setNumberType(e.target.value as typeof numberType)}
+            >
               <option value="">Not sure</option>
               <option value="jio">Jio</option>
               <option value="non_jio">Non-Jio</option>
             </select>
           </label>
-          {num === 'non_jio' && (
+          {numberType === 'non_jio' && (
             <label className="f" htmlFor="c5">
               Trial start date
               <input id="c5" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
@@ -187,10 +219,16 @@ export function ScenarioCalculator() {
           )}
         </div>
         <Result
-          r={jioAiCloud({ numberType: num || null, trialStart: start || null })}
+          r={jioAiCloud({
+            numberType: numberType || null,
+            trialStart: start || null,
+            trialMonths: num(jioTrial?.benefitValue.trialMonths),
+            storageGb: num(jioTrial?.benefitValue.storageGb),
+          })}
           onRemind={remind('JioAICloud trial ends')}
           remindLabel="Remind me before the trial ends"
         />
+        <SourceNote o={jioTrial} />
       </section>
 
       <section className="panel">
@@ -214,10 +252,15 @@ export function ScenarioCalculator() {
           </label>
         </div>
         <Result
-          r={googleAiTrial({ plan, trialEnd: trialEnd || null })}
+          r={googleAiTrial({
+            plan,
+            trialEnd: trialEnd || null,
+            documentedPricePaise: pricePaise(googlePlan(plan)),
+          })}
           onRemind={remind('Decide on Google AI trial')}
           remindLabel="Remind me to decide"
         />
+        <SourceNote o={googlePlan(plan)} />
         <p className="muted small">{PAYMENT_NOTE}</p>
       </section>
       <Disclaimer />

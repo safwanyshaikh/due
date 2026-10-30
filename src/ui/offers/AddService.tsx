@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { useApp } from '../store';
 import type { Nav } from '../App';
-import { Disclaimer, PROVIDER_CHOICES, SourceLink, StatusBadge, useCatalog } from './parts';
+import {
+  Disclaimer,
+  PROVIDER_CHOICES,
+  PendingBadge,
+  SourceLink,
+  StatusBadge,
+  useCatalog,
+  useCatalogEmpty,
+} from './parts';
 import { blankService, upsertService } from '../../lib/offers/services';
 import {
   completeness,
@@ -21,7 +29,8 @@ const tri = (v: Tri) => (v === '' ? null : v === 'yes');
 
 export function AddService({ nav }: { nav: Nav }) {
   const { today, update } = useApp();
-  const catalog = useCatalog(today);
+  const { offers: catalog } = useCatalog();
+  const catalogEmpty = useCatalogEmpty();
   const [step, setStep] = useState(1);
   const [s, setS] = useState<UserServiceRecord>(() => blankService('jio', today));
   const [price, setPrice] = useState('');
@@ -373,7 +382,7 @@ export function AddService({ nav }: { nav: Nav }) {
           <p>
             {comp.total
               ? `${comp.filled} of ${comp.total} useful details filled in.`
-              : 'No extra details are needed for the saved sources.'}
+              : 'No extra details are needed for these records.'}
           </p>
           {comp.missing.length > 0 && (
             <p className="muted small">
@@ -388,20 +397,27 @@ export function AddService({ nav }: { nav: Nav }) {
           <h3>Possible matches</h3>
           {matches.length === 0 && (
             <p className="muted small">
-              No current documented benefits for this provider in the saved sources.
+              {catalogEmpty.empty
+                ? catalogEmpty.message
+                : 'No current documented benefits for this provider from Due’s monitoring service.'}
             </p>
           )}
           <ul className="srcs">
             {matches.map((o) => (
               <li key={o.offerId}>
                 <a href={`#/offer/${o.offerId}`}>{o.name}</a> <StatusBadge s={o.computedStatus} />{' '}
+                <PendingBadge o={o} />{' '}
                 <span className="small">
                   {matchSummary(evaluateEligibility(o, draft)) === 'may_not_qualify'
                     ? 'You may not qualify — verify.'
                     : 'May qualify — verify in the provider app.'}
                 </span>
-                <br />
-                <SourceLink s={o.sources[0]} />
+                {o.sources[0] && (
+                  <>
+                    <br />
+                    <SourceLink s={o.sources[0]} />
+                  </>
+                )}
               </li>
             ))}
           </ul>

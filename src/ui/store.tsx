@@ -9,8 +9,7 @@ import {
 } from 'react';
 import { todayInTz } from '../lib/dates';
 import { clearStorage, loadData, saveData } from '../lib/storage';
-import { buildSampleData } from '../lib/sample';
-import { deleteAllData } from '../lib/data';
+import { deleteAllData, emptyData } from '../lib/data';
 import type { AppData } from '../lib/types';
 
 interface Ctx {
@@ -31,7 +30,7 @@ export function useApp(): Ctx {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [today] = useState(() => todayInTz());
-  const [data, setData] = useState<AppData>(() => loadData() ?? buildSampleData(today));
+  const [data, setData] = useState<AppData>(() => loadData() ?? emptyData());
   const [persisted, setPersisted] = useState(true);
 
   useEffect(() => {

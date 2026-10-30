@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppProvider, useApp } from './store';
+import { CatalogProvider } from './offers/catalogStore';
 import { Home } from './Home';
 import { CategoryView } from './CategoryView';
 import { CommitmentForm } from './CommitmentForm';
@@ -197,7 +198,9 @@ function Shell() {
 export function App() {
   return (
     <AppProvider>
-      <Shell />
+      <CatalogProvider>
+        <Shell />
+      </CatalogProvider>
     </AppProvider>
   );
 }

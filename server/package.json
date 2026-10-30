@@ -1,0 +1,46 @@
+{
+  "name": "due-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Due production API, admin backend and source-monitoring engine.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "migrate": "node dist/cli/migrate.js",
+    "seed:registry": "node dist/cli/seed.js",
+    "worker": "node dist/worker.js",
+    "dev:migrate": "npm run build && npm run migrate",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/cors": "^11.3.1",
+    "@fastify/rate-limit": "^11.2.1",
+    "@fastify/static": "^10.1.8",
+    "cheerio": "^1.2.0",
+    "fast-xml-parser": "^5.11.2",
+    "fastify": "^5.12.7",
+    "nodemailer": "^10.3.1",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "robots-parser": "^3.0.1",
+    "undici": "^8.12.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.13.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  }
+}

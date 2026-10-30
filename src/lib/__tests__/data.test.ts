@@ -6,13 +6,15 @@ import {
   exportCSV,
   exportJSON,
   importCandidates,
-  removeSampleData,
+  emptyData,
   setStatementLink,
   upsertCommitment,
   upsertLabel,
   withdrawIntegration,
 } from '../data';
-import { buildSampleData } from '../sample';
+import { DROP_BUNDLED_EXAMPLES } from '../migrate';
+import { blankService } from '../offers/services';
+import type { AppData } from '../types';
 import { cashForecast } from '../totals';
 import { monthPeriod } from '../dates';
 import { previewCSV, parseCSV, CSV_TEMPLATE } from '../csv';
@@ -23,35 +25,192 @@ import { clearStorage, loadData, saveData, STORAGE_KEY } from '../storage';
 import { ALL_ADAPTERS, IntegrationDisabledError } from '../adapters';
 import { mk, dataWith } from './helpers';
 
-describe('sample data', () => {
-  const data = buildSampleData('2026-10-30');
-  it('has the required demo records, all labelled sample', () => {
-    expect(data.commitments.map((c) => c.type).sort()).toEqual([
-      'credit_card',
-      'emi',
-      'school_fee',
-      'subscription',
-    ]);
-    expect(data.seasons.length).toBe(1);
-    expect(data.links.length).toBe(1);
-    expect(data.commitments.every((c) => c.isSample && /\(demo\)/.test(c.nickname))).toBe(true);
+// A household entered by the user. Test fixture only.
+function household(): AppData {
+  const card = mk({
+    id: 'card',
+    type: 'credit_card',
+    frequency: 'one_time',
+    amountPaise: 1500000,
+    nextDue: '2026-11-13',
   });
-  it('does not double count the linked subscription', () => {
+  const stream = mk({
+    id: 'stream',
+    type: 'subscription',
+    amountPaise: 49900,
+    nextDue: '2026-11-02',
+  });
+  const emi = mk({ id: 'emi', type: 'emi', amountPaise: 325000, nextDue: '2026-11-04' });
+  const school = mk({
+    id: 'school',
+    type: 'school_fee',
+    frequency: 'quarterly',
+    amountPaise: 1200000,
+    nextDue: '2026-11-19',
+  });
+  let d = dataWith(card, stream, emi, school);
+  d = setStatementLink(d, 'stream', 'card');
+  d.seasons.push({
+    id: 'season',
+    name: 'Cricket season',
+    start: '2026-12-01',
+    end: '2027-01-15',
+    linkedCommitmentIds: ['stream'],
+    considerLeadDays: 7,
+    reviewLeadDays: 3,
+    restartDate: null,
+  });
+  return d;
+}
+
+describe('first launch', () => {
+  it('starts empty: no commitments, services, seasons or relay messages', () => {
+    expect(loadData({ getItem: () => null })).toBeNull();
+    const d = emptyData();
+    expect(d.commitments).toEqual([]);
+    expect(d.services).toEqual([]);
+    expect(d.seasons).toEqual([]);
+    expect(d.relay.events).toEqual([]);
+    expect(d.relay.status).toBe('not_connected');
+    expect(d.relay.token).toBeNull();
+    expect(d.migrations).toContain(DROP_BUNDLED_EXAMPLES);
+  });
+  it('a linked subscription is not double counted', () => {
+    const data = household();
     const f = cashForecast(data, { start: '2026-10-30', end: '2026-12-31' });
-    expect(f.items.some((i) => i.commitment.id === 'sample_stream')).toBe(false);
+    expect(f.items.some((i) => i.commitment.id === 'stream')).toBe(false);
     expect(validateCommitment(data.commitments[0])).toEqual([]);
   });
-  it('can be removed without touching real entries', () => {
-    const real = mk({ id: 'real', provider: 'Mine' });
-    const d = removeSampleData({ ...data, commitments: [...data.commitments, real] });
-    expect(d.commitments.map((c) => c.id)).toEqual(['real']);
-    expect(d.seasons).toEqual([]);
+});
+
+describe('legacy bundled-example migration', () => {
+  const realCommitment = mk({ id: 'mine', provider: 'My broadband', amountPaise: 99900 });
+  const realService = { ...blankService('jio', '2026-10-01'), id: 'svc_mine', label: 'My Jio' };
+  const realSeason = {
+    id: 'my_season',
+    name: 'IPL',
+    start: '2027-03-20',
+    end: '2027-05-30',
+    linkedCommitmentIds: ['mine', 'old_stream'],
+    considerLeadDays: 7,
+    reviewLeadDays: 3,
+    restartDate: null,
+  };
+  const realEvent = {
+    id: 'ev_real',
+    messageId: 'local-1',
+    fingerprint: 'abcd1234',
+    receivedAt: '2026-10-20T00:00:00.000Z',
+    subject: 'My bill',
+    classification: 'utility',
+    candidate: {
+      provider: null,
+      service: null,
+      amountPaise: null,
+      currency: null,
+      date: null,
+      trialEnd: null,
+      benefit: null,
+      senderDomain: null,
+      links: [],
+    },
+    matchedOfferIds: [],
+    verification: 'unverified',
+    state: 'needs_confirmation',
+    parserVersion: 'generic-0.1',
+    confidence: 'low',
+    extractedAt: '2026-10-20T00:00:00.000Z',
+    rawExcerpt: null,
+    rawPurgeAfter: '2026-10-27T00:00:00.000Z',
+  };
+  // Shape written by earlier builds: flagged example records next to the user's own records.
+  const legacy = {
+    ...emptyData(),
+    migrations: undefined,
+    commitments: [
+      { ...mk({ id: 'old_card', type: 'credit_card' }), isSample: true },
+      { ...mk({ id: 'old_stream', type: 'subscription' }), isSample: true },
+      realCommitment,
+    ],
+    links: [
+      {
+        id: 'l1',
+        parentId: 'old_card',
+        componentId: 'old_stream',
+        relation: 'included_in_statement',
+        confirmedByUser: true,
+      },
+    ],
+    seasons: [{ ...realSeason, id: 'old_season', isSample: true }, realSeason],
+    services: [{ ...realService, id: 'old_svc', isSample: true }, realService],
+    actionLog: [
+      {
+        id: 'a1',
+        commitmentId: 'old_card',
+        action: 'x',
+        confirmationSource: 'user_entered',
+        at: '2026-10-01',
+      },
+      {
+        id: 'a2',
+        commitmentId: 'mine',
+        action: 'y',
+        confirmationSource: 'user_entered',
+        at: '2026-10-02',
+      },
+    ],
+    relay: {
+      status: 'connected',
+      token: 'abc234',
+      retentionDays: 7,
+      events: [{ ...realEvent, id: 'old_ev', fingerprint: 'old', isSample: true }, realEvent],
+    },
+    offerObservations: [{ id: 'x:1' }],
+    offersLastChecked: '2026-10-30T00:00:00.000Z',
+  };
+  const storeWith = (v: unknown) => {
+    const store = new Map<string, string>([[STORAGE_KEY, JSON.stringify(v)]]);
+    return {
+      store,
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, val: string) => void store.set(k, val),
+    };
+  };
+
+  it('drops flagged records once and leaves real records untouched', () => {
+    const d = loadData(storeWith(legacy))!;
+    expect(d.commitments).toEqual([realCommitment]);
+    expect(d.services).toEqual([realService]);
+    expect(d.seasons).toEqual([{ ...realSeason, linkedCommitmentIds: ['mine'] }]);
     expect(d.links).toEqual([]);
+    expect(d.actionLog.map((a) => a.id)).toEqual(['a2']);
+    expect(d.relay.events).toEqual([realEvent]);
+    expect(d.relay.status).toBe('not_connected');
+    expect(d.relay.token).toBeNull();
+    expect('offerObservations' in d).toBe(false);
+    expect('offersLastChecked' in d).toBe(false);
+    expect(JSON.stringify(d)).not.toContain('isSample');
+    expect(d.migrations).toEqual([DROP_BUNDLED_EXAMPLES]);
+  });
+  it('is idempotent and does not run again after it has been applied', () => {
+    const once = loadData(storeWith(legacy))!;
+    const twice = loadData(storeWith(once))!;
+    expect(twice).toEqual(once);
+    // With the migration recorded, later data is passed through as-is.
+    const later = { ...once, commitments: [...once.commitments, mk({ id: 'new' })] };
+    expect(loadData(storeWith(later))!.commitments.map((c) => c.id)).toEqual(['mine', 'new']);
+  });
+  it('a real dataset with no flagged records keeps everything', () => {
+    const real = { ...household(), migrations: undefined };
+    const d = loadData(storeWith(real))!;
+    expect(d.commitments).toEqual(real.commitments);
+    expect(d.links).toEqual(real.links);
+    expect(d.seasons).toEqual(real.seasons);
   });
 });
 
 describe('export, deletion, withdrawal', () => {
-  const base = buildSampleData('2026-10-30');
+  const base = household();
   it('exports JSON and CSV (formula-safe)', () => {
     const j = JSON.parse(exportJSON(base));
     expect(j.data.commitments.length).toBe(4);
@@ -64,7 +223,7 @@ describe('export, deletion, withdrawal', () => {
     expect(csv.split('\n')[0]).toContain('amount_rupees');
   });
   it('deleting a commitment removes its links, season refs and logs', () => {
-    const d = deleteCommitment(base, 'sample_stream');
+    const d = deleteCommitment(base, 'stream');
     expect(d.links).toEqual([]);
     expect(d.seasons[0].linkedCommitmentIds).toEqual([]);
     expect(d.commitments.length).toBe(3);

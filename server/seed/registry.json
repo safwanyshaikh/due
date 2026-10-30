@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-10-30T08:14:01Z",
+  "method": "WebFetch research agent",
+  "vendors": [
+    {
+      "name": "Reliance Jio",
+      "slug": "reliance-jio",
+      "kind": "vendor",
+      "officialWebsite": "https://www.jio.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.jio.com/google-gemini-offer/",
+          "label": "Jio Google Gemini offer page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:14:01Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.jio.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.jio.com/jcms/en-in/jio-google-gemini-terms-and-conditions/",
+          "label": "Jio Google Gemini offer terms and conditions",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:14:01Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.jio.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.jio.com/help/faq/mobile/offers/google-gemini-offer/",
+          "label": "Jio Google Gemini offer FAQ",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:14:01Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.jio.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/",
+          "label": "Jio prepaid mobile plans",
+          "sourceCategory": "pricing",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:14:01Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.jio.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bharti Airtel",
+      "slug": "bharti-airtel",
+      "kind": "vendor",
+      "officialWebsite": "https://www.airtel.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.airtel.in/press-release/09-2026/airtel-enhances-its-postpaid-offering-by-adding-apples-newly-expanded-icloud-with-apple-tv-and-apple-arcade/",
+          "label": "Airtel press release: postpaid adds Apple iCloud+ with Apple TV and Apple Arcade (Sep 2026)",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.airtel.in/plans/broadband",
+          "label": "Airtel broadband plans",
+          "sourceCategory": "pricing",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.airtel.in/press-release/01-2026/in-a-global-first-airtel-provides-360-million-indians-with-free-access-to-adobe-express-premium/",
+          "label": "Airtel press release: free Adobe Express Premium (Jan 2026)",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vodafone Idea (Vi)",
+      "slug": "vodafone-idea",
+      "kind": "vendor",
+      "officialWebsite": "https://www.myvi.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.myvi.in/vi-movies-and-tv/all-ott-in-one-app",
+          "label": "Vi Movies & TV all-OTT app page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.myvi.in/prepaid/recharge-cashback-offers",
+          "label": "Vi prepaid recharge cashback offers",
+          "sourceCategory": "pricing",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Amazon India (Prime)",
+      "slug": "amazon-india-prime",
+      "kind": "vendor",
+      "officialWebsite": "https://www.amazon.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.amazon.in/b?ie=UTF8&node=16700000031",
+          "label": "Amazon Prime India membership page (node 16700000031)",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=G6RZ3AA6NQMCKYEM",
+          "label": "Amazon.in help page (nodeId G6RZ3AA6NQMCKYEM)",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=G2B9L3YR7LR8J4XP",
+          "label": "Amazon.in help page (nodeId G2B9L3YR7LR8J4XP)",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.primevideo.com/help?nodeId=202095490",
+          "label": "Prime Video help page (nodeId 202095490)",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/b?ie=UTF8&node=207354383031",
+          "label": "Amazon.in browse page (node 207354383031)",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Google (Google One / Gemini subscriptions India)",
+      "slug": "google-one-gemini",
+      "kind": "vendor",
+      "officialWebsite": "https://gemini.google",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://gemini.google/in/subscriptions/?hl=en-IN",
+          "label": "Gemini subscriptions (India)",
+          "sourceCategory": "pricing",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://support.google.com/googleone/answer/9155746?hl=en-IN",
+          "label": "Google One help article 9155746",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:14:01Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://support.google.com/googleone/answer/9056360?hl=en-IN",
+          "label": "Google One help article 9056360",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        },
+        {
+          "url": "https://support.google.com/googleone/answer/15801606?hl=en-IN",
+          "label": "Google One help article 15801606",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Google Pay India",
+      "slug": "google-pay-india",
+      "kind": "vendor",
+      "officialWebsite": "https://pay.google.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://support.google.com/pay/india/answer/18815856",
+          "label": "Google Pay India help article 18815856",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "NPCI (UPI, RuPay)",
+      "slug": "npci",
+      "kind": "vendor",
+      "officialWebsite": "https://www.npci.org.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.rupay.co.in/rupay-credit-card-on-upi",
+          "label": "RuPay credit card on UPI",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Paytm",
+      "slug": "paytm",
+      "kind": "vendor",
+      "officialWebsite": "https://paytm.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://business.paytm.com/subscriptions",
+          "label": "Paytm for Business subscriptions product page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": null,
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: WebFetch DNS resolution was denied by the session network policy for www.jio.com and support.google.com (getaddrinfo ENOTFOUND); further vendor hosts were not attempted per that policy. URL comes from the task's previously-cited list and is unverified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "BSNL",
+      "slug": "bsnl",
+      "kind": "vendor",
+      "officialWebsite": "https://www.bsnl.co.in",
+      "country": "IN",
+      "description": null,
+      "sources": []
+    },
+    {
+      "name": "JioHotstar",
+      "slug": "jiohotstar",
+      "kind": "vendor",
+      "officialWebsite": "https://www.jiohotstar.com",
+      "country": "IN",
+      "description": null,
+      "sources": []
+    },
+    {
+      "name": "Netflix India",
+      "slug": "netflix-india",
+      "kind": "vendor",
+      "officialWebsite": "https://www.netflix.com/in/",
+      "country": "IN",
+      "description": null,
+      "sources": []
+    },
+    {
+      "name": "Apple (India subscriptions / Apple One)",
+      "slug": "apple-india",
+      "kind": "vendor",
+      "officialWebsite": "https://www.apple.com/in/",
+      "country": "IN",
+      "description": null,
+      "sources": []
+    }
+  ]
+}

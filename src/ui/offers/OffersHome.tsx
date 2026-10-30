@@ -1,22 +1,19 @@
-import { useState } from 'react';
 import { useApp } from '../store';
 import type { Nav } from '../App';
-import { Disclaimer, OfferRow, useCatalog } from './parts';
+import { CatalogStatus, Disclaimer, OfferRow, useCatalog, useCatalogEmpty } from './parts';
 import { offersForService } from '../../lib/offers/eligibility';
 import { isRecommendable, isStale } from '../../lib/offers/status';
 import { nextServiceDate } from '../../lib/offers/services';
-import { runRefresh, snapshotAdapter } from '../../lib/offers/refresh';
-import { PROVIDER_LABEL } from '../../lib/offers/catalog';
+import { PROVIDER_LABEL } from '../../lib/offers/labels';
 import { PRIVATE_NOTE } from '../../lib/offers/copy';
 import { addDays, formatDate } from '../../lib/dates';
 import { formatINR } from '../../lib/money';
 import type { OfferRecord } from '../../lib/offers/types';
 
 export function OffersHome({ nav }: { nav: Nav }) {
-  const { data, today, update } = useApp();
-  const catalog = useCatalog(today);
-  const [announce, setAnnounce] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { data, today } = useApp();
+  const { offers: catalog } = useCatalog();
+  const catalogEmpty = useCatalogEmpty();
 
   const services = data.services;
   const horizon = addDays(today, 60);
@@ -65,22 +62,6 @@ export function OffersHome({ nav }: { nav: Nav }) {
   const browse = catalog.filter((o) => isRecommendable(o.computedStatus));
   const history = catalog.filter((o) => o.computedStatus === 'expired');
 
-  async function refresh() {
-    setBusy(true);
-    const providers = [...new Set(catalog.map((o) => o.provider))];
-    const now = new Date().toISOString();
-    const r = await runRefresh(
-      providers.map((p) => snapshotAdapter(catalog, p, now)),
-      data.offerObservations,
-      now,
-    );
-    update((d) => ({ ...d, offerObservations: r.observations, offersLastChecked: r.checkedAt }));
-    setAnnounce(
-      `Checked ${r.observations.length - data.offerObservations.length} saved source records. ${r.changed ? `${r.changed} changed.` : 'No changes found.'}`,
-    );
-    setBusy(false);
-  }
-
   return (
     <div className="page">
       <section className="banner c-sky">
@@ -103,27 +84,12 @@ export function OffersHome({ nav }: { nav: Nav }) {
       </section>
 
       <section className="panel">
-        <div className="softline">
-          <span className="muted small">
-            Last checked{' '}
-            {data.offersLastChecked
-              ? new Date(data.offersLastChecked).toLocaleString('en-IN', {
-                  timeZone: 'Asia/Kolkata',
-                })
-              : `${formatDate(catalog[0].lastConfirmedAt)} (research snapshot)`}
-          </span>
-          <button className="btn quiet" onClick={() => void refresh()} disabled={busy}>
-            {busy ? 'Checking…' : 'Check sources again'}
-          </button>
-        </div>
+        <CatalogStatus />
         <p className="muted small">
-          This checks Due’s saved public snapshot. Live checks of provider sites need a server and
-          are not running yet. {PRIVATE_NOTE}
+          Due’s monitoring service checks public provider pages on a schedule. It is not real-time,
+          so always confirm with the provider. {PRIVATE_NOTE}
         </p>
-        <p className="sr-only" role="status" aria-live="polite">
-          {announce}
-        </p>
-        {announce && <p className="small">{announce}</p>}
+        {catalogEmpty.empty && <p className="small emptyline">{catalogEmpty.message}</p>}
       </section>
 
       <Section
@@ -151,9 +117,11 @@ export function OffersHome({ nav }: { nav: Nav }) {
       <Section
         title="Benefits to verify"
         empty={
-          services.length
-            ? 'No documented benefits matched your services yet.'
-            : 'Add a provider or service to see benefits that may be included.'
+          catalogEmpty.empty
+            ? catalogEmpty.message
+            : services.length
+              ? 'No documented benefits matched your services yet.'
+              : 'Add a provider or service to see benefits that may be included.'
         }
       >
         {toVerify.map(({ o, svc }) => (
@@ -170,7 +138,10 @@ export function OffersHome({ nav }: { nav: Nav }) {
         ))}
       </Section>
 
-      <Section title="Conflicting or stale sources" empty="No source problems found.">
+      <Section
+        title="Conflicting or stale sources"
+        empty={catalogEmpty.empty ? catalogEmpty.message : 'No source problems found.'}
+      >
         {problems.map((o) => (
           <OfferRow key={o.offerId} o={o} today={today} />
         ))}
@@ -181,7 +152,6 @@ export function OffersHome({ nav }: { nav: Nav }) {
           <a key={s.id} className="item" href={`#/service/${s.id}`}>
             <span className="row">
               <strong>{s.label || PROVIDER_LABEL[s.provider]}</strong>
-              {s.isSample && <span className="badge soft">Demo</span>}
             </span>
             <span className="foot2">
               <span className="muted small">
@@ -198,6 +168,11 @@ export function OffersHome({ nav }: { nav: Nav }) {
           <b>Browse documented benefits ({browse.length})</b>
         </summary>
         <div className="cards">
+          {browse.length === 0 && (
+            <p className="muted small emptyline">
+              {catalogEmpty.empty ? catalogEmpty.message : 'No current benefits to show.'}
+            </p>
+          )}
           {browse.map((o) => (
             <OfferRow key={o.offerId} o={o} today={today} />
           ))}

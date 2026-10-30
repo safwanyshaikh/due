@@ -3,7 +3,7 @@ export const PRIVACY_SUMMARY = {
   banner:
     'Draft, not final legal text. A lawyer in India must review the real terms and privacy notice before any public launch.',
   points: [
-    'Where your data lives: in this browser on this device (local storage). Nothing is sent to a server in this release. Clearing browser data or deleting your data here removes it.',
+    'Where your data lives: in this browser on this device (local storage). Nothing you enter is sent to a server in this release. The app only downloads the public offers list from Due’s monitoring service; that request carries none of your data. Clearing browser data or deleting your data here removes it.',
     'What we store: the commitments you type in or import (provider, nickname, amounts, dates, notes), your limits, seasonal plans, reminder settings and billing-email labels.',
     'What we never ask for or store: card numbers or security codes, UPI PINs, bank passwords, PAN, Aadhaar, loan-account logins, raw inbox or chat contents, or full bank statements. If text looks like one of these, the app asks you to remove it.',
     'Billing-email labels only help you organise records. We are not reading that inbox.',

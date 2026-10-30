@@ -140,11 +140,7 @@ export function SeasonsView() {
       {data.seasons.map((s) => {
         const rems = remindersForSeason(s, data.commitments);
         return (
-          <Card
-            key={s.id}
-            title={s.name}
-            right={s.isSample ? <span className="badge badge-sample">Demo data</span> : undefined}
-          >
+          <Card key={s.id} title={s.name}>
             <p>
               {formatDate(s.start)} to {formatDate(s.end)}
             </p>

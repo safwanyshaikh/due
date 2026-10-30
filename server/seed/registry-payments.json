@@ -1,0 +1,987 @@
+{
+  "generatedAt": "2026-10-30T08:15:23Z",
+  "method": "WebFetch research agent (payments ecosystem)",
+  "networkNote": "All WebFetch attempts failed with getaddrinfo ENOTFOUND (session network allow-list). URLs were discovered via WebSearch result listings only; no page content, robots.txt, offer pattern or partner relationship could be verified. offerPatterns/partners are intentionally empty.",
+  "vendors": [
+    {
+      "name": "PhonePe",
+      "slug": "phonepe",
+      "kind": "vendor",
+      "officialWebsite": "https://www.phonepe.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.phonepe.com/robots.txt",
+          "label": "PhonePe robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/terms-conditions/recharge-bills/",
+          "label": "PhonePe Recharge & Bill Pay terms",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'PhonePe | Logo'."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/terms-conditions/general",
+          "label": "PhonePe general terms (includes an Offers section per search snippet)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'PhonePe | Logo'."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/terms-conditions/recharge-bills/app",
+          "label": "PhonePe Recharge & Bill Pay terms (in-app web view)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Privacy Policy'."
+          }
+        },
+        {
+          "url": "https://phonepe.com/terms-conditions/",
+          "label": "PhonePe terms index",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: sibling host www.phonepe.com failed DNS via WebFetch. Expected/observed: getaddrinfo ENOTFOUND phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'PhonePe | Logo'."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/press/",
+          "label": "PhonePe press room",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/press/indus-appstore-transforms-to-phonepe-appstore-introducing-a-unified-marketplace-for-indias-digital-goods",
+          "label": "PhonePe press: PhonePe Appstore",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Indus Appstore transforms to PhonePe Appstore, Introducing a Unified Marketplace for India's Digital Goods'."
+          }
+        },
+        {
+          "url": "https://www.phonepe.com/offers/2018/01/05/OF1801051434307589035174/en.html",
+          "label": "PhonePe legacy dated offer-detail page (example of /offers/YYYY/MM/DD/<offerId>/en.html URL scheme)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.phonepe.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Offer Details'."
+          }
+        },
+        {
+          "url": "https://phonepe.com/app/offers/august/14/jio/app-en.html",
+          "label": "PhonePe legacy Jio cashback offer page (in-app web view)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched: sibling host www.phonepe.com failed DNS via WebFetch. Expected/observed: getaddrinfo ENOTFOUND phonepe.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Cashback details'."
+          }
+        },
+        {
+          "url": "https://tatapower-ddl.com/Editor_UploadedDocuments/Content/PHONEPE_CASHBACK_OFFER_ON_BILL_PAYMENT_FOR_THE_PERIOD_of_July_to_Sept'22.pdf",
+          "label": "Partner-hosted (Tata Power-DDL) PhonePe bill-payment cashback T&C PDF",
+          "sourceCategory": "secondary",
+          "isOfficial": false,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND tatapower-ddl.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'PHONEPE CASHBACK OFFER ON BILL PAYMENT FOR THE PERIOD of July to Sept'22'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "Google Pay (India)",
+      "slug": "google-pay-india",
+      "kind": "vendor",
+      "officialWebsite": "https://pay.google.com/intl/en_in/about/",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://support.google.com/robots.txt",
+          "label": "support.google.com robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://support.google.com/pay/india/answer/7580493",
+          "label": "Google Pay Terms and Conditions: Offers and Rewards",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for support.google.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Google Pay Terms and Conditions: Offers and Rewards'."
+          }
+        },
+        {
+          "url": "https://support.google.com/pay/india/answer/7539588",
+          "label": "Google Pay Rewards FAQs",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for support.google.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Rewards FAQs'."
+          }
+        },
+        {
+          "url": "https://support.google.com/pay/india/answer/7579062",
+          "label": "Pay bills using Google Pay (fees, BBPS)",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for support.google.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Pay bills using Google Pay'."
+          }
+        },
+        {
+          "url": "https://support.google.com/pay/india/answer/13267498?hl=en",
+          "label": "Refer your friends to Google Pay",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for support.google.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Refer your friends to Google Pay'."
+          }
+        },
+        {
+          "url": "https://support.google.com/pay/india/answer/9010473",
+          "label": "Google Pay India help article (attempted directly)",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for support.google.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND support.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://pay.google.com/intl/en_in/about/terms",
+          "label": "Google Pay India terms (incl. Bill Payment Services addendum)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND pay.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Addendum To Google Pay Terms: Google Pay Terms Of Service For India Non-Residents'."
+          }
+        },
+        {
+          "url": "https://pay.google.com/intl/en_in/about/",
+          "label": "Google Pay India product site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND pay.google.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'pay.google.com'."
+          }
+        },
+        {
+          "url": "https://blog.google/intl/en-in/products/explore-communicate/google-pay-advancing-payments-credit-and-commerce-in-india/",
+          "label": "Google India blog: Google Pay payments, credit and commerce",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND blog.google. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Google Pay: Advancing Payments, Credit, and Commerce in India'."
+          }
+        },
+        {
+          "url": "https://blog.google/intl/en-in/products/explore-communicate/flex-by-google-pay-reimagining-everyday-credit-for-india/",
+          "label": "Google India blog: Flex by Google Pay",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND blog.google. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Flex by Google Pay: Reimagining Everyday Credit for India'."
+          }
+        },
+        {
+          "url": "https://blog.google/intl/en-in/products/explore-communicate/find-and-select-prepaid-mobile-recharge/",
+          "label": "Google India blog: prepaid mobile recharge search",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND blog.google. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Find and select prepaid mobile recharge packs with a simple search'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "Paytm (One 97 Communications)",
+      "slug": "paytm",
+      "kind": "vendor",
+      "officialWebsite": "https://paytm.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://paytm.com/robots.txt",
+          "label": "Paytm robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/recharge/mobile-recharge",
+          "label": "Paytm mobile recharge cashback offer page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Up to ₹300 Cashback'."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/recharge/jio-rs-15-cashback",
+          "label": "Paytm Jio recharge cashback offer page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'jio-rs-15-cashback'."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/app-super-cashback",
+          "label": "Paytm app-only cashback offers",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get Exclusive App-Only Cashback Offers - Paytm.com'."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/rs-2100-cashback-pay-using-upi/mobile-recharge-and-bill-payment-voucher-tnc",
+          "label": "Paytm Mobile Recharge & Bill Payment voucher T&C",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Terms & Condition - Mobile Recharge & Bill Payment Voucher of ₹50'."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/get-upto-rs10000-cashback/recharge-tnc",
+          "label": "Paytm Recharge T&C",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Recharge TnC'."
+          }
+        },
+        {
+          "url": "https://paytm.com/offer/recharge/d2h150",
+          "label": "Paytm Videocon d2h recharge cashback offer (legacy)",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get up to ₹ 150 Cashback on Videocon d2h Recharge at Paytm'."
+          }
+        },
+        {
+          "url": "https://ir.paytm.com/stock-exchange-submissions",
+          "label": "Paytm IR: stock exchange filings (Reg. 30 disclosures incl. press releases)",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND ir.paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Paytm IR - All Stock Exchange Filings'."
+          }
+        },
+        {
+          "url": "https://paytm.com/blog/investor-relations/company-updates/",
+          "label": "Paytm blog: investor relations company updates",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Information on Company Updates'."
+          }
+        },
+        {
+          "url": "https://paytm.com/blog/investor-relations/",
+          "label": "Paytm blog: investor relations",
+          "sourceCategory": "press",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for paytm.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND paytm.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Information on Investor Relations'."
+          }
+        },
+        {
+          "url": "https://www.axisbank.com/docs/default-source/default-document-library/paytm-cashback-offer.pdf",
+          "label": "Partner-hosted (Axis Bank) Paytm cashback offer T&C PDF",
+          "sourceCategory": "secondary",
+          "isOfficial": false,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND www.axisbank.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'paytm cashback offer'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "Amazon Pay (India)",
+      "slug": "amazon-pay-india",
+      "kind": "vendor",
+      "officialWebsite": "https://www.amazon.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.amazon.in/robots.txt",
+          "label": "amazon.in robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/h/rewards/dp/amzn1.rewards.rewardAd.rechargeOrPayBills?rdpf=en",
+          "label": "Amazon Pay rewards: Recharge and pay bills",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.amazon.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Recharge and pay bills'."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/h/rewards/dp/amzn1.rewards.rewardAd.BAO4VIJVL6HAY?rdpf=en",
+          "label": "Amazon Pay reward-ad T&C (dated recharge/bill window, Jan 2026)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.amazon.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): '1. Make a Recharge or Bill payment between 01-Jan-2026 ...'."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/h/rewards/dp/amzn1.rewards.rewardAd.S2H3NGUBBH25K?rdpf=en",
+          "label": "Amazon Pay reward-ad: using Amazon Pay UPI",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.amazon.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'using Amazon Pay UPI'."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=G9NSAWQVKB9KP2C9",
+          "label": "Service Payments on Amazon.in Terms & Conditions",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.amazon.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Service Payments on Amazon.in Terms & Conditions - Amazon Customer Service'."
+          }
+        },
+        {
+          "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=202159280",
+          "label": "Amazon help: Prepaid Mobile Recharges",
+          "sourceCategory": "help",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.amazon.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.amazon.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Prepaid Mobile Recharges - Amazon Customer Service'."
+          }
+        },
+        {
+          "url": "https://www.rupay.co.in/PDF/rupay/Amazon-T-and-C-FY-23-24.pdf",
+          "label": "Partner-hosted (RuPay/NPCI) Amazon offer T&C PDF FY23-24",
+          "sourceCategory": "secondary",
+          "isOfficial": false,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND www.rupay.co.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Amazon T and C FY 23 24'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "MobiKwik",
+      "slug": "mobikwik",
+      "kind": "vendor",
+      "officialWebsite": "https://www.mobikwik.com",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.mobikwik.com/robots.txt",
+          "label": "MobiKwik robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offers",
+          "label": "MobiKwik offers index",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'MobiKwik Offers, Wallet Discounts & Cashback Offer'."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offers/rechargeandbills",
+          "label": "MobiKwik recharge & bills offers",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'MobiKwik Recharge Offers, Bills Payment and Mobile Recharge'."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offer/billpay",
+          "label": "MobiKwik electricity bill SuperCash offer",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get 10% SuperCash on Electricity Bill Payment'."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offers/rechargeandbills/fullpay",
+          "label": "MobiKwik credit card bill payment cashback offer",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get upto Rs.200 Cashback on Credit card Bill payment'."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offers/rechargeandbills/myjioapp",
+          "label": "MobiKwik x MyJio cashback offer (partner)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get flat Rs.100 Cashback @ My Jio app or Jio.com!'."
+          }
+        },
+        {
+          "url": "https://www.mobikwik.com/offer/india",
+          "label": "MobiKwik UPI first recharge/bill offer",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.mobikwik.com via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.mobikwik.com. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Get Flat Rs.75 Cashback on First Recharge or bill payment using MobiKwik upi (@ikwik handle)'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "CRED",
+      "slug": "cred",
+      "kind": "vendor",
+      "officialWebsite": "https://cred.club",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://cred.club/robots.txt",
+          "label": "CRED robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND cred.club. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://cred.club/terms",
+          "label": "CRED terms & conditions (offers, CRED Balance, bill payments)",
+          "sourceCategory": "terms",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for cred.club via WebFetch. Expected/observed: getaddrinfo ENOTFOUND cred.club. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'terms & conditions - CRED'."
+          }
+        },
+        {
+          "url": "https://cred.club/credit-card-bill-payment-online",
+          "label": "CRED credit card bill payment (offer marketing)",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for cred.club via WebFetch. Expected/observed: getaddrinfo ENOTFOUND cred.club. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'Pay Credit Card Bill Online instantly & get upto 100% Cashback, Exclusive Rewards & Offers'."
+          }
+        },
+        {
+          "url": "https://cred.club/cred-pay",
+          "label": "CRED pay product page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for cred.club via WebFetch. Expected/observed: getaddrinfo ENOTFOUND cred.club. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'CRED pay. a payment experience for India’s 1%.'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    },
+    {
+      "name": "NPCI / BHIM UPI",
+      "slug": "npci",
+      "kind": "vendor",
+      "officialWebsite": "https://www.npci.org.in",
+      "country": "IN",
+      "description": null,
+      "sources": [
+        {
+          "url": "https://www.npci.org.in/robots.txt",
+          "label": "NPCI robots.txt",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "WebFetch error: getaddrinfo ENOTFOUND www.npci.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification."
+          }
+        },
+        {
+          "url": "https://www.npci.org.in/product/autopay",
+          "label": "NPCI UPI AutoPay product page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.npci.org.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.npci.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'National Payments Corporation of India (NPCI) - Enabling digital payments in India'."
+          }
+        },
+        {
+          "url": "https://www.npci.org.in/product/upi",
+          "label": "NPCI UPI product page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.npci.org.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.npci.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'UPI: Unified Payments Interface - Instant Mobile Payments'."
+          }
+        },
+        {
+          "url": "https://www.bhimupi.org.in/upiautopay",
+          "label": "BHIM UPI AutoPay page",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "critical",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND www.bhimupi.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'UPI AUTOPAY'."
+          }
+        },
+        {
+          "url": "https://www.bhimupi.org.in/upiautopay/list-of-banks-and-apps-live-on-upi-autopay",
+          "label": "List of banks and apps live on UPI AutoPay",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "regular",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not attempted: session network policy blocked every payments host tried (7 of 7), so further hosts were not tried per tool guidance. Expected/observed: getaddrinfo ENOTFOUND www.bhimupi.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'List Of Banks And Apps Live On UPI AutoPay'."
+          }
+        },
+        {
+          "url": "https://www.npci.org.in/uploads/UPI_Auto_Pay_Brand_Guidelines_bcabed7282.pdf",
+          "label": "NPCI UPI AutoPay brand guidelines PDF",
+          "sourceCategory": "document",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "robots": "unknown",
+          "evidence": {
+            "fetchedAt": "2026-10-30T08:15:00Z",
+            "status": "inaccessible",
+            "title": null,
+            "excerpt": null,
+            "reason": "Not fetched individually: host-level DNS failure already observed for www.npci.org.in via WebFetch. Expected/observed: getaddrinfo ENOTFOUND www.npci.org.in. Host is outside this cloud session's allowed network domains; must be allowed in the environment's network settings before verification. URL discovered via WebSearch; search-result title (not page-verified): 'The screenshots are only for illustrative representation purposes only.'."
+          }
+        }
+      ],
+      "offerPatterns": [],
+      "partners": []
+    }
+  ]
+}

@@ -1,0 +1,1112 @@
+{
+  "description": "Re-expression of the 22 offer records from src/lib/offers/catalog.ts (git HEAD at time of migration). Research snapshot from the Oct 2026 research report; no facts added. Each offer keeps its cited official source URLs.",
+  "researchDate": "2026-10-30",
+  "offers": [
+    {
+      "id": "jio-prepaid-1029-prime",
+      "provider": "jio",
+      "productFamily": "Jio prepaid",
+      "name": "Jio prepaid ₹1,029 · 84 days with Amazon Prime",
+      "benefitType": "bundle",
+      "priceInr": 1029,
+      "billingPeriod": "none",
+      "benefitValue": {
+        "validityDays": 84,
+        "ott": [
+          "Amazon Prime (plan variant: verify)"
+        ]
+      },
+      "sourceUrls": [
+        "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Plan-specific OTT benefit listed on Jio prepaid plans."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/",
+            "label": "Jio prepaid plans",
+            "kind": "plan_page",
+            "ref": 4
+          }
+        ],
+        "skuOrPlanCode": "1029",
+        "geography": "India; availability can vary by circle",
+        "eligibility": [
+          {
+            "kind": "service_type",
+            "description": "Jio prepaid number",
+            "verification": "user_input",
+            "field": "serviceType",
+            "expected": "prepaid"
+          },
+          {
+            "kind": "address_circle",
+            "description": "Plan availability in your circle",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "weekly"
+      }
+    },
+    {
+      "id": "jio-fiber-ott",
+      "provider": "jio",
+      "productFamily": "JioFiber / AirFiber",
+      "name": "JioFiber and AirFiber tiers with selected OTT access",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": "monthly",
+      "benefitValue": {
+        "ott": "Selected OTT services by tier (verify for your tier)"
+      },
+      "sourceUrls": [
+        "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "unknown",
+      "pageStatus": "unknown",
+      "computedStatus": "unknown",
+      "confidence": "low",
+      "notes": [
+        "The report cites Jio sources together; the exact Fiber plan page is to be confirmed at the next refresh."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/",
+            "label": "Jio prepaid plans",
+            "kind": "plan_page",
+            "ref": 4
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "address_circle",
+            "description": "Serviceability at your address",
+            "verification": "provider_only"
+          },
+          {
+            "kind": "plan_threshold",
+            "description": "Your Fiber tier",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "jio-aicloud-jio",
+      "provider": "jio",
+      "productFamily": "JioAICloud",
+      "name": "JioAICloud for Jio numbers",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": "none",
+      "benefitValue": {
+        "cost": "Free for Jio numbers"
+      },
+      "sourceUrls": [
+        "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "The report cites Jio sources together; confirm the exact JioAICloud page at the next refresh."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/",
+            "label": "Jio prepaid plans",
+            "kind": "plan_page",
+            "ref": 4
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "number_type",
+            "description": "You use a Jio number",
+            "verification": "user_input",
+            "field": "numberType",
+            "expected": "jio"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "jio-aicloud-nonjio-trial",
+      "provider": "jio",
+      "productFamily": "JioAICloud",
+      "name": "JioAICloud one-time trial for non-Jio numbers · 3 months, 50 GB",
+      "benefitType": "trial",
+      "priceInr": null,
+      "billingPeriod": "one_time",
+      "benefitValue": {
+        "trialMonths": 3,
+        "storageGb": 50,
+        "frequency": "one-time"
+      },
+      "sourceUrls": [
+        "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "The report cites Jio sources together; confirm the exact JioAICloud page at the next refresh."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.jio.com/selfcare/plans/mobility/prepaid-plans-home/",
+            "label": "Jio prepaid plans",
+            "kind": "plan_page",
+            "ref": 4
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "number_type",
+            "description": "You use a non-Jio number",
+            "verification": "user_input",
+            "field": "numberType",
+            "expected": "non_jio"
+          },
+          {
+            "kind": "frequency_cap",
+            "description": "One trial per user",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "jio-gemini-ai-pro",
+      "provider": "jio",
+      "productFamily": "Jio partner offers",
+      "name": "Jio · Google Gemini AI Pro offer",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "partner": "Google Gemini AI Pro"
+      },
+      "sourceUrls": [
+        "https://www.jio.com/google-gemini-offer/",
+        "https://www.jio.com/jcms/en-in/jio-google-gemini-terms-and-conditions/",
+        "https://www.jio.com/help/faq/mobile/offers/google-gemini-offer/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "unavailable",
+      "pageStatus": "visible",
+      "computedStatus": "conflicting",
+      "confidence": "high",
+      "notes": [
+        "The landing page is still visible, but the official terms say the offer is no longer available. The terms take priority."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.jio.com/google-gemini-offer/",
+            "label": "Jio Google Gemini offer page",
+            "kind": "landing_page",
+            "ref": 1
+          },
+          {
+            "url": "https://www.jio.com/jcms/en-in/jio-google-gemini-terms-and-conditions/",
+            "label": "Jio Google Gemini offer terms and conditions",
+            "kind": "terms",
+            "ref": 2
+          },
+          {
+            "url": "https://www.jio.com/help/faq/mobile/offers/google-gemini-offer/",
+            "label": "Jio Google Gemini offer FAQ",
+            "kind": "faq",
+            "ref": 3
+          }
+        ],
+        "eligibility": [],
+        "cadence": "weekly"
+      }
+    },
+    {
+      "id": "airtel-postpaid-partners",
+      "provider": "airtel",
+      "productFamily": "Airtel postpaid",
+      "name": "Airtel postpaid plans with partner benefits",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": "monthly",
+      "benefitValue": {
+        "partners": [
+          "Google One",
+          "Amazon Prime",
+          "JioHotstar",
+          "Apple iCloud with Apple TV and Apple Arcade",
+          "Netflix"
+        ],
+        "note": "On selected tiers only"
+      },
+      "sourceUrls": [
+        "https://www.airtel.in/press-release/09-2026/airtel-enhances-its-postpaid-offering-by-adding-apples-newly-expanded-icloud-with-apple-tv-and-apple-arcade/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "unknown",
+      "computedStatus": "unknown",
+      "confidence": "medium",
+      "notes": [
+        "Source is a press release. Confirm your tier and claim path in the Airtel app before relying on it."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.airtel.in/press-release/09-2026/airtel-enhances-its-postpaid-offering-by-adding-apples-newly-expanded-icloud-with-apple-tv-and-apple-arcade/",
+            "label": "Airtel press release: postpaid with Apple iCloud, Apple TV and Apple Arcade (Sep 2026)",
+            "kind": "press_release",
+            "ref": 5
+          }
+        ],
+        "sourcePublishedAt": "2026-09",
+        "liveClaimPath": false,
+        "eligibility": [
+          {
+            "kind": "service_type",
+            "description": "Airtel postpaid connection",
+            "verification": "user_input",
+            "field": "serviceType",
+            "expected": "postpaid"
+          },
+          {
+            "kind": "plan_threshold",
+            "description": "Your postpaid tier includes the partner",
+            "verification": "provider_only"
+          },
+          {
+            "kind": "device_platform",
+            "description": "Apple services need an Apple device",
+            "verification": "user_input",
+            "field": "device",
+            "expected": "ios"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "airtel-fiber-partners",
+      "provider": "airtel",
+      "productFamily": "Airtel Fiber",
+      "name": "Airtel Fiber plans with partner benefits",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": "monthly",
+      "benefitValue": {
+        "partners": [
+          "Google One",
+          "Adobe Express",
+          "JioHotstar",
+          "ZEE5",
+          "Netflix",
+          "other listed benefits"
+        ]
+      },
+      "sourceUrls": [
+        "https://www.airtel.in/plans/broadband"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Benefits differ by Fiber plan."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.airtel.in/plans/broadband",
+            "label": "Airtel broadband (Fiber) plans",
+            "kind": "plan_page",
+            "ref": 6
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "address_circle",
+            "description": "Serviceability at your address",
+            "verification": "provider_only"
+          },
+          {
+            "kind": "plan_threshold",
+            "description": "Your Fiber plan includes the benefit",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "airtel-adobe-express-12m",
+      "provider": "airtel",
+      "productFamily": "Airtel partner benefits",
+      "name": "12 months of Adobe Express Premium for Airtel customers",
+      "benefitType": "one_time_reward",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "months": 12,
+        "product": "Adobe Express Premium"
+      },
+      "sourceUrls": [
+        "https://www.airtel.in/press-release/01-2026/in-a-global-first-airtel-provides-360-million-indians-with-free-access-to-adobe-express-premium/"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "unknown",
+      "computedStatus": "unknown",
+      "confidence": "medium",
+      "notes": [
+        "Source is a press release. Look for a claim card in the Airtel app."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.airtel.in/press-release/01-2026/in-a-global-first-airtel-provides-360-million-indians-with-free-access-to-adobe-express-premium/",
+            "label": "Airtel press release: Adobe Express Premium (Jan 2026)",
+            "kind": "press_release",
+            "ref": 7
+          }
+        ],
+        "sourcePublishedAt": "2026-01",
+        "liveClaimPath": false,
+        "eligibility": [
+          {
+            "kind": "claim_channel",
+            "description": "Claim card visible in your Airtel app",
+            "verification": "user_input",
+            "field": "claimCardVisible",
+            "expected": true
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "airtel-699-prime",
+      "provider": "airtel",
+      "productFamily": "Airtel prepaid",
+      "name": "Airtel prepaid ₹699 recharge with 56 days of Amazon Prime",
+      "benefitType": "bundle",
+      "priceInr": 699,
+      "billingPeriod": "none",
+      "benefitValue": {
+        "primeDays": 56
+      },
+      "sourceUrls": [
+        "https://www.amazon.in/b?ie=UTF8&node=16700000031"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Prime validity starts with the recharge or pack start."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.amazon.in/b?ie=UTF8&node=16700000031",
+            "label": "Amazon.in page for the Airtel ₹699 recharge with Prime",
+            "kind": "campaign_page",
+            "ref": 8
+          }
+        ],
+        "skuOrPlanCode": "699",
+        "eligibility": [
+          {
+            "kind": "service_type",
+            "description": "Airtel prepaid number",
+            "verification": "user_input",
+            "field": "serviceType",
+            "expected": "prepaid"
+          },
+          {
+            "kind": "existing_subscription",
+            "description": "Existing Prime members may not be eligible",
+            "verification": "user_input",
+            "field": "existingSubscription",
+            "expected": false
+          },
+          {
+            "kind": "renewal_rule",
+            "description": "Prime validity starts with the recharge or pack start",
+            "verification": "provider_only"
+          }
+        ],
+        "billingOwner": "Airtel",
+        "cadence": "weekly"
+      }
+    },
+    {
+      "id": "vi-movies-tv",
+      "provider": "vi",
+      "productFamily": "Vi Movies & TV",
+      "name": "Vi Movies & TV packs",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "ottCount": "Use the count shown for your selected pack"
+      },
+      "sourceUrls": [
+        "https://www.myvi.in/vi-movies-and-tv/all-ott-in-one-app"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "OTT counts differ across parts of Vi’s FAQ. Due keeps the entitlement you select instead of a headline number."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.myvi.in/vi-movies-and-tv/all-ott-in-one-app",
+            "label": "Vi Movies & TV",
+            "kind": "plan_page",
+            "ref": 9
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "address_circle",
+            "description": "Pack availability in your circle",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "weekly"
+      }
+    },
+    {
+      "id": "vi-recharge-ott",
+      "provider": "vi",
+      "productFamily": "Vi prepaid",
+      "name": "Complimentary OTT on some Vi recharge denominations",
+      "benefitType": "bundle",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "ott": "Varies by denomination"
+      },
+      "sourceUrls": [
+        "https://www.myvi.in/vi-movies-and-tv/all-ott-in-one-app"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Circle- and number-sensitive."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.myvi.in/vi-movies-and-tv/all-ott-in-one-app",
+            "label": "Vi Movies & TV",
+            "kind": "plan_page",
+            "ref": 9
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "service_type",
+            "description": "Vi prepaid number",
+            "verification": "user_input",
+            "field": "serviceType",
+            "expected": "prepaid"
+          },
+          {
+            "kind": "address_circle",
+            "description": "Denomination available in your circle",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "weekly"
+      }
+    },
+    {
+      "id": "vi-wallet-cashback",
+      "provider": "vi",
+      "productFamily": "Vi recharge cashback",
+      "name": "Vi recharge cashback examples (Paytm, BHIM, Amazon Pay, MobiKwik)",
+      "benefitType": "one_time_reward",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "rails": [
+          "Paytm",
+          "BHIM",
+          "Amazon Pay",
+          "MobiKwik"
+        ]
+      },
+      "sourceUrls": [
+        "https://www.myvi.in/prepaid/recharge-cashback-offers"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "unknown",
+      "pageStatus": "visible",
+      "computedStatus": "unknown",
+      "confidence": "low",
+      "notes": [
+        "The report describes these as dated examples. Current dates were not confirmed."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.myvi.in/prepaid/recharge-cashback-offers",
+            "label": "Vi recharge cashback offers",
+            "kind": "campaign_page",
+            "ref": 10
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "payment_rail",
+            "description": "Depends on the payment app used",
+            "verification": "user_input",
+            "field": "paymentRail"
+          },
+          {
+            "kind": "frequency_cap",
+            "description": "Campaign limits",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "daily"
+      }
+    },
+    {
+      "id": "amazon-prime-plans",
+      "provider": "amazon",
+      "productFamily": "Amazon Prime",
+      "name": "Amazon Prime, Prime Lite and Prime Shopping Edition",
+      "benefitType": "recurring_entitlement",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "plans": [
+          "Prime",
+          "Prime Lite",
+          "Prime Shopping Edition"
+        ]
+      },
+      "sourceUrls": [
+        "https://www.amazon.in/gp/help/customer/display.html?nodeId=G6RZ3AA6NQMCKYEM"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "Prices are on the Amazon page and can change; none are stored here."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=G6RZ3AA6NQMCKYEM",
+            "label": "Amazon Prime plans help page",
+            "kind": "help_page",
+            "ref": 11
+          }
+        ],
+        "eligibility": [],
+        "billingOwner": "Amazon, unless bought through a partner",
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "amazon-prime-billing-owner",
+      "provider": "amazon",
+      "productFamily": "Amazon Prime",
+      "name": "Prime bought through a partner is managed by that partner",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "partners": [
+          "Google Play",
+          "Airtel",
+          "Bharat Connect",
+          "Bank or payment apps"
+        ]
+      },
+      "sourceUrls": [
+        "https://www.amazon.in/gp/help/customer/display.html?nodeId=G2B9L3YR7LR8J4XP",
+        "https://www.primevideo.com/help?nodeId=202095490"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "Cancellation and refunds follow the party that bills you."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.amazon.in/gp/help/customer/display.html?nodeId=G2B9L3YR7LR8J4XP",
+            "label": "Amazon Prime membership and billing help page",
+            "kind": "help_page",
+            "ref": 12
+          },
+          {
+            "url": "https://www.primevideo.com/help?nodeId=202095490",
+            "label": "Prime Video help: subscriptions through partners",
+            "kind": "help_page",
+            "ref": 13
+          }
+        ],
+        "eligibility": [],
+        "billingOwner": "The partner that bills you",
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "amazon-pay-cashback-apr-may-2026",
+      "provider": "amazon",
+      "productFamily": "Amazon Pay",
+      "name": "Amazon Pay cashback campaign, April–May 2026",
+      "benefitType": "one_time_reward",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "window": "April–May 2026"
+      },
+      "sourceUrls": [
+        "https://www.amazon.in/b?ie=UTF8&node=207354383031"
+      ],
+      "officialEndAt": "2026-05-31",
+      "termsStatus": "expired",
+      "pageStatus": "unknown",
+      "computedStatus": "expired",
+      "confidence": "high",
+      "notes": [
+        "Historical. The report gives April–May 2026; the latest possible end date is used."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.amazon.in/b?ie=UTF8&node=207354383031",
+            "label": "Amazon Pay cashback campaign page (Apr–May 2026)",
+            "kind": "campaign_page",
+            "ref": 14
+          }
+        ],
+        "officialStartAt": "2026-04-01",
+        "eligibility": [],
+        "cadence": "on_demand"
+      }
+    },
+    {
+      "id": "google-ai-plus",
+      "provider": "google",
+      "productFamily": "Google AI",
+      "name": "Google AI Plus",
+      "benefitType": "recurring_entitlement",
+      "priceInr": 399,
+      "billingPeriod": "monthly",
+      "benefitValue": {
+        "plan": "AI Plus"
+      },
+      "sourceUrls": [
+        "https://gemini.google/in/subscriptions/?hl=en-IN"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "India retail price, subject to change."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://gemini.google/in/subscriptions/?hl=en-IN",
+            "label": "Google AI subscriptions in India",
+            "kind": "plan_page",
+            "ref": 15
+          }
+        ],
+        "eligibility": [],
+        "billingOwner": "Google, Apple or a partner, depending on where you subscribed",
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "google-ai-pro",
+      "provider": "google",
+      "productFamily": "Google AI",
+      "name": "Google AI Pro",
+      "benefitType": "recurring_entitlement",
+      "priceInr": 1950,
+      "billingPeriod": "monthly",
+      "benefitValue": {
+        "plan": "AI Pro"
+      },
+      "sourceUrls": [
+        "https://gemini.google/in/subscriptions/?hl=en-IN"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "India retail price, subject to change."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://gemini.google/in/subscriptions/?hl=en-IN",
+            "label": "Google AI subscriptions in India",
+            "kind": "plan_page",
+            "ref": 15
+          }
+        ],
+        "eligibility": [],
+        "billingOwner": "Google, Apple or a partner, depending on where you subscribed",
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "google-ai-trial",
+      "provider": "google",
+      "productFamily": "Google AI",
+      "name": "Google AI trial",
+      "benefitType": "trial",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "requiresPaymentMethod": true,
+        "renewsInto": "A paid plan unless stopped before the trial ends"
+      },
+      "sourceUrls": [
+        "https://support.google.com/googleone/answer/9155746?hl=en-IN",
+        "https://support.google.com/googleone/answer/9056360?hl=en-IN"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Trials generally need a payment method and can renew into a paid plan."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://support.google.com/googleone/answer/9155746?hl=en-IN",
+            "label": "Google One help: trials and payment method",
+            "kind": "help_page",
+            "ref": 16
+          },
+          {
+            "url": "https://support.google.com/googleone/answer/9056360?hl=en-IN",
+            "label": "Google One help: cancel or change your plan",
+            "kind": "help_page",
+            "ref": 17
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "existing_subscription",
+            "description": "Trials are usually for people without the plan",
+            "verification": "user_input",
+            "field": "existingSubscription",
+            "expected": false
+          },
+          {
+            "kind": "payment_rail",
+            "description": "A payment method is needed to start a trial",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "google-billing-owner",
+      "provider": "google",
+      "productFamily": "Google One",
+      "name": "Who manages your Google plan depends on who bills it",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "owners": [
+          "Google",
+          "Apple",
+          "Partner (for example a telecom)"
+        ]
+      },
+      "sourceUrls": [
+        "https://support.google.com/googleone/answer/9056360?hl=en-IN",
+        "https://support.google.com/googleone/answer/15801606?hl=en-IN"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "Partner-billed plans are changed through the partner, not Google’s cancellation screen."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://support.google.com/googleone/answer/9056360?hl=en-IN",
+            "label": "Google One help: cancel or change your plan",
+            "kind": "help_page",
+            "ref": 17
+          },
+          {
+            "url": "https://support.google.com/googleone/answer/15801606?hl=en-IN",
+            "label": "Google One help: plans billed by partners",
+            "kind": "help_page",
+            "ref": 18
+          }
+        ],
+        "eligibility": [],
+        "billingOwner": "Google, Apple or the partner",
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "gpay-rewards",
+      "provider": "ecosystem",
+      "productFamily": "Google Pay",
+      "name": "Google Pay rewards and cashback",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "personalised": true
+      },
+      "sourceUrls": [
+        "https://support.google.com/pay/india/answer/18815856"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Rewards are personalised. There is no universal list."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://support.google.com/pay/india/answer/18815856",
+            "label": "Google Pay India help: rewards and cashback",
+            "kind": "help_page",
+            "ref": 19
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "account_status",
+            "description": "Shown only to selected users",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "rupay-credit-on-upi",
+      "provider": "ecosystem",
+      "productFamily": "RuPay",
+      "name": "RuPay credit card on UPI",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "capability": "Link an eligible RuPay credit card to UPI"
+      },
+      "sourceUrls": [
+        "https://www.rupay.co.in/rupay-credit-card-on-upi"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "high",
+      "notes": [
+        "A capability, not a reward. Offers depend on issuer and card variant."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://www.rupay.co.in/rupay-credit-card-on-upi",
+            "label": "RuPay credit card on UPI",
+            "kind": "product_page",
+            "ref": 20
+          }
+        ],
+        "eligibility": [
+          {
+            "kind": "account_status",
+            "description": "Issuer and card variant support it",
+            "verification": "provider_only"
+          }
+        ],
+        "cadence": "monthly"
+      }
+    },
+    {
+      "id": "paytm-upi-autopay",
+      "provider": "ecosystem",
+      "productFamily": "UPI Autopay",
+      "name": "UPI Autopay subscriptions (Paytm for Business)",
+      "benefitType": "capability",
+      "priceInr": null,
+      "billingPeriod": null,
+      "benefitValue": {
+        "capability": "Merchants can set up recurring UPI mandates"
+      },
+      "sourceUrls": [
+        "https://business.paytm.com/subscriptions"
+      ],
+      "officialEndAt": null,
+      "termsStatus": "active",
+      "pageStatus": "visible",
+      "computedStatus": "active_verify",
+      "confidence": "medium",
+      "notes": [
+        "Infrastructure for merchants. Due never creates or changes a mandate."
+      ],
+      "verificationStatus": "research_snapshot",
+      "observedAt": "2026-10-30",
+      "lastConfirmedAt": "2026-10-30",
+      "details": {
+        "currency": "INR",
+        "sources": [
+          {
+            "url": "https://business.paytm.com/subscriptions",
+            "label": "Paytm for Business: subscriptions and UPI Autopay",
+            "kind": "product_page",
+            "ref": 21
+          }
+        ],
+        "eligibility": [],
+        "cadence": "monthly"
+      }
+    }
+  ]
+}

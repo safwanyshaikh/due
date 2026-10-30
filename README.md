@@ -16,7 +16,9 @@ npm install
 npm run dev
 ```
 
-Open the address it prints (usually http://localhost:5173). The first launch shows clearly labelled **sample data** (one subscription, one EMI, one card statement with a linked subscription, one school-fee instalment, one seasonal plan). Remove it from the home banner or Settings.
+Open the address it prints (usually http://localhost:5173). The first launch starts **empty** with an "Add your first commitment" prompt. No example or pre-filled records are shipped.
+
+Due & Offers reads its data from the backend API at `${VITE_API_BASE}/api/public/catalog` (see `.env.example`; leave `VITE_API_BASE` empty when the app and API share an origin). Without a reachable API the Offers screens show "Data unavailable" instead of any bundled data.
 
 Other commands:
 
@@ -41,12 +43,12 @@ npm run preview   # serve the production build (installable PWA)
 
 A tile on the home screen opens **Due & Offers**: documented benefits, renewals, trials and expiry for services like Jio, Airtel, Vi, Amazon Prime, Google AI and Cards/UPI.
 
-- **Seed catalog** (`src/lib/offers/catalog.ts`): 22 records taken only from the 30 Oct 2026 research report and its official source URLs (`sources.ts`, with report reference numbers). No prices, dates or counts were added beyond what the report states.
+- **Catalog from the API** (`src/lib/offers/api.ts`, `src/ui/offers/catalogStore.tsx`): offers come only from `GET ${VITE_API_BASE}/api/public/catalog` (10 s timeout, GET, no credentials). The last good response is cached in local storage with its `generatedAt`. The screen says "Last updated <time> IST from Due’s monitoring service", or, if the service cannot be reached, "Data unavailable — the monitoring service could not be reached. Last successful update: <time or never>". **Refresh** calls the API again. Zero offers shows an honest empty state. Records with `verification_status` `research_snapshot` or `pending` are labelled **Verification pending**; `rejected` records are never shown.
 - **Status rules** (`status.ts`): `expired` when the official end date has passed or terms say unavailable; `conflicting` when a visible landing page disagrees with the terms (for example the Jio Gemini offer); `unknown` when no authoritative source or only a press release exists; `active_verify` when current but account details are unresolved. Expired and conflicting records never appear in the default list.
 - **Eligibility** (`eligibility.ts`): each condition is "confirmed by you", "missing" or "only the provider can confirm". A match is at most "may qualify — verify".
-- **Observations** (`observations.ts`, `refresh.ts`): append-only history with fingerprints. In this browser build, "Check sources again" replays the saved snapshot; live checks need a server job.
-- **Scenario calculator** (`calculator.ts`): Airtel ₹699 + Prime, Airtel monthly cashback (wallet and UPI not combinable), JioAICloud, Google AI trial. Every result is labelled as an estimate.
-- **Due Relay** (`relay.ts`): designed but demo-only. Settings shows a private forwarding address with Copy, Rotate, Pause and Delete intake data. The review inbox has Needs your confirmation / Saved / Ignored / Could not identify. No email service is connected, so nothing arrives automatically.
+- **Monitoring** runs on the server (scheduled polling of public pages, not real-time). The browser never contacts provider sites.
+- **Scenario calculator** (`calculator.ts`): Airtel recharge + Prime, Airtel monthly cashback (wallet and UPI not combinable), JioAICloud, Google AI trial. Documented prices and trial terms are taken from the API record when it has one; otherwise the line says "Not available from Due’s monitoring service". Every result is labelled as an estimate.
+- **Due Relay** (`relay.ts`): email forwarding is **not available yet — it needs an inbound email service**, so no forwarding address is issued. The review inbox keeps a clearly labelled local organiser: paste one message and it is processed in this browser only, then shown under Needs your confirmation / Saved / Ignored / Could not identify.
 - **Never**: purchase, recharge, pay, activate, redeem, cancel, pause, port, OTP capture, KYC, mandate changes, inbox or SMS reading. A guardrail test scans shipped code for these.
 
 ## How the numbers work
@@ -67,24 +69,25 @@ Statuses are your own notes. `pause_planned` is not `pause_confirmed_by_user`; `
 - Manual entry and user-chosen CSV only. No bank, Account Aggregator, payment-app, Gmail/Outlook, WhatsApp or SMS access.
 - Never stored: card numbers/CVV, UPI PINs, passwords, PAN, Aadhaar, raw inbox/chat content, bank statements. Text that looks like these is refused in forms and CSV files, and CSV files with such columns are rejected.
 - Future connections (`src/lib/adapters.ts`) are **disabled interfaces** that throw if called.
-- A test scans shipped code for payment wording, broad SMS permissions, mailbox tokens, credential fields, scraping tools and network calls.
+- A test scans shipped code for payment wording, broad SMS permissions, mailbox tokens, credential fields, scraping tools and network calls (the only allowed call is the public catalog GET in `src/lib/offers/api.ts`).
+- A test fails if any file under `src/` (outside tests) imports a sample/demo/mock module or contains demo/sample-data wording or a bundled offer catalog.
 - School-fee records use generic labels. No child names, birthdates, student IDs or school logins.
 
 ## Where data lives
 
-Everything is in the browser's local storage on the user's device. There is no server, no account system and no hosted database in this release, so there is no cross-user access to test. A hosted plan with per-user row-level security is sketched in `docs/hosted-schema-plan.sql` (**not applied, not used**). `.env.example` lists placeholders only.
+Everything the user enters is in the browser's local storage on their device; the consumer app has no account system and sends no user data. The only network request is the public, unauthenticated offers catalog GET. A hosted plan with per-user row-level security is sketched in `docs/hosted-schema-plan.sql` (**not applied, not used**). `.env.example` lists placeholders only.
 
 ## Known limitations
 
-- Due & Offers data is a dated research snapshot (30 Oct 2026). It shows "Needs a refresh" as it ages; no live provider checks run yet.
-- Due Relay has no real mailbox. The address shown is a demo.
+- Due & Offers depends on the backend API. Records not yet confirmed by monitoring are labelled "Verification pending".
+- Due Relay email forwarding is not available (no inbound email service). Only the paste-one-message organiser works, locally.
 
 - Single device, single user. No sign-in, no sync, no household sharing yet. Clearing browser data erases records (export regularly).
 - Reminders show in the app when it is opened and in calendar files. There is no push, email or WhatsApp delivery.
 - A statement's linked items are matched to its period by date; items with unusual schedules may need manual review (the app warns if linked items exceed the statement).
 - Next due date is a single date the user keeps updated; past dates are flagged but not rolled forward automatically.
-- Sample-data dates are relative to today, so "this month" may be empty on the first screen if the sample dates fall next month.
-- The offline cache (`public/sw.js`) caches the app shell only. Not tested on iOS Safari beyond basics.
+- Datasets saved by earlier builds have their flagged example records removed once on load (`src/lib/migrate.ts`); the user's own records are untouched.
+- The offline cache (`public/sw.js`) caches the app shell only and never caches `/api/` responses. Not tested on iOS Safari beyond basics.
 - Not tested with real Indian users yet. Wording and flows need interviews (see `docs/product-strategy.md`).
 - Legal text is a draft. Nothing here is legal advice or "compliant".
 
@@ -121,9 +124,9 @@ Everything is in the browser's local storage on the user's device. There is no s
 ## Test and build output (last run)
 
 ```
-npm test      -> 6 test files, 64 tests passed
+npm test      -> 7 test files, 114 tests passed
 npm run lint  -> no errors
 npm run build -> tsc clean, vite build succeeded
 ```
 
-Browser smoke test (headless Chromium, 390px wide): home, categories, add/edit, limits, seasons, reminders and settings rendered without errors; the duplicate warning, card-link suggestion and sensitive-text refusal behaved as designed.
+The consumer-app mock/demo removal is documented in `src/MOCK_REMOVAL_REPORT.md`.

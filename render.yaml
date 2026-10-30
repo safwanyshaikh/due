@@ -1,26 +1,47 @@
-# Render Blueprint: deploys the production app in this repo as a static site.
-# Only the built app (dist/) is published. Nothing from docs/ or any artifact is served.
+# Render Blueprint for Due (production).
+# One web service serves the Due app (/), the admin panel (/admin/) and the API (/api/),
+# and runs the monitoring scheduler. One managed Postgres database.
+databases:
+  - name: due-db
+    databaseName: due
+    plan: basic-256mb
+    postgresMajorVersion: '16'
+    ipAllowList: []
+
 services:
   - type: web
     name: due
-    runtime: static
-    buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: false
-    headers:
-      - path: /sw.js
-        name: Cache-Control
-        value: no-cache
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: Referrer-Policy
-        value: no-referrer
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: >-
+      npm ci && npm run build &&
+      npm --prefix admin ci && npm --prefix admin run build &&
+      npm --prefix server ci && npm --prefix server run build
+    startCommand: >-
+      npm --prefix server run migrate &&
+      npm --prefix server run seed:registry &&
+      npm --prefix server start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      - key: RUN_SCHEDULER
+        value: 'true'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: due-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      # You set this once in the Render dashboard, create the owner at /admin/setup, then delete it.
+      - key: ADMIN_SETUP_TOKEN
+        sync: false
+      # Optional: set to enable important-alert emails (otherwise alerts stay in the admin panel).
+      - key: SMTP_URL
+        sync: false
+      - key: SMTP_FROM
+        sync: false

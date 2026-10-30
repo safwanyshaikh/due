@@ -1,9 +1,4 @@
-import type {
-  OfferReminder,
-  RelayState,
-  SourceObservation,
-  UserServiceRecord,
-} from './offers/types';
+import type { OfferReminder, RelayState, UserServiceRecord } from './offers/types';
 
 export type ISODate = string; // YYYY-MM-DD, interpreted in the user's timezone (default Asia/Kolkata)
 
@@ -93,7 +88,6 @@ export interface Commitment {
   /** Optional 24-hour cooling-off: show a gentle "revisit" prompt on/after this date. Never moves a due date. */
   coolingOffUntil?: ISODate | null;
   source: 'manual' | 'csv_import';
-  isSample?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -124,7 +118,6 @@ export interface Season {
   reviewLeadDays: number;
   /** Optional: user intends to pause until this date. */
   restartDate?: ISODate | null;
-  isSample?: boolean;
 }
 
 export interface BillingEmailLabel {
@@ -174,10 +167,9 @@ export interface AppData {
   services: UserServiceRecord[];
   /** Dates and labels only. */
   offerReminders: OfferReminder[];
-  /** Append-only public-source observations. */
-  offerObservations: SourceObservation[];
-  offersLastChecked: string | null;
   relay: RelayState;
+  /** One-time data migrations already applied to this dataset. */
+  migrations?: string[];
 }
 
 export interface Period {

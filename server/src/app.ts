@@ -1,0 +1,147 @@
+import cookie from '@fastify/cookie';
+import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import type { Mailer } from './alerts.js';
+import { resolveSession, SESSION_COOKIE } from './auth/sessions.js';
+import { systemClock, type Clock } from './clock.js';
+import type { AppConfig } from './config.js';
+import type { Pool } from './db.js';
+import type { AppDeps } from './http/context.js';
+import { AppError } from './http/errors.js';
+import { registerCsrfGuard, registerSecurityHeaders } from './http/security.js';
+import type { MonitorContext } from './monitor/engine.js';
+import { MonitorRuntime } from './monitor/runtime.js';
+import { SERVER_ROOT } from './paths.js';
+import { adminRoutes } from './routes/admin/index.js';
+import { authRoutes } from './routes/auth.js';
+import { publicRoutes } from './routes/public.js';
+
+export interface BuildAppOptions {
+  pool: Pool;
+  config: AppConfig;
+  clock?: Clock;
+  mailer?: Mailer | null;
+  runtime?: MonitorRuntime;
+  logger?: FastifyServerOptions['logger'];
+  /** Test hook: receives every registered route. */
+  onRoute?: (route: { method: string | string[]; url: string }) => void;
+}
+
+export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
+  const { config, pool } = opts;
+  const clock = opts.clock ?? systemClock;
+  const app = Fastify({
+    logger:
+      opts.logger ?? {
+        level: config.isProduction ? 'info' : 'debug',
+        redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+      },
+    bodyLimit: 256 * 1024,
+    trustProxy: config.trustProxy,
+    routerOptions: { ignoreTrailingSlash: true },
+  });
+
+  const runtime = opts.runtime ?? new MonitorRuntime(config.monitor);
+  const monitor: MonitorContext = { pool, clock, mailer: opts.mailer ?? null, runtime, log: app.log };
+  const deps: AppDeps = { pool, config, clock, mailer: opts.mailer ?? null, runtime, monitor };
+  app.decorate('deps', deps);
+  if (opts.onRoute) {
+    const cb = opts.onRoute;
+    app.addHook('onRoute', (r) => cb({ method: r.method, url: r.url }));
+  }
+  app.decorateRequest('user', null);
+  app.decorateRequest('sessionIdHash', null);
+
+  // Accept an empty body on JSON requests (e.g. "Run now" buttons); reject malformed JSON with 400.
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    const text = typeof body === 'string' ? body : body.toString('utf8');
+    if (text.trim() === '') return done(null, undefined);
+    try {
+      done(null, JSON.parse(text));
+    } catch {
+      const err = Object.assign(new Error('Malformed JSON body'), { statusCode: 400 });
+      done(err, undefined);
+    }
+  });
+  await app.register(cookie);
+  // Coarse per-IP flood protection; the login limiter (per IP+email) lives in the login route.
+  await app.register(rateLimit, { global: true, max: 600, timeWindow: '1 minute' });
+
+  registerSecurityHeaders(app, config.isProduction);
+  registerCsrfGuard(app, config.publicBaseUrl);
+
+  app.addHook('onRequest', async (req) => {
+    const path = req.url.split('?')[0]!;
+    if (!path.startsWith('/api/admin') && !path.startsWith('/api/auth')) return;
+    const token = req.cookies[SESSION_COOKIE];
+    if (!token || token.length > 200) return;
+    const s = await resolveSession(
+      pool,
+      { secret: config.sessionSecret, idleMs: config.sessionIdleMs, maxMs: config.sessionMaxMs },
+      token,
+      clock(),
+    );
+    if (s) {
+      req.user = s.user;
+      req.sessionIdHash = s.idHash;
+    }
+  });
+
+  app.setErrorHandler((err, req, reply) => {
+    if (err instanceof AppError) {
+      return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message, details: err.details } });
+    }
+    const e = err as { statusCode?: number; code?: string; message: string; validation?: unknown };
+    const status = e.statusCode && e.statusCode >= 400 && e.statusCode < 600 ? e.statusCode : 500;
+    if (status >= 500) req.log.error({ err }, 'unhandled error');
+    const code =
+      status === 429 ? 'rate_limited' : status === 413 ? 'payload_too_large' : status === 415 ? 'unsupported_media_type' : status >= 500 ? 'internal_error' : 'bad_request';
+    return reply.code(status).send({ error: { code, message: status >= 500 ? 'Internal server error' : e.message } });
+  });
+
+  await app.register(authRoutes);
+  await app.register(publicRoutes);
+  await app.register(adminRoutes, { prefix: '/api/admin' });
+
+  const adminDist = config.adminDist ?? resolve(SERVER_ROOT, '../admin/dist');
+  if (existsSync(resolve(adminDist, 'index.html'))) {
+    await app.register(fastifyStatic, { root: adminDist, prefix: '/admin/', index: ['index.html'], wildcard: true });
+    app.log.info({ adminDist }, 'serving admin SPA');
+  }
+
+  // Consumer PWA (root build output) is served from the same origin, so it can call /api without CORS.
+  const appDist = config.appDist ?? resolve(SERVER_ROOT, '../dist');
+  const hasApp = existsSync(resolve(appDist, 'index.html'));
+  if (hasApp) {
+    await app.register(fastifyStatic, {
+      root: appDist,
+      prefix: '/',
+      index: ['index.html'],
+      wildcard: false,
+      decorateReply: false,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('sw.js') || filePath.endsWith('index.html')) res.header('Cache-Control', 'no-cache');
+      },
+    });
+    app.log.info({ appDist }, 'serving consumer app');
+  }
+
+  app.setNotFoundHandler((req, reply) => {
+    const path = req.url.split('?')[0]!;
+    if (req.method === 'GET' && (path === '/admin' || path.startsWith('/admin/')) && existsSync(resolve(adminDist, 'index.html'))) {
+      reply.header('Cache-Control', 'no-cache');
+      return reply.sendFile('index.html', adminDist);
+    }
+    if (req.method === 'GET' && hasApp && !path.startsWith('/api')) {
+      reply.header('Cache-Control', 'no-cache');
+      return reply.sendFile('index.html', appDist);
+    }
+    return reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } });
+  });
+
+  return app;
+}

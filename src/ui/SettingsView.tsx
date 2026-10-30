@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { useApp } from './store';
 import { Card, download } from './common';
 import type { Nav } from './App';
-import {
-  deleteLabel,
-  exportCSV,
-  exportJSON,
-  newId,
-  upsertLabel,
-  removeSampleData,
-} from '../lib/data';
+import { deleteLabel, exportCSV, exportJSON, newId, upsertLabel } from '../lib/data';
 import { ALL_ADAPTERS } from '../lib/adapters';
 import { LABEL_NOTE, PRIVACY_SUMMARY } from '../content/privacy';
 import { CHANNEL_AVAILABILITY } from '../lib/reminders';
@@ -150,11 +143,6 @@ export function SettingsView({ nav }: { nav: Nav }) {
           </button>
           <button onClick={() => nav.go({ name: 'import' })}>Import a CSV</button>
         </div>
-        {data.commitments.some((c) => c.isSample) && (
-          <div className="actions">
-            <button onClick={() => update(removeSampleData)}>Remove demo data</button>
-          </div>
-        )}
         <div className="actions">
           <button
             className="danger"

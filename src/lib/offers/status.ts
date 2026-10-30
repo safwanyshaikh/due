@@ -61,11 +61,18 @@ export function daysBetween(a: string, b: string): number {
   );
 }
 
+/** Never-confirmed records are not "stale"; they are shown as "Verification pending" instead. */
 export function isStale(
   r: Pick<OfferRecord, 'lastConfirmedAt' | 'cadence'>,
   today: string,
 ): boolean {
+  if (!r.lastConfirmedAt) return false;
   return daysBetween(r.lastConfirmedAt, today) > STALE_DAYS[r.cadence];
+}
+
+/** Research-derived records that Due's monitoring service has not confirmed yet. */
+export function isVerificationPending(r: Pick<OfferRecord, 'verificationStatus'>): boolean {
+  return r.verificationStatus === 'research_snapshot' || r.verificationStatus === 'pending';
 }
 
 export function expiryLabel(r: Pick<OfferRecord, 'officialEndAt'>): string {

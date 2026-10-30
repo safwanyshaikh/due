@@ -9,7 +9,8 @@ import { countsTowardForecast } from '../lib/status';
 import { monthlyEquivalentPaise } from '../lib/schedule';
 import { formatINR } from '../lib/money';
 import type { AppData, Commitment } from '../lib/types';
-import { buildCatalog } from '../lib/offers/catalog';
+import { useCatalog } from './offers/catalogStore';
+import type { OfferRecord } from '../lib/offers/types';
 import { offersForService } from '../lib/offers/eligibility';
 import { isRecommendable, isStale } from '../lib/offers/status';
 import { nextServiceDate } from '../lib/offers/services';
@@ -66,6 +67,7 @@ function initialOffset(data: AppData, today: string): number {
 export function offersTileText(
   data: AppData,
   today: string,
+  catalog: OfferRecord[],
 ): { sub: string; line: string; tone: '' | 'review' } {
   if (!data.services.length)
     return {
@@ -73,7 +75,6 @@ export function offersTileText(
       line: 'Add a provider or recurring service.',
       tone: '',
     };
-  const catalog = buildCatalog(today);
   const matched = data.services.flatMap((s) => offersForService(s, catalog));
   if (matched.some((o) => o.computedStatus === 'conflicting')) {
     return {
@@ -106,6 +107,7 @@ export function offersTileText(
 
 export function Home({ nav }: { nav: Nav }) {
   const { data, today } = useApp();
+  const { offers: catalog } = useCatalog();
   const [mode, setMode] = useState<'month' | 'year'>('month');
   const [offset, setOffset] = useState(() => initialOffset(data, today));
   const t = parseISO(today);
@@ -170,11 +172,10 @@ export function Home({ nav }: { nav: Nav }) {
   }
   const stripLead = tone === 'flag' ? 'Marked overdue. ' : tone === 'review' ? 'For review. ' : '';
 
-  const offersTile = offersTileText(data, today);
+  const offersTile = offersTileText(data, today, catalog);
   const seasonsNext = data.seasons
     .filter((s) => s.end >= today)
     .sort((a, b2) => a.start.localeCompare(b2.start))[0];
-  const hasDemo = data.commitments.some((c) => c.isSample) || data.services.some((s) => s.isSample);
 
   return (
     <div className="page">
@@ -235,40 +236,64 @@ export function Home({ nav }: { nav: Nav }) {
         </div>
       </section>
 
-      <section className="summary" aria-labelledby="sumT">
-        <h2 id="sumT">{title}</h2>
-        <div className="planned">
-          <b className="amt">{formatINR(cash.totalPaise)}</b>
-          <span>planned</span>
-        </div>
-        <p className="muted">{phrase}</p>
-        <div className="facts">
-          <div className="fact">
-            <b className="amt">{formatINR(soon)}</b>
-            <small>due in the next 14 days</small>
+      {data.commitments.length === 0 ? (
+        <section className="summary onboarding" aria-labelledby="onbT">
+          <h2 id="onbT">Add your first commitment</h2>
+          <p>
+            Due starts empty. Add a subscription, EMI, card statement, school fee or bill, and
+            you’ll see what is due and when. Nothing is paid from here.
+          </p>
+          <div className="actions">
+            <button
+              className="btn primary"
+              onClick={() => nav.go({ name: 'add', type: 'subscription' })}
+            >
+              Add your first commitment
+            </button>
+            <a className="linkbtn" href="#/import">
+              Or import a CSV
+            </a>
           </div>
-          <div className="fact">
-            <b>{data.commitments.length}</b>
-            <small>
-              {data.commitments.length === 1 ? 'commitment listed' : 'commitments listed'}
-            </small>
+          <p className="muted small">What you enter stays in this browser.</p>
+        </section>
+      ) : (
+        <section className="summary" aria-labelledby="sumT">
+          <h2 id="sumT">{title}</h2>
+          <div className="planned">
+            <b className="amt">{formatINR(cash.totalPaise)}</b>
+            <span>planned</span>
           </div>
-          <div className="fact">
-            <b>
-              {nx ? `${nx.nickname || nx.provider} · ${shortDate(nx.nextDue)}` : 'Nothing upcoming'}
-            </b>
-            <small>next date</small>
+          <p className="muted">{phrase}</p>
+          <div className="facts">
+            <div className="fact">
+              <b className="amt">{formatINR(soon)}</b>
+              <small>due in the next 14 days</small>
+            </div>
+            <div className="fact">
+              <b>{data.commitments.length}</b>
+              <small>
+                {data.commitments.length === 1 ? 'commitment listed' : 'commitments listed'}
+              </small>
+            </div>
+            <div className="fact">
+              <b>
+                {nx
+                  ? `${nx.nickname || nx.provider} · ${shortDate(nx.nextDue)}`
+                  : 'Nothing upcoming'}
+              </b>
+              <small>next date</small>
+            </div>
           </div>
-        </div>
-        <div className="softline">
-          <span className="muted small">
-            Based on what you entered. Some amounts may be estimates.
-          </span>
-          <a className="linkbtn" href="#/calc">
-            How this is calculated
-          </a>
-        </div>
-      </section>
+          <div className="softline">
+            <span className="muted small">
+              Based on what you entered. Some amounts may be estimates.
+            </span>
+            <a className="linkbtn" href="#/calc">
+              How this is calculated
+            </a>
+          </div>
+        </section>
+      )}
 
       <div className={`strip ${tone}`} role="status">
         <Icon name={tone === 'flag' ? 'flag' : tone === 'review' ? 'info' : 'leaf'} />
@@ -371,7 +396,6 @@ export function Home({ nav }: { nav: Nav }) {
             in this browser.
           </p>
         </details>
-        {hasDemo && <span className="badge soft">Demo data</span>}
         <span className="muted small">Today is {formatDate(today)} (IST)</span>
       </footer>
     </div>
