@@ -13,7 +13,7 @@ services:
     name: due
     runtime: node
     plan: starter
-    region: singapore
+    region: oregon
     buildCommand: >-
       npm ci && npm run build &&
       npm --prefix admin ci && npm --prefix admin run build &&
