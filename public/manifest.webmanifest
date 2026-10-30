@@ -1,0 +1,11 @@
+{
+  "name": "Recurring Payables Planner (beta)",
+  "short_name": "Planner",
+  "description": "Plan what your household owes. We never pay or borrow for you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf8f3",
+  "theme_color": "#2f6f5e",
+  "lang": "en-IN",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
