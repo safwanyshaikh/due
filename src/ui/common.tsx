@@ -71,7 +71,7 @@ export function CommitmentRow({
       </span>
       <span className="row-side">
         <ConfidenceBadge v={c.amountConfidence} />
-        {c.isSample && <Badge tone="sample">Sample data</Badge>}
+        {c.isSample && <Badge tone="sample">Demo data</Badge>}
       </span>
     </button>
   );

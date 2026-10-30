@@ -23,8 +23,14 @@ const shipped = [
 const PRIVACY_COPY = /(content\/privacy|lib\/sensitive)\.ts$/;
 
 const forbidden: [string, RegExp][] = [
-  ['payment button or checkout', /pay\s*now|checkout|proceed to pay/i],
-  ['payment initiation', /initiate[a-z]*\s+payment|upi:\/\/|razorpay|paytm|phonepe\.com/i],
+  [
+    'payment or redemption prompts',
+    /pay\s*now|buy\s*now|redeem\s*(now|for\s*me)|guaranteed\s*saving|we found money|proceed to pay|checkout\s*(now|button|page)/i,
+  ],
+  [
+    'payment initiation or payment SDKs',
+    /upi:\/\/|from\s+['"](razorpay|paytm|phonepe|@juspay|cashfree)|createMandate|initiatePayment/i,
+  ],
   ['broad SMS permission', /READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG/],
   ['mailbox tokens', /oauth|access_token|refresh_token|gmail\.googleapis/i],
   ['credentials fields', /cvv|upi[\s_-]?pin|net[\s_-]?banking[\s_-]?password/i],

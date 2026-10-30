@@ -140,14 +140,11 @@ export function CommitmentForm({
   }
 
   return (
-    <>
-      <button className="link" onClick={nav.back}>
-        ‹ Back
-      </button>
+    <div className="page">
       <h1>
         {existing ? 'Edit' : 'Add'} {TYPE_SINGULAR[c.type].toLowerCase()}
       </h1>
-      {c.isSample && <p className="notice">This is sample data. Edit it or remove it any time.</p>}
+      {c.isSample && <p className="notice">This is demo data. Edit it or remove it any time.</p>}
 
       <Card title="Basics">
         <Field label="Type">
@@ -581,6 +578,6 @@ export function CommitmentForm({
         )}
       </div>
       {!isValidISO(c.nextDue) && <p className="muted">Pick a valid date to continue.</p>}
-    </>
+    </div>
   );
 }

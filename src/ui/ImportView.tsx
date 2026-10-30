@@ -36,10 +36,7 @@ export function ImportView({ nav }: { nav: Nav }) {
   }
 
   return (
-    <>
-      <button className="link" onClick={nav.back}>
-        ‹ Back
-      </button>
+    <div className="page">
       <h1>Import from CSV</h1>
       <p className="muted">
         Choose a file from your device. It is read in your browser only; the file itself is not
@@ -111,6 +108,6 @@ export function ImportView({ nav }: { nav: Nav }) {
           </div>
         </Card>
       )}
-    </>
+    </div>
   );
 }

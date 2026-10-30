@@ -1,3 +1,10 @@
+import type {
+  OfferReminder,
+  RelayState,
+  SourceObservation,
+  UserServiceRecord,
+} from './offers/types';
+
 export type ISODate = string; // YYYY-MM-DD, interpreted in the user's timezone (default Asia/Kolkata)
 
 export type CommitmentType =
@@ -163,6 +170,14 @@ export interface AppData {
   settings: Settings;
   actionLog: ActionLogEntry[];
   deliveryLog: DeliveryLogEntry[];
+  /** Due & Offers: the user's own service records (no credentials). */
+  services: UserServiceRecord[];
+  /** Dates and labels only. */
+  offerReminders: OfferReminder[];
+  /** Append-only public-source observations. */
+  offerObservations: SourceObservation[];
+  offersLastChecked: string | null;
+  relay: RelayState;
 }
 
 export interface Period {

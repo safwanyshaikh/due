@@ -1,8 +1,9 @@
 import { addDays } from './dates';
 import { blankCommitment, emptyData, setStatementLink } from './data';
 import type { AppData } from './types';
+import { sampleRelay } from './offers/relay';
 
-/** Demo dataset, all labelled "(sample)". Dates are relative to `today` so the demo always looks current. */
+/** Demo dataset, all labelled "(demo)". Dates are relative to `today` so the demo always looks current. */
 export function buildSampleData(today: string): AppData {
   let data = emptyData();
   const stamp = { isSample: true, lastConfirmed: today } as const;
@@ -11,7 +12,7 @@ export function buildSampleData(today: string): AppData {
     ...blankCommitment('credit_card', today),
     id: 'sample_card',
     provider: 'Sample Bank card',
-    nickname: 'Sample card statement (sample)',
+    nickname: 'Card statement (demo)',
     amountPaise: 1500000,
     frequency: 'one_time' as const,
     nextDue: addDays(today, 14),
@@ -30,7 +31,7 @@ export function buildSampleData(today: string): AppData {
     ...blankCommitment('subscription', today),
     id: 'sample_stream',
     provider: 'Sample Streaming',
-    nickname: 'Streaming (sample)',
+    nickname: 'Streaming (demo)',
     amountPaise: 49900,
     nextDue: addDays(today, 3),
     dueConfidence: 'confirmed' as const,
@@ -46,7 +47,7 @@ export function buildSampleData(today: string): AppData {
     ...blankCommitment('emi', today),
     id: 'sample_emi',
     provider: 'Sample Lender',
-    nickname: 'Appliance EMI (sample)',
+    nickname: 'Appliance EMI (demo)',
     amountPaise: 325000,
     nextDue: addDays(today, 5),
     dueConfidence: 'confirmed' as const,
@@ -67,7 +68,7 @@ export function buildSampleData(today: string): AppData {
     ...blankCommitment('school_fee', today),
     id: 'sample_school',
     provider: 'School fees',
-    nickname: 'School fees, term instalment (sample)',
+    nickname: 'School fees (demo)',
     amountPaise: 1200000,
     frequency: 'quarterly' as const,
     nextDue: addDays(today, 20),
@@ -83,7 +84,7 @@ export function buildSampleData(today: string): AppData {
   data = setStatementLink(data, stream.id, card.id);
   data.seasons.push({
     id: 'sample_season',
-    name: 'Sample cricket season (sample)',
+    name: 'Cricket season (demo)',
     start: addDays(today, 30),
     end: addDays(today, 75),
     linkedCommitmentIds: [stream.id],
@@ -92,5 +93,19 @@ export function buildSampleData(today: string): AppData {
     restartDate: null,
     isSample: true,
   });
+  data.services.push({
+    id: 'sample_svc_airtel',
+    provider: 'airtel',
+    serviceType: 'prepaid',
+    label: 'Airtel prepaid (demo)',
+    planName: '₹699 recharge',
+    approxPricePaise: 69900,
+    existingSubscription: null,
+    renewalDate: addDays(today, 25),
+    notes: 'Demo record.',
+    createdAt: today,
+    isSample: true,
+  });
+  data.relay = sampleRelay(`${today}T09:00:00.000Z`);
   return data;
 }

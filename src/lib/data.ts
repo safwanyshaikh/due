@@ -1,6 +1,7 @@
 import { DEFAULT_BUDGET } from './budget';
 import type { ImportCandidate } from './csv';
 import { DEFAULT_OFFSETS } from './reminders';
+import { emptyRelay } from './offers/relay';
 import type { AppData, Commitment, CommitmentLink, Season, BillingEmailLabel } from './types';
 
 let counter = 0;
@@ -30,6 +31,11 @@ export function emptyData(): AppData {
     },
     actionLog: [],
     deliveryLog: [],
+    services: [],
+    offerReminders: [],
+    offerObservations: [],
+    offersLastChecked: null,
+    relay: emptyRelay(),
   };
 }
 
@@ -187,7 +193,12 @@ export function removeSampleData(data: AppData): AppData {
   const sampleIds = new Set(data.commitments.filter((c) => c.isSample).map((c) => c.id));
   let next = data;
   for (const id of sampleIds) next = deleteCommitment(next, id);
-  return { ...next, seasons: next.seasons.filter((s) => !s.isSample) };
+  return {
+    ...next,
+    seasons: next.seasons.filter((s) => !s.isSample),
+    services: next.services.filter((s) => !s.isSample),
+    relay: { ...next.relay, events: next.relay.events.filter((e) => !e.isSample) },
+  };
 }
 
 export function exportJSON(data: AppData): string {

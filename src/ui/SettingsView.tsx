@@ -15,6 +15,7 @@ import { LABEL_NOTE, PRIVACY_SUMMARY } from '../content/privacy';
 import { CHANNEL_AVAILABILITY } from '../lib/reminders';
 import type { ReminderChannel } from '../lib/types';
 import { STATUS_NOTE } from '../lib/status';
+import { RelayCard } from './offers/RelayCard';
 
 export function SettingsView({ nav }: { nav: Nav }) {
   const { data, update, wipe } = useApp();
@@ -22,7 +23,7 @@ export function SettingsView({ nav }: { nav: Nav }) {
   const [name, setName] = useState('');
   const s = data.settings;
   return (
-    <>
+    <div className="page">
       <h1>Settings</h1>
 
       <Card title="Reminders">
@@ -151,7 +152,7 @@ export function SettingsView({ nav }: { nav: Nav }) {
         </div>
         {data.commitments.some((c) => c.isSample) && (
           <div className="actions">
-            <button onClick={() => update(removeSampleData)}>Remove sample data only</button>
+            <button onClick={() => update(removeSampleData)}>Remove demo data</button>
           </div>
         )}
         <div className="actions">
@@ -168,6 +169,8 @@ export function SettingsView({ nav }: { nav: Nav }) {
           Data is stored in this browser only. Deleting removes it from this device.
         </p>
       </Card>
+
+      <RelayCard />
 
       <Card title="Data connections">
         <p className="muted">
@@ -215,6 +218,6 @@ export function SettingsView({ nav }: { nav: Nav }) {
         </label>
         <p className="muted">{STATUS_NOTE}</p>
       </Card>
-    </>
+    </div>
   );
 }

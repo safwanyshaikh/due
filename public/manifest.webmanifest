@@ -1,11 +1,18 @@
 {
-  "name": "Recurring Payables Planner (beta)",
-  "short_name": "Planner",
-  "description": "Plan what your household owes. We never pay or borrow for you.",
+  "name": "Due",
+  "short_name": "Due",
+  "description": "Know what’s coming. Take your time. Due never pays or borrows for you.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fbf8f3",
-  "theme_color": "#2f6f5e",
+  "background_color": "#f3f6f8",
+  "theme_color": "#0f7f78",
   "lang": "en-IN",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

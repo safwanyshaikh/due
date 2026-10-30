@@ -1,113 +1,124 @@
-import { useState } from 'react';
 import { useApp } from './store';
-import { Card, CommitmentRow, inr } from './common';
+import { Icon } from './Icon';
+import { TILE_BY_TYPE } from './tiles';
 import type { Nav } from './App';
-import type { CommitmentType, Status } from '../lib/types';
-import { STATUS_LABELS, TYPE_LABELS } from '../lib/status';
-import { cashForecast, linkedParentMap } from '../lib/totals';
-import { formatDate, monthPeriod, parseISO, yearPeriod } from '../lib/dates';
+import type { Commitment, CommitmentType } from '../lib/types';
+import { addDays, formatDate } from '../lib/dates';
+import { linkedParentMap } from '../lib/totals';
+import { countsTowardForecast } from '../lib/status';
+import { formatINR } from '../lib/money';
+
+const CYCLE: Record<Commitment['frequency'], string> = {
+  one_time: 'One time',
+  monthly: 'Monthly',
+  quarterly: 'Every 3 months',
+  half_yearly: 'Every 6 months',
+  annual: 'Yearly',
+  custom_months: 'Custom',
+};
 
 export function CategoryView({ type, nav }: { type: CommitmentType; nav: Nav }) {
   const { data, today } = useApp();
-  const [q, setQ] = useState('');
-  const [status, setStatus] = useState<Status | 'all'>('all');
-  const [owner, setOwner] = useState('all');
-  const t = parseISO(today);
-  const all = data.commitments.filter((c) => c.type === type);
-  const owners = [...new Set(all.map((c) => c.ownerLabel).filter(Boolean))];
-  const items = all
-    .filter((c) => (status === 'all' ? true : c.status === status))
-    .filter((c) => (owner === 'all' ? true : c.ownerLabel === owner))
-    .filter((c) => `${c.provider} ${c.nickname} ${c.notes}`.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => a.nextDue.localeCompare(b.nextDue));
-  const scoped = { ...data, commitments: all };
-  const month = cashForecast(scoped, monthPeriod(t.y, t.m));
-  const year = cashForecast(scoped, yearPeriod(t.y));
-  const calendar = yearPeriod(t.y);
-  const upcoming = cashForecast(scoped, { start: today, end: calendar.end }).items.slice(0, 12);
+  const tile = TILE_BY_TYPE[type] ?? TILE_BY_TYPE.subscription;
   const linked = linkedParentMap(data);
+  const items = data.commitments
+    .filter((c) => c.type === type)
+    .sort((a, b) => a.nextDue.localeCompare(b.nextDue));
+  const seasonal = items.filter((c) =>
+    [
+      'seasonal_plan',
+      'pause_planned',
+      'pause_confirmed_by_user',
+      'cancelled_confirmed_by_user',
+      'cancel_pending',
+    ].includes(c.status),
+  );
+  const rest = items.filter((c) => !seasonal.includes(c));
+  const horizon = addDays(today, 30);
+  const groups: [string, Commitment[]][] = [
+    ['Coming up', rest.filter((c) => c.nextDue <= horizon)],
+    ['Later', rest.filter((c) => c.nextDue > horizon)],
+    ['Seasonal and paused plans', seasonal],
+  ];
+
+  const card = (c: Commitment) => {
+    const kids = data.commitments.filter((k) => linked.get(k.id) === c.id);
+    const passed = c.nextDue < today && countsTowardForecast(c.status);
+    return (
+      <button key={c.id} className="item" onClick={() => nav.go({ name: 'edit', id: c.id })}>
+        <span className="row">
+          <strong>{c.nickname || c.provider}</strong>
+          <span className="big amt">
+            {c.amountPaise === null ? 'Amount not entered' : formatINR(c.amountPaise)}
+          </span>
+        </span>
+        <span className="muted">
+          {type === 'subscription' ? 'Renews' : 'Due'} {formatDate(c.nextDue)} ·{' '}
+          {CYCLE[c.frequency]}
+        </span>
+        {linked.has(c.id) && (
+          <span className="small">Included in your card statement, so not counted twice.</span>
+        )}
+        {kids.length > 0 && (
+          <span className="small">
+            Includes {kids.map((k) => k.nickname || k.provider).join(', ')}
+          </span>
+        )}
+        {passed && (
+          <span className="small muted">
+            This date has passed. Update it when you know the next one.
+          </span>
+        )}
+        <span className="foot2">
+          <span className="badge soft">
+            {c.amountConfidence === 'confirmed' ? 'You entered this' : 'Estimated'}
+          </span>
+          <span className="go">Review details ›</span>
+        </span>
+      </button>
+    );
+  };
 
   return (
-    <>
-      <button className="link" onClick={nav.back}>
-        ‹ Back
-      </button>
-      <h1>{TYPE_LABELS[type]}</h1>
-      <div className="grid2">
-        <Card title="This month">
-          <p className="big">{inr(month.totalPaise)}</p>
-        </Card>
-        <Card title="This year">
-          <p className="big">{inr(year.totalPaise)}</p>
-        </Card>
-      </div>
-      <button className="fab" onClick={() => nav.go({ name: 'add', type })}>
-        + Add {TYPE_LABELS[type].toLowerCase()}
-      </button>
-
-      <div className="filters">
-        <input
-          type="search"
-          placeholder="Search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="Search"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as Status | 'all')}
-          aria-label="Status filter"
-        >
-          <option value="all">Any status</option>
-          {Object.entries(STATUS_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-        {owners.length > 0 && (
-          <select
-            value={owner}
-            onChange={(e) => setOwner(e.target.value)}
-            aria-label="Owner filter"
-          >
-            <option value="all">Whole household</option>
-            {owners.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      <Card title="Due calendar (rest of this year)">
-        {upcoming.length === 0 && <p className="muted">Nothing scheduled.</p>}
-        {upcoming.map((u, i) => (
-          <div className="line" key={`${u.commitment.id}${u.date}${i}`}>
-            <span>
-              {formatDate(u.date)} · {u.commitment.nickname || u.commitment.provider}
-            </span>
-            <span>{u.amountPaise === null ? 'amount not entered' : inr(u.amountPaise)}</span>
+    <div className="page">
+      <section className={`banner c-${tile.color}`}>
+        <div className="cathead">
+          <span className="ic">
+            <Icon name={tile.icon} />
+          </span>
+          <div>
+            <h1>{tile.name}</h1>
+            <p>
+              {tile.lead}
+              {items.length ? ` · ${items.length} listed` : ''}
+            </p>
           </div>
-        ))}
-        {type === 'subscription' && (
-          <p className="muted">
-            Subscriptions charged to a card statement are not listed here because the statement
-            already includes them.
+        </div>
+        <div>
+          <button className="btn primary quiet" onClick={() => nav.go({ name: 'add', type })}>
+            + {tile.add}
+          </button>
+        </div>
+      </section>
+      {!items.length && (
+        <div className="empty">
+          <p>
+            <b>Nothing here yet.</b>
           </p>
-        )}
-      </Card>
-
-      <Card title={`All ${TYPE_LABELS[type].toLowerCase()}`}>
-        {items.length === 0 && <p className="muted">Nothing here yet.</p>}
-        {items.map((c) => (
-          <CommitmentRow
-            key={c.id}
-            c={c}
-            onOpen={(id) => nav.go({ name: 'edit', id })}
-            linkedNote={linked.has(c.id) ? 'included in a card statement' : undefined}
-          />
-        ))}
-      </Card>
-    </>
+          <p className="muted">Add one whenever you’re ready. There’s no rush.</p>
+          <button className="btn primary" onClick={() => nav.go({ name: 'add', type })}>
+            {tile.emptyAct}
+          </button>
+        </div>
+      )}
+      {groups.map(([title, list]) =>
+        list.length ? (
+          <section className="group" key={title}>
+            <h2>{title}</h2>
+            <div className="cards">{list.map(card)}</div>
+          </section>
+        ) : null,
+      )}
+    </div>
   );
 }

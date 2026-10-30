@@ -25,7 +25,7 @@ export function SeasonsView() {
   }
 
   return (
-    <>
+    <div className="page">
       <h1>Seasonal plans</h1>
       <p className="muted">
         Plan a window, for example a sports tournament. We only set your own reminders. We don’t
@@ -143,7 +143,7 @@ export function SeasonsView() {
           <Card
             key={s.id}
             title={s.name}
-            right={s.isSample ? <span className="badge badge-sample">Sample data</span> : undefined}
+            right={s.isSample ? <span className="badge badge-sample">Demo data</span> : undefined}
           >
             <p>
               {formatDate(s.start)} to {formatDate(s.end)}
@@ -167,6 +167,6 @@ export function SeasonsView() {
           </Card>
         );
       })}
-    </>
+    </div>
   );
 }

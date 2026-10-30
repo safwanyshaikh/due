@@ -55,7 +55,7 @@ export function BudgetView() {
   );
 
   return (
-    <>
+    <div className="page">
       <h1>Your limits</h1>
       <p className="muted">
         Limits are yours to set, change or turn off. They are for planning, not advice.
@@ -208,6 +208,6 @@ export function BudgetView() {
           )}
         </Card>
       )}
-    </>
+    </div>
   );
 }

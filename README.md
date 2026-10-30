@@ -1,4 +1,4 @@
-# Recurring Payables Planner (India, invite-only beta)
+# Due (India, invite-only beta)
 
 A **planning-only** app. It helps an adult household see what is due, when, and how much, this month and this year. It **never** pays, borrows, cancels, pauses, or changes a mandate for you. There is no "pay" button, no checkout, no lender marketplace.
 
@@ -37,6 +37,18 @@ npm run preview   # serve the production build (installable PWA)
 - Reminders: 7/3/1 days by default, quiet hours, in-app list, `.ics` calendar export, delivery log. Email and WhatsApp are shown as **unavailable**; nothing is ever marked "sent".
 - Data: JSON/CSV export, CSV import with row-by-row preview, delete one item or everything, billing-email labels.
 
+## Due & Offers (read-only Offer Intelligence)
+
+A tile on the home screen opens **Due & Offers**: documented benefits, renewals, trials and expiry for services like Jio, Airtel, Vi, Amazon Prime, Google AI and Cards/UPI.
+
+- **Seed catalog** (`src/lib/offers/catalog.ts`): 22 records taken only from the 30 Oct 2026 research report and its official source URLs (`sources.ts`, with report reference numbers). No prices, dates or counts were added beyond what the report states.
+- **Status rules** (`status.ts`): `expired` when the official end date has passed or terms say unavailable; `conflicting` when a visible landing page disagrees with the terms (for example the Jio Gemini offer); `unknown` when no authoritative source or only a press release exists; `active_verify` when current but account details are unresolved. Expired and conflicting records never appear in the default list.
+- **Eligibility** (`eligibility.ts`): each condition is "confirmed by you", "missing" or "only the provider can confirm". A match is at most "may qualify — verify".
+- **Observations** (`observations.ts`, `refresh.ts`): append-only history with fingerprints. In this browser build, "Check sources again" replays the saved snapshot; live checks need a server job.
+- **Scenario calculator** (`calculator.ts`): Airtel ₹699 + Prime, Airtel monthly cashback (wallet and UPI not combinable), JioAICloud, Google AI trial. Every result is labelled as an estimate.
+- **Due Relay** (`relay.ts`): designed but demo-only. Settings shows a private forwarding address with Copy, Rotate, Pause and Delete intake data. The review inbox has Needs your confirmation / Saved / Ignored / Could not identify. No email service is connected, so nothing arrives automatically.
+- **Never**: purchase, recharge, pay, activate, redeem, cancel, pause, port, OTP capture, KYC, mandate changes, inbox or SMS reading. A guardrail test scans shipped code for these.
+
 ## How the numbers work
 
 | Figure                        | Definition                                                                                                                      |
@@ -63,6 +75,9 @@ Statuses are your own notes. `pause_planned` is not `pause_confirmed_by_user`; `
 Everything is in the browser's local storage on the user's device. There is no server, no account system and no hosted database in this release, so there is no cross-user access to test. A hosted plan with per-user row-level security is sketched in `docs/hosted-schema-plan.sql` (**not applied, not used**). `.env.example` lists placeholders only.
 
 ## Known limitations
+
+- Due & Offers data is a dated research snapshot (30 Oct 2026). It shows "Needs a refresh" as it ages; no live provider checks run yet.
+- Due Relay has no real mailbox. The address shown is a demo.
 
 - Single device, single user. No sign-in, no sync, no household sharing yet. Clearing browser data erases records (export regularly).
 - Reminders show in the app when it is opened and in calendar files. There is no push, email or WhatsApp delivery.

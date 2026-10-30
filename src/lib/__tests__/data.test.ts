@@ -34,7 +34,7 @@ describe('sample data', () => {
     ]);
     expect(data.seasons.length).toBe(1);
     expect(data.links.length).toBe(1);
-    expect(data.commitments.every((c) => c.isSample && /sample/i.test(c.nickname))).toBe(true);
+    expect(data.commitments.every((c) => c.isSample && /\(demo\)/.test(c.nickname))).toBe(true);
   });
   it('does not double count the linked subscription', () => {
     const f = cashForecast(data, { start: '2026-10-30', end: '2026-12-31' });

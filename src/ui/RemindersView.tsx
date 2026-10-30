@@ -41,18 +41,31 @@ export function RemindersView() {
     }));
   }, [active, data.deliveryLog, update]);
 
+  const offerRems = data.offerReminders
+    .filter((r) => r.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   function exportIcs() {
-    const events = items.map((r) => ({
-      uid: r.key.replace(/[^a-zA-Z0-9]/g, '-'),
-      date: r.remindOn,
-      summary: `Reminder: ${r.label} on ${formatDate(r.targetDate)}`,
-      description: 'Created by your Payables Planner. Amounts and dates are what you entered.',
-    }));
-    download('payables-reminders.ics', buildICS(events), 'text/calendar');
+    const events = [
+      ...items.map((r) => ({
+        uid: r.key.replace(/[^a-zA-Z0-9]/g, '-'),
+        date: r.remindOn,
+        summary: `Reminder: ${r.label} on ${formatDate(r.targetDate)}`,
+        description: 'Created by Due. Amounts and dates are what you entered.',
+      })),
+      ...offerRems.map((r) => ({
+        uid: r.id.replace(/[^a-zA-Z0-9]/g, '-'),
+        date: r.date,
+        summary: `Due: ${r.label}`,
+        description:
+          'A reminder you set in Due & Offers. Verify in the official provider app/site.',
+      })),
+    ];
+    download('due-reminders.ics', buildICS(events), 'text/calendar');
   }
 
   return (
-    <>
+    <div className="page">
       <h1>Reminders</h1>
       <p className="muted">
         Reminders appear here when you open the app, and you can add them to your calendar. Email
@@ -78,6 +91,16 @@ export function RemindersView() {
           </div>
         ))}
       </Card>
+      {offerRems.length > 0 && (
+        <Card title="Due & Offers reminders">
+          {offerRems.map((r) => (
+            <div className="line" key={r.id}>
+              <span>{r.label}</span>
+              <span>on {formatDate(r.date)}</span>
+            </div>
+          ))}
+        </Card>
+      )}
       <Card title="Coming reminders">
         {upcoming.length === 0 && <p className="muted">None scheduled.</p>}
         {upcoming.map((r) => (
@@ -119,6 +142,6 @@ export function RemindersView() {
           “Shown in app” is the only status this release records. Nothing is marked “sent”.
         </p>
       </Card>
-    </>
+    </div>
   );
 }
