@@ -5,21 +5,18 @@ import { emptyRelay } from './offers/relay';
 
 /** Migrations a freshly created dataset never needs. Keep in sync with migrate.ts. */
 export const CURRENT_MIGRATIONS = ['drop-bundled-examples-v1'] as const;
+import { newId } from './ids';
+import { canonicalMerchant } from './merchants';
+import { todayInTz } from './dates';
+import { effectiveNext } from './obligations';
+import { reconcileObligation, withMirrors, manualV2Fields } from './provenance';
 import type { AppData, Commitment, CommitmentLink, Season, BillingEmailLabel } from './types';
 
-let counter = 0;
-export function newId(prefix = 'id'): string {
-  counter++;
-  const rand =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID().slice(0, 8)
-      : Math.random().toString(36).slice(2, 10);
-  return `${prefix}_${rand}${counter}`;
-}
+export { newId };
 
 export function emptyData(): AppData {
   return {
-    version: 1,
+    version: 2,
     commitments: [],
     links: [],
     budget: { ...DEFAULT_BUDGET },
@@ -38,11 +35,17 @@ export function emptyData(): AppData {
     offerReminders: [],
     relay: emptyRelay(),
     migrations: [...CURRENT_MIGRATIONS],
+    audit: [],
+    importQueue: [],
+    userEvents: [],
+    duplicateDecisions: [],
+    reminderStates: [],
   };
 }
 
 export function blankCommitment(type: Commitment['type'], now: string): Commitment {
-  return {
+  const stamp = new Date().toISOString();
+  const base: Commitment = {
     id: newId('c'),
     type,
     provider: '',
@@ -69,14 +72,27 @@ export function blankCommitment(type: Commitment['type'], now: string): Commitme
     statement:
       type === 'credit_card' ? { cardNickname: '', confirmedFromLatest: false } : undefined,
     source: 'manual',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: stamp,
+    updatedAt: stamp,
+    canonicalProvider: null,
+    ...manualV2Fields(now, null, stamp, 'estimated'),
   };
+  if (type === 'credit_card') base.rule = { kind: 'one_time', start: now };
+  return withMirrors(base);
 }
 
+/**
+ * Legacy upsert (older screens). Edits to the v1 flat fields are reconciled into the v2
+ * tracked fields. Not audited; new code should use mutations.ts.
+ */
 export function upsertCommitment(data: AppData, c: Commitment): AppData {
   const exists = data.commitments.some((x) => x.id === c.id);
-  const next = { ...c, updatedAt: new Date().toISOString() };
+  const rec = reconcileObligation(c);
+  const next = withMirrors({
+    ...rec,
+    canonicalProvider: canonicalMerchant(rec.provider)?.key ?? null,
+    updatedAt: new Date().toISOString(),
+  });
   return {
     ...data,
     commitments: exists
@@ -209,7 +225,14 @@ function csvCell(v: string | number | null | undefined): string {
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
-export function exportCSV(data: AppData): string {
+/**
+ * CSV of the user's live items. Soft-deleted items are left out, and next_due is the item's
+ * effective next occurrence on `today` (the stored `nextDue` is only the schedule's anchor).
+ */
+export function exportCSV(
+  data: AppData,
+  today: string = todayInTz(data.settings?.timezone || undefined),
+): string {
   const head = [
     'type',
     'provider',
@@ -223,6 +246,7 @@ export function exportCSV(data: AppData): string {
   ];
   const lines = [head.join(',')];
   for (const c of data.commitments) {
+    if (c.deletedAt) continue;
     lines.push(
       [
         c.type,
@@ -230,7 +254,7 @@ export function exportCSV(data: AppData): string {
         c.nickname,
         c.amountPaise === null ? '' : (c.amountPaise / 100).toFixed(2),
         c.frequency,
-        c.nextDue,
+        effectiveNext(c, today)?.date ?? c.nextDue,
         c.importance,
         c.status,
         c.notes,

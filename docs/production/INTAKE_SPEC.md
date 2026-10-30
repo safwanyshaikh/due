@@ -33,7 +33,7 @@ Handle documents as sensitive financial data. Use encrypted transport, malware s
 
 Forward-one-email flow
 
-Give a signed-in user or temporary intake session a unique alias such as u84kd@inbox.due.app. Never use one shared mailbox and route only by sender email. Route by unique alias/token, message ID, sender/domain, and normalized fingerprint.
+Give a signed-in user or temporary intake session a unique alias such as u7k2mq4xdzfpa@inbox.due.app (`u` + 12 base32 characters, about 60 bits; 5-character aliases issued before go-live keep routing). Never use one shared mailbox and route only by sender email. Route by unique alias/token, message ID, sender/domain, and normalized fingerprint.
 
 The user forwards one bill, renewal, trial, recharge, offer, card, loan, school-fee, or utility email. Due extracts provider, service, amount, billing cycle, renewal date, trial end, benefit, expiry, sender/domain, and source links. Show Review before saving with Save, Edit, Ignore, and Delete.
 
@@ -175,7 +175,7 @@ Sensitive documents require encrypted transport, malware scanning, short raw-fil
 
 Forward one subscription email
 
-Give a user or temporary intake session a unique alias such as u84kd@inbox.due.app. Do not use one shared mailbox and identify customers only from sender email. Route using the unique alias/token, message ID, sender/domain, and normalized fingerprint.
+Give a user or temporary intake session a unique alias such as u7k2mq4xdzfpa@inbox.due.app (`u` + 12 base32 characters, about 60 bits; 5-character aliases issued before go-live keep routing). Do not use one shared mailbox and identify customers only from sender email. Route using the unique alias/token, message ID, sender/domain, and normalized fingerprint.
 
 The user forwards only the relevant bill, renewal, trial, recharge, offer, card, lender, school, or utility email. Due extracts provider, service, amount, billing cycle, renewal date, trial end, benefit, offer expiry, sender/domain, and source links. It then shows Review before saving with Save, Edit, Ignore, and Delete.
 

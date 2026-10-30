@@ -35,6 +35,15 @@ export const SETTING_SCHEMAS = {
       support_email: z.string().email().nullable(),
     })
     .strict(),
+  /** Shown before checkout (GET /api/public/plans). Admin-editable; must be legally reviewed before launch. */
+  billing_terms: z
+    .object({
+      renewal: z.string().trim().min(1).max(2000),
+      cancellation: z.string().trim().min(1).max(2000),
+      refund: z.string().trim().min(1).max(2000),
+      legal_review_status: z.enum(['pending', 'reviewed']),
+    })
+    .strict(),
 } as const;
 
 export type SettingKey = keyof typeof SETTING_SCHEMAS;
@@ -46,6 +55,15 @@ export const DEFAULT_SETTINGS: Settings = {
   retention: { snapshots_days: 365, login_events_days: 180 },
   notifications: { email_enabled: false, recipients: [] },
   business: { app_name: 'Due', support_email: null },
+  billing_terms: {
+    renewal:
+      'Subscriptions renew automatically at the end of each billing period you choose (monthly or yearly) until you cancel. Yearly billing is only used if you explicitly choose it. These terms are pending legal review.',
+    cancellation:
+      'Cancel anytime from Account > Plan in the app. Cancellation takes effect at the end of the current paid period; you keep premium features until then. These terms are pending legal review.',
+    refund:
+      'Refund terms are pending legal review and have not been finalised. Contact support before purchasing if you need a refund commitment.',
+    legal_review_status: 'pending',
+  },
 };
 
 export const SETTING_KEYS = Object.keys(SETTING_SCHEMAS) as SettingKey[];

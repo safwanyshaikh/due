@@ -155,3 +155,25 @@ Typecheck, lint and builds pass. A browser end-to-end run covered setup, login, 
 5. **Legal review.**
    - Why: required before public launch.
    - What: Terms, privacy notice, DPDP obligations, and crawling terms for each vendor site (see the README checklist).
+
+## Update: obligation-first redesign go-live (30 Oct 2026)
+
+What changed since the first production report:
+
+- **Home** is now obligation-first: next 7 days header with "Why?", next-due hero card (Review / Snooze / Edit), 7-day and 30-day totals with "Needs attention", next three by date, then Add due item / Import. Category tiles live on the separate All page.
+- **Start without an account**: "See my next due date" leads to four equal paths (add manually, upload a bill or sanction letter, forward an email, sign in).
+- **Domain v2**: recurrence for one-time, monthly, quarterly, half-yearly, annual, end-of-month, weekday, custom months, trial-to-paid and irregular schedules. Amounts and dates carry confidence and source. The next date can be moved without rewriting history. Every change is audited with a 6-second Undo.
+- **Import**: PDF and text are read in the browser (never uploaded), with sensitive numbers masked first. Single SMS and CSV import. Nothing is saved before review.
+- **Accounts (server)**: email magic-link sign-in with a confirm-on-device step, sessions and devices, backup and sync with conflict handling, consents that take effect, export and delete.
+- **Plans**: Free and Plus on sale; Household is off sale until sharing ships. Prices are admin-editable. Razorpay checkout and webhook are built but inactive without keys.
+- **Forwarding**: a private address per user or temporary session, encrypted raw text with 7-day retention, and a review queue. Inactive until an inbound email provider is configured.
+- **QA**: 22 bugs found and fixed in review and the go-live pass (see commit history). In the final browser walkthrough a date bug was found and fixed: the day-of-month ignored the picked date.
+
+| Feature | Status |
+| --- | --- |
+| Guest use, home, edit/snooze/undo, PDF/SMS/CSV import, reminders in app, admin | ✅ tested end to end |
+| Email sign-in, email reminders, household invites | 🔑 need `SMTP_URL`, `SMTP_FROM` |
+| Payments (Plus) | 🔑 need the `RAZORPAY_*` keys and plan ids (Admin → Plans) |
+| Email forwarding | 🔑 need `INBOUND_EMAIL_DOMAIN`, `INBOUND_WEBHOOK_SECRET` and an inbound provider (Postmark or Mailgun) |
+| Raw email storage | 🔑 needs `DATA_ENCRYPTION_KEY` (without it, only structured fields are kept) |
+| Photo (JPG/PNG) text recognition, push notifications, household sharing UI | ✖ not built yet; the app says so |

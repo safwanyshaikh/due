@@ -12,7 +12,7 @@ import { buildICS } from '../lib/ics';
 
 export function RemindersView() {
   const { data, today, update } = useApp();
-  const items = allReminders(data.commitments, data.seasons);
+  const items = allReminders(data.commitments, data.seasons, today);
   const active = activeReminders(items, today);
   const cooling = data.commitments.filter((c) => c.coolingOffUntil && c.coolingOffUntil <= today);
   const upcoming = items

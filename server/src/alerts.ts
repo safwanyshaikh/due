@@ -2,7 +2,8 @@ import type { Queryable } from './db.js';
 import { getSettings } from './settings.js';
 
 export interface Mailer {
-  send(to: string[], subject: string, text: string): Promise<void>;
+  /** Resolves with the provider message id when the transport reports one. */
+  send(to: string[], subject: string, text: string): Promise<{ messageId?: string } | void>;
 }
 
 export interface AlertInput {
@@ -56,7 +57,8 @@ export async function createMailer(smtpUrl: string | null, from: string | null):
   const sender = from ?? 'Due monitor <no-reply@localhost>';
   return {
     async send(to, subject, text) {
-      await transport.sendMail({ from: sender, to: to.join(', '), subject, text });
+      const info = await transport.sendMail({ from: sender, to: to.join(', '), subject, text });
+      return { messageId: typeof info.messageId === 'string' ? info.messageId : undefined };
     },
   };
 }

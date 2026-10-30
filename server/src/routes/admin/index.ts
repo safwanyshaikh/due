@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../../http/context.js';
 import { categoryRoutes } from './categories.js';
 import { companyRoutes } from './companies.js';
+import { consumerAdminRoutes } from './consumer.js';
 import { dashboardRoutes } from './dashboard.js';
 import { exportRoutes } from './exportRoutes.js';
 import { alertRoutes, auditRoutes, jobRoutes, settingsRoutes } from './misc.js';
@@ -25,4 +26,5 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   await app.register(alertRoutes);
   await app.register(settingsRoutes);
   await app.register(offerRoutes);
+  await app.register(consumerAdminRoutes);
 }

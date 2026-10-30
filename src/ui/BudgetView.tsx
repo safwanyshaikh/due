@@ -145,7 +145,8 @@ export function BudgetView() {
                   <div className="chips">
                     {REVIEW_ACTIONS.map((a) => {
                       if (a === 'Open provider help') {
-                        const url = c.subscription?.helpUrl;
+                        const raw = c.subscription?.helpUrl;
+                        const url = raw && /^https?:\/\//i.test(raw) ? raw : null;
                         return url ? (
                           <a
                             key={a}
@@ -198,8 +199,8 @@ export function BudgetView() {
                       : 'Remind me tomorrow (24-hour cooling-off)'}
                   </button>
                   <small className="muted">
-                    Reminders set: {remindersForCommitment(c).length}. Nothing here changes your
-                    subscription with the provider.
+                    Reminders set: {remindersForCommitment(c, today).length}. Nothing here changes
+                    your subscription with the provider.
                   </small>
                 </div>
               ))}

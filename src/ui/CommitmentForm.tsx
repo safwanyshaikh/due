@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from './store';
+import { ConfirmButton } from './components/ui';
+import { deleteObligation } from '../lib/mutations';
 import { Card, inr } from './common';
 import type { Nav } from './App';
 import type {
@@ -13,7 +15,6 @@ import type {
 } from '../lib/types';
 import {
   blankCommitment,
-  deleteCommitment,
   setStatementLink,
   setStatus,
   upsertCommitment,
@@ -76,7 +77,7 @@ export function CommitmentForm({
   editId?: string;
   nav: Nav;
 }) {
-  const { data, today, update } = useApp();
+  const { data, today, update, mutate, ctx } = useApp();
   const existing = editId ? data.commitments.find((c) => c.id === editId) : undefined;
   const [c, setC] = useState<Commitment>(
     () => existing ?? blankCommitment(newType ?? 'subscription', today),
@@ -562,17 +563,15 @@ export function CommitmentForm({
             >
               Mark “review later”
             </button>
-            <button
-              className="danger"
-              onClick={() => {
-                if (confirm('Delete this item from your records?')) {
-                  update((d) => deleteCommitment(d, existing.id));
-                  nav.back();
-                }
+            <ConfirmButton
+              label="Delete"
+              confirmLabel="Yes, delete it"
+              message="Delete this item? You can undo this or restore it from its page."
+              onConfirm={() => {
+                if (mutate((d) => deleteObligation(d, existing.id, ctx())))
+                  nav.go({ name: 'home' });
               }}
-            >
-              Delete
-            </button>
+            />
           </>
         )}
       </div>

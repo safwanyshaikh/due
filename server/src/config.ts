@@ -5,6 +5,9 @@ const boolish = z
   .optional()
   .transform((v) => (v === undefined || v === '' ? undefined : ['1', 'true', 'yes'].includes(v.toLowerCase())));
 
+/** Optional URL; an empty value (e.g. an unset Render `sync: false` variable) counts as not set. */
+const optionalUrl = z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().url().optional());
+
 const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().int().positive().default(10000),
@@ -13,15 +16,22 @@ const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   ADMIN_SETUP_TOKEN: z.string().optional(),
   PUBLIC_APP_ORIGIN: z.string().optional(),
-  PUBLIC_BASE_URL: z.string().url().optional(),
+  PUBLIC_BASE_URL: optionalUrl,
   /** Set automatically by Render; used when PUBLIC_BASE_URL is not given. */
-  RENDER_EXTERNAL_URL: z.string().url().optional(),
+  RENDER_EXTERNAL_URL: optionalUrl,
   RUN_SCHEDULER: boolish,
   SMTP_URL: z.string().optional(),
   SMTP_FROM: z.string().optional(),
   TRUST_PROXY: boolish,
   ADMIN_DIST: z.string().optional(),
   APP_DIST: z.string().optional(),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  INBOUND_EMAIL_DOMAIN: z.string().optional(),
+  INBOUND_WEBHOOK_SECRET: z.string().optional(),
+  /** 32 random bytes, base64. Without it raw intake text is never stored (structured fields only). */
+  DATA_ENCRYPTION_KEY: z.string().optional(),
 });
 
 export interface MonitorOptions {
@@ -54,6 +64,15 @@ export interface AppConfig {
   appDist: string | null;
   sessionIdleMs: number;
   sessionMaxMs: number;
+  /** Consumer (due_acct) sessions: 30 days idle, 180 days absolute. */
+  accountSessionIdleMs: number;
+  accountSessionMaxMs: number;
+  /** Razorpay credentials; null when any of the three is missing (checkout is then unavailable). */
+  razorpay: { keyId: string; keySecret: string; webhookSecret: string } | null;
+  /** Forwarding-alias domain (e.g. inbox.example.com); intake is "live" only with this and the webhook secret. */
+  inboundEmailDomain: string | null;
+  inboundWebhookSecret: string | null;
+  dataEncryptionKey: Buffer | null;
   schedulerTickMs: number;
   monitor: MonitorOptions;
 }
@@ -61,6 +80,13 @@ export interface AppConfig {
 export function userAgentFor(publicBaseUrl: string | null): string {
   const host = publicBaseUrl ? new URL(publicBaseUrl).host : 'localhost';
   return `DueSourceMonitor/1.0 (+https://${host}/about-monitoring)`;
+}
+
+function parseEncryptionKey(v: string | undefined): Buffer | null {
+  if (!v?.trim()) return null;
+  const key = Buffer.from(v.trim(), 'base64');
+  if (key.length !== 32) throw new Error('Invalid environment: DATA_ENCRYPTION_KEY must be 32 bytes, base64-encoded');
+  return key;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -92,6 +118,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     appDist: e.APP_DIST ?? null,
     sessionIdleMs: 12 * 60 * 60 * 1000,
     sessionMaxMs: 7 * 24 * 60 * 60 * 1000,
+    accountSessionIdleMs: 30 * 24 * 60 * 60 * 1000,
+    accountSessionMaxMs: 180 * 24 * 60 * 60 * 1000,
+    razorpay:
+      e.RAZORPAY_KEY_ID?.trim() && e.RAZORPAY_KEY_SECRET?.trim() && e.RAZORPAY_WEBHOOK_SECRET?.trim()
+        ? { keyId: e.RAZORPAY_KEY_ID.trim(), keySecret: e.RAZORPAY_KEY_SECRET.trim(), webhookSecret: e.RAZORPAY_WEBHOOK_SECRET.trim() }
+        : null,
+    inboundEmailDomain: e.INBOUND_EMAIL_DOMAIN?.trim() ? e.INBOUND_EMAIL_DOMAIN.trim().toLowerCase() : null,
+    inboundWebhookSecret: e.INBOUND_WEBHOOK_SECRET?.trim() ? e.INBOUND_WEBHOOK_SECRET.trim() : null,
+    dataEncryptionKey: parseEncryptionKey(e.DATA_ENCRYPTION_KEY),
     schedulerTickMs: 60_000,
     monitor: {
       userAgent: userAgentFor(e.PUBLIC_BASE_URL ?? e.RENDER_EXTERNAL_URL ?? null),

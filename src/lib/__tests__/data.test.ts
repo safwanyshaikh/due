@@ -222,6 +222,16 @@ describe('export, deletion, withdrawal', () => {
     expect(csv).toContain("'=HYPERLINK");
     expect(csv.split('\n')[0]).toContain('amount_rupees');
   });
+  it('CSV export skips soft-deleted items and uses the effective next date', () => {
+    const d = dataWith(
+      mk({ id: 'm', provider: 'Monthly Co', nextDue: '2026-01-10', frequency: 'monthly' }),
+      { ...mk({ id: 'gone', provider: 'Deleted Co' }), deletedAt: '2026-02-01T00:00:00.000Z' },
+    );
+    const csv = exportCSV(d, '2026-03-05');
+    expect(csv).not.toContain('Deleted Co');
+    expect(csv).toContain('2026-03-10');
+    expect(csv).not.toContain('2026-01-10');
+  });
   it('deleting a commitment removes its links, season refs and logs', () => {
     const d = deleteCommitment(base, 'stream');
     expect(d.links).toEqual([]);

@@ -50,11 +50,19 @@ describe('MVP guardrails', () => {
     const m = JSON.parse(readFileSync(join(root, 'public/manifest.webmanifest'), 'utf8'));
     expect(m.permissions).toBeUndefined();
   });
-  it('makes network calls only from the catalog API client', () => {
+  it('makes network calls only from Due’s own API clients', () => {
     const hits = src.filter((f) =>
       /\bfetch\b|XMLHttpRequest|WebSocket|sendBeacon|EventSource/.test(readFileSync(f, 'utf8')),
     );
-    expect(hits.map((f) => f.slice(root.length + 1))).toEqual(['src/lib/offers/api.ts']);
+    expect(hits.map((f) => f.slice(root.length + 1)).sort()).toEqual([
+      'src/lib/account/client.ts',
+      'src/lib/offers/api.ts',
+    ]);
+  });
+  it('the account client only calls Due’s own relative /api paths', () => {
+    const c = readFileSync(join(root, 'src/lib/account/client.ts'), 'utf8');
+    expect(c).not.toMatch(/https?:\/\/[a-z0-9]/i);
+    expect(c).toContain('due-app');
   });
   it('the API client only calls Due’s own public catalog endpoint, without credentials', () => {
     const api = readFileSync(join(root, 'src/lib/offers/api.ts'), 'utf8');

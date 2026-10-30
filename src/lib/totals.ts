@@ -3,9 +3,11 @@ import { monthlyEquivalentPaise, occurrences, stepMonths } from './schedule';
 import { countsTowardForecast } from './status';
 import type { AppData, Commitment, CommitmentType, ISODate, Period } from './types';
 
+const live = (data: AppData): Commitment[] => data.commitments.filter((c) => !c.deletedAt);
+
 /** component id -> parent statement id, only for user-confirmed links whose parent still exists. */
 export function linkedParentMap(data: AppData): Map<string, string> {
-  const ids = new Set(data.commitments.map((c) => c.id));
+  const ids = new Set(data.commitments.filter((c) => !c.deletedAt).map((c) => c.id));
   const map = new Map<string, string>();
   for (const l of data.links) {
     if (l.confirmedByUser && ids.has(l.parentId) && ids.has(l.componentId)) {
@@ -39,7 +41,7 @@ export function cashForecast(data: AppData, period: Period): CashForecast {
   let totalPaise = 0;
   let unknownAmountCount = 0;
   let estimateCount = 0;
-  for (const c of data.commitments) {
+  for (const c of live(data)) {
     if (!countsTowardForecast(c.status) || linked.has(c.id)) continue;
     for (const o of occurrences(c, period)) {
       items.push({ commitment: c, date: o.date, amountPaise: o.amountPaise });
@@ -67,7 +69,7 @@ export function runRate(data: AppData): RunRate {
   const byType: Partial<Record<CommitmentType, number>> = {};
   let totalPaise = 0;
   let skippedCount = 0;
-  for (const c of data.commitments) {
+  for (const c of live(data)) {
     if (!countsTowardForecast(c.status) || linked.has(c.id)) continue;
     const eq = monthlyEquivalentPaise(c);
     if (eq === null) {
@@ -98,9 +100,9 @@ export function cashBreakdown(data: AppData, period: Period): Breakdown {
   const add = (t: CommitmentType, v: number) => {
     byType[t] = (byType[t] ?? 0) + v;
   };
-  for (const c of data.commitments) {
+  for (const c of live(data)) {
     if (!countsTowardForecast(c.status) || linked.has(c.id)) continue;
-    const components = data.commitments.filter(
+    const components = live(data).filter(
       (x) => linked.get(x.id) === c.id && countsTowardForecast(x.status),
     );
     for (const o of occurrences(c, period)) {
@@ -142,7 +144,7 @@ function statementWindow(c: Commitment, dueDate: ISODate): Period {
 /** Monthly run-rate of optional subscriptions, including ones paid via a card statement. */
 export function discretionaryRunRatePaise(data: AppData): number {
   let total = 0;
-  for (const c of data.commitments) {
+  for (const c of live(data)) {
     if (c.type !== 'subscription' || c.importance !== 'optional') continue;
     if (!countsTowardForecast(c.status)) continue;
     total += monthlyEquivalentPaise(c) ?? 0;
@@ -152,13 +154,13 @@ export function discretionaryRunRatePaise(data: AppData): number {
 
 export function dueSoon(data: AppData, today: ISODate, days = 7): Commitment[] {
   const end = addDays(today, days);
-  return data.commitments
+  return live(data)
     .filter((c) => countsTowardForecast(c.status) && c.nextDue >= today && c.nextDue <= end)
     .sort((a, b) => a.nextDue.localeCompare(b.nextDue));
 }
 
 export function markedOverdue(data: AppData): Commitment[] {
-  return data.commitments.filter((c) => c.status === 'overdue_user_entered');
+  return live(data).filter((c) => c.status === 'overdue_user_entered');
 }
 
 /** Dates in the past that the user may want to roll forward. Not a statement about payment. */

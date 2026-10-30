@@ -77,3 +77,13 @@ describe('admin SPA serving', () => {
     await pool.end();
   });
 });
+
+describe('config', () => {
+  it('treats empty optional URLs (unset Render sync:false variables) as not set', async () => {
+    const { loadConfig } = await import('../src/config.js');
+    const base = { DATABASE_URL: 'postgres://x', SESSION_SECRET: 'x'.repeat(32) };
+    expect(loadConfig({ ...base, PUBLIC_BASE_URL: '', RENDER_EXTERNAL_URL: 'https://due.onrender.com' }).publicBaseUrl).toBe('https://due.onrender.com');
+    expect(loadConfig({ ...base, PUBLIC_BASE_URL: 'https://due.example.com/' }).publicBaseUrl).toBe('https://due.example.com');
+    expect(loadConfig({ ...base, PUBLIC_BASE_URL: ' ' }).publicBaseUrl).toBeNull();
+  });
+});

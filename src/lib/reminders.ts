@@ -1,4 +1,5 @@
 import { addDays } from './dates';
+import { effectiveNext } from './obligations';
 import { occurrences } from './schedule';
 import { countsTowardForecast } from './status';
 import type { Commitment, ISODate, Season, Settings } from './types';
@@ -52,20 +53,26 @@ function expand(
   }));
 }
 
-export function remindersForCommitment(c: Commitment): ReminderItem[] {
-  if (!c.reminder.enabled || !countsTowardForecast(c.status)) return [];
+/**
+ * With `today`, reminders target the item's effective next occurrence (rule + overrides, skipping
+ * paid ones). `nextDue` alone is only the schedule's anchor date and goes stale once it passes.
+ */
+export function remindersForCommitment(c: Commitment, today?: ISODate): ReminderItem[] {
+  if (!c.reminder.enabled || !countsTowardForecast(c.status) || c.deletedAt) return [];
+  const target = today ? effectiveNext(c, today)?.date : c.nextDue;
   const name = c.nickname || c.provider;
   const o = c.reminder.offsets;
   const out: ReminderItem[] = [];
-  out.push(
-    ...expand(
-      c.id,
-      c.type === 'subscription' ? 'renewal' : 'due_date',
-      c.type === 'subscription' ? `${name} renews` : `${name} is due`,
-      c.nextDue,
-      o,
-    ),
-  );
+  if (target)
+    out.push(
+      ...expand(
+        c.id,
+        c.type === 'subscription' ? 'renewal' : 'due_date',
+        c.type === 'subscription' ? `${name} renews` : `${name} is due`,
+        target,
+        o,
+      ),
+    );
   const sub = c.subscription;
   if (sub?.trialEnd) out.push(...expand(c.id, 'trial_end', `${name} trial ends`, sub.trialEnd, o));
   if (sub?.cancellationBy) {
@@ -122,11 +129,15 @@ function firstRenewalOnOrAfter(c: Commitment, date: ISODate): ISODate | null {
   return o.length ? o[0].date : null;
 }
 
-export function allReminders(commitments: Commitment[], seasons: Season[]): ReminderItem[] {
+export function allReminders(
+  commitments: Commitment[],
+  seasons: Season[],
+  today?: ISODate,
+): ReminderItem[] {
   const seen = new Set<string>();
   const out: ReminderItem[] = [];
   for (const r of [
-    ...commitments.flatMap(remindersForCommitment),
+    ...commitments.flatMap((c) => remindersForCommitment(c, today)),
     ...seasons.flatMap((s) => remindersForSeason(s, commitments)),
   ]) {
     if (seen.has(r.key)) continue;

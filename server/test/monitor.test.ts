@@ -284,7 +284,7 @@ describe('scheduler and jobs', () => {
     clock.set('2026-10-31T09:00:00Z'); // Saturday
     expect(clock.now.getUTCDay()).toBe(6);
     const runs = await sched.tick();
-    expect(runs.map((r) => r.job_id).sort()).toEqual(['monitor_sources', 'retention_cleanup', 'retry_failed']);
+    expect(runs.map((r) => r.job_id).sort()).toEqual(['consumer_reminders', 'intake_purge', 'monitor_sources', 'retention_cleanup', 'retry_failed']);
     expect(runs.every((r) => r.status === 'success' && r.triggered_by === 'schedule')).toBe(true);
     expect(runs.find((r) => r.job_id === 'monitor_sources')!.stats).toMatchObject({ due: 1, changed: 1 });
     expect(srv.hit('/a')).toBe(1);

@@ -24,8 +24,17 @@ function requestOrigin(req: FastifyRequest): string {
   return `${req.protocol}://${req.host}`;
 }
 
+/** Path prefix -> required X-Requested-With value for mutating requests. */
+const CSRF_PREFIXES: [string, string][] = [
+  ['/api/admin', 'due-admin'],
+  ['/api/auth', 'due-admin'],
+  ['/api/account', 'due-app'],
+  ['/api/intake', 'due-app'],
+];
+
 /**
- * CSRF guard for /api/auth and /api/admin mutations: requires X-Requested-With: due-admin
+ * CSRF guard for /api/auth and /api/admin mutations (X-Requested-With: due-admin) and consumer
+ * /api/account + /api/intake mutations (X-Requested-With: due-app). The header
  * (cannot be sent cross-site without a CORS preflight, which we never grant) and, when the
  * browser sends Origin, it must be this server's own origin.
  */
@@ -35,8 +44,9 @@ export function registerCsrfGuard(app: FastifyInstance, publicBaseUrl: string | 
   app.addHook('onRequest', async (req: FastifyRequest) => {
     if (!MUTATING.has(req.method)) return;
     const path = req.url.split('?')[0]!;
-    if (!path.startsWith('/api/admin') && !path.startsWith('/api/auth')) return;
-    if (req.headers['x-requested-with'] !== 'due-admin') {
+    const rule = CSRF_PREFIXES.find(([prefix]) => path === prefix || path.startsWith(`${prefix}/`));
+    if (!rule) return;
+    if (req.headers['x-requested-with'] !== rule[1]) {
       throw new AppError(403, 'csrf_rejected', 'Missing or invalid X-Requested-With header');
     }
     const origin = req.headers.origin;
@@ -62,7 +72,8 @@ export function registerSecurityHeaders(app: FastifyInstance, isProduction: bool
     if (path.startsWith('/api/public')) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
     }
-    if ((path.startsWith('/api/admin') || path.startsWith('/api/auth')) && !reply.hasHeader('Cache-Control')) {
+    const privatePath = ['/api/admin', '/api/auth', '/api/account', '/api/intake', '/api/billing', '/api/inbound'].some((p) => path.startsWith(p));
+    if (privatePath && !reply.hasHeader('Cache-Control')) {
       reply.header('Cache-Control', 'no-store');
     }
     return payload;

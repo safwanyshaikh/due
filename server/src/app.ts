@@ -15,7 +15,15 @@ import { registerCsrfGuard, registerSecurityHeaders } from './http/security.js';
 import type { MonitorContext } from './monitor/engine.js';
 import { MonitorRuntime } from './monitor/runtime.js';
 import { SERVER_ROOT } from './paths.js';
+import { ACCOUNT_COOKIE, resolveAccountSession } from './consumer/sessions.js';
+import { accountRoutes } from './routes/account.js';
 import { adminRoutes } from './routes/admin/index.js';
+import { billingRoutes } from './routes/billing.js';
+import { householdRoutes } from './routes/household.js';
+import { inboundRoutes } from './routes/inbound.js';
+import { intakeRoutes } from './routes/intake.js';
+import { INTAKE_COOKIE, resolveTempSession } from './intake/service.js';
+import { telemetryRoutes } from './routes/telemetry.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
 
@@ -30,15 +38,38 @@ export interface BuildAppOptions {
   onRoute?: (route: { method: string | string[]; url: string }) => void;
 }
 
+/**
+ * Query parameters that carry bearer secrets: magic-link tokens (`/api/account/verify?token=` and the app's
+ * confirmation screen `/?account=confirm&token=`) and household-invite tokens (`?household_invite=`).
+ */
+const SECRET_QUERY = /([?&](?:token|household_invite)=)[^&#]*/gi;
+
+/** Request URL as logged: secret query values are replaced so log readers cannot reuse them. */
+export function redactUrl(url: string): string {
+  return url.replace(SECRET_QUERY, '$1[redacted]');
+}
+
+/** Production logger: no cookies/auth headers, and no bearer tokens from query strings. */
+export function loggerOptions(isProduction: boolean) {
+  return {
+    level: isProduction ? 'info' : 'debug',
+    redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+    serializers: {
+      req: (req: { method: string; url: string; host?: string; ip?: string }) => ({
+        method: req.method,
+        url: redactUrl(req.url),
+        host: req.host,
+        remoteAddress: req.ip,
+      }),
+    },
+  };
+}
+
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const { config, pool } = opts;
   const clock = opts.clock ?? systemClock;
   const app = Fastify({
-    logger:
-      opts.logger ?? {
-        level: config.isProduction ? 'info' : 'debug',
-        redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
-      },
+    logger: opts.logger ?? loggerOptions(config.isProduction),
     bodyLimit: 256 * 1024,
     trustProxy: config.trustProxy,
     routerOptions: { ignoreTrailingSlash: true },
@@ -54,11 +85,19 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   }
   app.decorateRequest('user', null);
   app.decorateRequest('sessionIdHash', null);
+  app.decorateRequest('account', null);
+  app.decorateRequest('accountSessionHash', null);
+  app.decorateRequest('accountSessionPublicId', null);
+  app.decorateRequest('rawBody', null);
+  app.decorateRequest('entitlement', null);
+  app.decorateRequest('intakeSession', null);
 
   // Accept an empty body on JSON requests (e.g. "Run now" buttons); reject malformed JSON with 400.
   app.removeContentTypeParser('application/json');
-  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
     const text = typeof body === 'string' ? body : body.toString('utf8');
+    // Kept for webhook signature verification (HMAC over the exact bytes received).
+    req.rawBody = text;
     if (text.trim() === '') return done(null, undefined);
     try {
       done(null, JSON.parse(text));
@@ -91,6 +130,29 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     }
   });
 
+  // Consumer accounts (due_acct cookie) for /api/account, /api/intake and /api/telemetry.
+  app.addHook('onRequest', async (req) => {
+    const path = req.url.split('?')[0]!;
+    if (!path.startsWith('/api/account') && !path.startsWith('/api/intake') && !path.startsWith('/api/telemetry')) return;
+    const intakeToken = req.cookies[INTAKE_COOKIE];
+    if (intakeToken && intakeToken.length <= 200 && !path.startsWith('/api/telemetry')) {
+      req.intakeSession = await resolveTempSession(pool, config.sessionSecret, intakeToken, clock());
+    }
+    const token = req.cookies[ACCOUNT_COOKIE];
+    if (!token || token.length > 200) return;
+    const s = await resolveAccountSession(
+      pool,
+      { secret: config.sessionSecret, idleMs: config.accountSessionIdleMs, maxMs: config.accountSessionMaxMs },
+      token,
+      clock(),
+    );
+    if (s) {
+      req.account = s.account;
+      req.accountSessionHash = s.idHash;
+      req.accountSessionPublicId = s.publicId;
+    }
+  });
+
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof AppError) {
       return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message, details: err.details } });
@@ -106,6 +168,12 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(authRoutes);
   await app.register(publicRoutes);
   await app.register(adminRoutes, { prefix: '/api/admin' });
+  await app.register(accountRoutes);
+  await app.register(householdRoutes);
+  await app.register(billingRoutes);
+  await app.register(telemetryRoutes);
+  await app.register(intakeRoutes);
+  await app.register(inboundRoutes);
 
   const adminDist = config.adminDist ?? resolve(SERVER_ROOT, '../admin/dist');
   if (existsSync(resolve(adminDist, 'index.html'))) {

@@ -1,14 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppProvider, useApp } from './store';
+import { ToastProvider } from './components/Toast';
+import { AccountProvider } from './account/AccountContext';
 import { CatalogProvider } from './offers/catalogStore';
-import { Home } from './Home';
-import { CategoryView } from './CategoryView';
+import { TopBar } from './components/TopBar';
+import { AccountReturn } from './account/AccountReturn';
+import { Home } from './screens/Home';
+import { Landing, StartPaths } from './screens/Landing';
+import { AllPage } from './screens/AllPage';
+import { AddScreen } from './screens/AddScreen';
+import { ItemScreen } from './screens/ItemScreen';
+import { EditScreen } from './screens/EditScreen';
+import { ImportScreen } from './screens/ImportScreen';
+import { UploadScreen, SmsScreen } from './screens/IntakeScreens';
+import { ForwardScreen } from './screens/ForwardScreen';
+import { CsvScreen } from './screens/CsvScreen';
+import { AccountScreen } from './screens/AccountScreen';
+import { PlansScreen } from './screens/PlansScreen';
+import { RemindersScreen } from './screens/RemindersScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
+import { ConnectionsScreen } from './screens/ConnectionsScreen';
 import { CommitmentForm } from './CommitmentForm';
 import { BudgetView } from './BudgetView';
 import { SeasonsView } from './SeasonsView';
 import { RemindersView } from './RemindersView';
-import { SettingsView } from './SettingsView';
-import { ImportView } from './ImportView';
 import { CalendarView } from './CalendarView';
 import { CalcView } from './CalcView';
 import { OffersHome } from './offers/OffersHome';
@@ -17,190 +32,228 @@ import { AddService } from './offers/AddService';
 import { ServiceCard } from './offers/ServiceCard';
 import { ScenarioCalculator } from './offers/ScenarioCalculator';
 import { RelayInbox } from './offers/RelayInbox';
-import type { CommitmentType } from '../lib/types';
+import { forecastObligations } from '../lib/obligations';
+import { pendingImports } from '../lib/imports';
+import type { AccountClient } from '../lib/account/client';
+import type { AppData } from '../lib/types';
+import { nav, parseRoute, toHash, type Route } from './lib/nav';
+import { useMotionPreference, useTheme, type ThemeChoice } from './lib/motion';
+import { download } from './common';
+import { ConfirmButton } from './components/ui';
 
-export type Route =
-  | { name: 'home' }
-  | { name: 'category'; type: CommitmentType }
-  | { name: 'add'; type: CommitmentType }
-  | { name: 'edit'; id: string }
-  | { name: 'offer'; id: string }
-  | { name: 'service'; id: string }
-  | {
-      name:
-        | 'budget'
-        | 'seasons'
-        | 'reminders'
-        | 'settings'
-        | 'import'
-        | 'calendar'
-        | 'calc'
-        | 'offers'
-        | 'offers-add'
-        | 'offers-calc'
-        | 'relay';
-    };
+export { parseRoute, toHash, nav } from './lib/nav';
+export type { Route, Nav } from './lib/nav';
 
-export interface Nav {
-  go: (r: Route) => void;
-  back: () => void;
+interface UiPrefs {
+  reduceMotion: boolean;
+  setReduceMotion: (v: boolean) => void;
+  theme: ThemeChoice;
+  setTheme: (t: ThemeChoice) => void;
+}
+const UiPrefsCtx = createContext<UiPrefs | null>(null);
+export function useUiPrefs(): UiPrefs {
+  const c = useContext(UiPrefsCtx);
+  if (!c) throw new Error('UiPrefs missing');
+  return c;
 }
 
-const SIMPLE = [
+function UiPrefsProvider({ children }: { children: ReactNode }) {
+  const [reduceMotion, setReduceMotion] = useMotionPreference();
+  const [theme, setTheme] = useTheme();
+  return (
+    <UiPrefsCtx.Provider value={{ reduceMotion, setReduceMotion, theme, setTheme }}>
+      {children}
+    </UiPrefsCtx.Provider>
+  );
+}
+
+function View({ route }: { route: Route }) {
+  const { data } = useApp();
+  switch (route.name) {
+    case 'home': {
+      const empty = forecastObligations(data).length === 0 && pendingImports(data).length === 0;
+      return empty ? <Landing /> : <Home />;
+    }
+    case 'start':
+      return <StartPaths />;
+    case 'all':
+    case 'category':
+      return <AllPage type={route.type} />;
+    case 'add':
+      return <AddScreen type={route.type} />;
+    case 'item':
+      return <ItemScreen id={route.id} />;
+    case 'edit':
+      return <EditScreen id={route.id} />;
+    case 'details':
+      return <CommitmentForm editId={route.id} nav={nav} />;
+    case 'import':
+      return <ImportScreen />;
+    case 'upload':
+      return <UploadScreen />;
+    case 'sms':
+      return <SmsScreen />;
+    case 'forward':
+      return <ForwardScreen />;
+    case 'csv':
+      return <CsvScreen />;
+    case 'account':
+      return <AccountScreen />;
+    case 'plans':
+      return <PlansScreen />;
+    case 'reminders':
+      return <RemindersScreen />;
+    case 'settings':
+      return <SettingsScreen />;
+    case 'connections':
+      return <ConnectionsScreen />;
+    case 'budget':
+      return <BudgetView />;
+    case 'seasons':
+      return <SeasonsView />;
+    case 'reminders-ics':
+      return <RemindersView />;
+    case 'calendar':
+      return <CalendarView nav={nav} />;
+    case 'calc':
+      return <CalcView />;
+    case 'offers':
+      return <OffersHome nav={nav} />;
+    case 'offers-add':
+      return <AddService nav={nav} />;
+    case 'offers-calc':
+      return <ScenarioCalculator />;
+    case 'relay':
+      return <RelayInbox nav={nav} />;
+    case 'offer':
+      return <OfferDetail id={route.id} />;
+    case 'service':
+      return <ServiceCard id={route.id} nav={nav} />;
+  }
+}
+
+const LEGACY = new Set([
+  'details',
   'budget',
   'seasons',
-  'reminders',
-  'settings',
-  'import',
+  'reminders-ics',
   'calendar',
   'calc',
   'offers',
   'offers-add',
   'offers-calc',
   'relay',
-] as const;
+  'offer',
+  'service',
+]);
 
-function parse(hash: string): Route {
-  const [name, a] = hash.replace(/^#\/?/, '').split('/');
-  switch (name) {
-    case 'category':
-      return { name: 'category', type: (a as CommitmentType) || 'subscription' };
-    case 'add':
-      return { name: 'add', type: (a as CommitmentType) || 'subscription' };
-    case 'edit':
-      return { name: 'edit', id: a };
-    case 'offer':
-      return { name: 'offer', id: a };
-    case 'service':
-      return { name: 'service', id: a };
-    default:
-      return (SIMPLE as readonly string[]).includes(name)
-        ? { name: name as (typeof SIMPLE)[number] }
-        : { name: 'home' };
-  }
-}
-
-export function toHash(r: Route): string {
-  switch (r.name) {
-    case 'category':
-    case 'add':
-      return `#/${r.name}/${r.type}`;
-    case 'edit':
-    case 'offer':
-    case 'service':
-      return `#/${r.name}/${r.id}`;
-    default:
-      return `#/${r.name === 'home' ? '' : r.name}`;
-  }
+/** Shown while a copy of unreadable saved data is kept on this device; nothing syncs automatically meanwhile. */
+function CorruptDataBanner() {
+  const { corruptBackup, discardCorruptBackup } = useApp();
+  if (!corruptBackup) return null;
+  return (
+    <div className="notice2 notice-warn shell-notice" role="alert">
+      <p>
+        <strong>Some saved data on this device couldn’t be read.</strong> Due kept an unchanged copy
+        on this device and hasn’t synced or overwritten it. Export the copy to keep it safe.
+        Automatic sync stays paused until you remove the copy.
+      </p>
+      <div className="btn-row">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm press"
+          onClick={() =>
+            download(
+              `due-unreadable-data-${corruptBackup.at.slice(0, 10)}.json`,
+              corruptBackup.raw,
+              'application/json',
+            )
+          }
+        >
+          Export the kept copy
+        </button>
+        <ConfirmButton
+          label="Remove the kept copy"
+          confirmLabel="Yes, remove it"
+          className="btn btn-quiet btn-sm press"
+          message="Remove the copy from this device? Export it first if you might need it."
+          onConfirm={discardCorruptBackup}
+        />
+      </div>
+    </div>
+  );
 }
 
 function Shell() {
-  const [route, setRoute] = useState<Route>(() => parse(window.location.hash));
+  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash));
   const { persisted } = useApp();
   const mainRef = useRef<HTMLElement>(null);
+  const firstRender = useRef(true);
   useEffect(() => {
-    const on = () => setRoute(parse(window.location.hash));
+    const on = () => setRoute(parseRoute(window.location.hash));
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
   useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
     const h = mainRef.current?.querySelector<HTMLElement>('h1');
     if (h) {
       h.setAttribute('tabindex', '-1');
       h.focus({ preventScroll: true });
     }
   }, [route]);
-  const nav: Nav = {
-    go: (r) => {
-      window.location.hash = toHash(r);
-      window.scrollTo(0, 0);
-    },
-    back: () => (window.history.length > 1 ? window.history.back() : (window.location.hash = '#/')),
-  };
-
-  let view;
-  switch (route.name) {
-    case 'category':
-      view = <CategoryView type={route.type} nav={nav} />;
-      break;
-    case 'add':
-      view = <CommitmentForm type={route.type} nav={nav} />;
-      break;
-    case 'edit':
-      view = <CommitmentForm editId={route.id} nav={nav} />;
-      break;
-    case 'budget':
-      view = <BudgetView />;
-      break;
-    case 'seasons':
-      view = <SeasonsView />;
-      break;
-    case 'reminders':
-      view = <RemindersView />;
-      break;
-    case 'settings':
-      view = <SettingsView nav={nav} />;
-      break;
-    case 'import':
-      view = <ImportView nav={nav} />;
-      break;
-    case 'calendar':
-      view = <CalendarView nav={nav} />;
-      break;
-    case 'calc':
-      view = <CalcView />;
-      break;
-    case 'offers':
-      view = <OffersHome nav={nav} />;
-      break;
-    case 'offers-add':
-      view = <AddService nav={nav} />;
-      break;
-    case 'offers-calc':
-      view = <ScenarioCalculator />;
-      break;
-    case 'relay':
-      view = <RelayInbox nav={nav} />;
-      break;
-    case 'offer':
-      view = <OfferDetail id={route.id} />;
-      break;
-    case 'service':
-      view = <ServiceCard id={route.id} nav={nav} />;
-      break;
-    default:
-      view = <Home nav={nav} />;
-  }
-
+  const key = toHash(route);
+  const legacy = LEGACY.has(route.name);
   const inOffers = ['offer', 'service', 'offers-add', 'offers-calc', 'relay'].includes(route.name);
   return (
-    <div className="app">
+    <div className="shell">
+      <a className="skip" href="#main">
+        Skip to content
+      </a>
+      <TopBar />
       {!persisted && (
-        <div className="notice">
+        <div className="notice2 notice-warn shell-notice" role="alert">
           Your browser isn’t saving data (private mode or storage blocked). Export from Settings
           before closing.
         </div>
       )}
-      {route.name !== 'home' && (
-        <div className="backrow">
-          <a className="back" href={inOffers ? '#/offers' : '#/'}>
-            ‹ {inOffers ? 'Back to Due & Offers' : 'Back to Due'}
-          </a>
-        </div>
-      )}
-      <main key={JSON.stringify(route)} ref={mainRef}>
-        {view}
+      <CorruptDataBanner />
+      <AccountReturn />
+      <main id="main" key={key} ref={mainRef} className={legacy ? 'legacy' : undefined}>
+        {legacy && (
+          <div className="backrow2">
+            <a className="text-btn press" href={inOffers ? '#/offers' : '#/all'}>
+              ‹ {inOffers ? 'Back to Due & Offers' : 'Back to All'}
+            </a>
+          </div>
+        )}
+        <View route={route} />
       </main>
     </div>
   );
 }
 
-export function App() {
+export function App({
+  client,
+  initialData,
+}: {
+  client?: AccountClient;
+  initialData?: AppData;
+} = {}) {
   return (
-    <AppProvider>
-      <CatalogProvider>
-        <Shell />
-      </CatalogProvider>
-    </AppProvider>
+    <UiPrefsProvider>
+      <ToastProvider>
+        <AppProvider initialData={initialData}>
+          <AccountProvider client={client}>
+            <CatalogProvider>
+              <Shell />
+            </CatalogProvider>
+          </AccountProvider>
+        </AppProvider>
+      </ToastProvider>
+    </UiPrefsProvider>
   );
 }

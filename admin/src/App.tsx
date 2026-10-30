@@ -13,6 +13,7 @@ import { CategoriesPage } from './pages/Categories';
 import { UsersPage } from './pages/Users';
 import { AutomationPage } from './pages/Automation';
 import { SettingsPage } from './pages/Settings';
+import { PlansPage } from './pages/Plans';
 
 export function AuthProvider({ children, initialMe }: { children: ReactNode; initialMe?: Me | null }) {
   const [me, setMe] = useState<Me | null>(initialMe ?? null);
@@ -96,6 +97,7 @@ export function AppRoutes() {
             </RequireAuth>
           }
         />
+        <Route path="plans" element={<PlansPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="account" element={<ChangePasswordPage />} />
         <Route path="*" element={<div className="empty">Page not found.</div>} />

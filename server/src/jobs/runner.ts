@@ -1,9 +1,11 @@
 import { addMinutes } from '../clock.js';
 import { many, one } from '../db.js';
 import { checkSource, type MonitorContext, type Outcome } from '../monitor/engine.js';
+import { runConsumerReminders } from '../consumer/reminders.js';
+import { runIntakePurge } from '../intake/service.js';
 import { getSettings } from '../settings.js';
 
-export const JOB_IDS = ['monitor_sources', 'retry_failed', 'retention_cleanup'] as const;
+export const JOB_IDS = ['monitor_sources', 'retry_failed', 'retention_cleanup', 'consumer_reminders', 'intake_purge'] as const;
 export type JobId = (typeof JOB_IDS)[number];
 
 const JOB_LOCK_NS = 724_190_002;
@@ -94,7 +96,16 @@ async function retentionCleanup(ctx: MonitorContext): Promise<Record<string, num
     'DELETE FROM password_resets WHERE expires_at < $1 OR (used_at IS NOT NULL AND used_at < $1)',
     [addMinutes(now, -30 * 1440)],
   );
+  const acctSessions = await ctx.pool.query(
+    `DELETE FROM consumer_sessions WHERE expires_at < $1 OR (revoked_at IS NOT NULL AND revoked_at < $1)`,
+    [addMinutes(now, -7 * 1440)],
+  );
+  const links = await ctx.pool.query('DELETE FROM magic_links WHERE expires_at < $1', [addMinutes(now, -1440)]);
+  const invites = await ctx.pool.query('DELETE FROM household_invites WHERE expires_at < $1', [addMinutes(now, -30 * 1440)]);
   return {
+    consumer_sessions_deleted: acctSessions.rowCount ?? 0,
+    magic_links_deleted: links.rowCount ?? 0,
+    household_invites_deleted: invites.rowCount ?? 0,
     snapshots_deleted: snaps.rowCount ?? 0,
     fetch_runs_deleted: runs.rowCount ?? 0,
     login_events_deleted: logins.rowCount ?? 0,
@@ -111,6 +122,10 @@ async function execute(ctx: MonitorContext, job: JobRow, jobRunId: number): Prom
       return monitorBatch(ctx, jobRunId, 'retry', job.config);
     case 'retention_cleanup':
       return retentionCleanup(ctx);
+    case 'consumer_reminders':
+      return runConsumerReminders(ctx, job.config);
+    case 'intake_purge':
+      return runIntakePurge(ctx);
   }
 }
 

@@ -30,6 +30,13 @@ describe('reminders', () => {
     const both = allReminders([sub, sub], []);
     expect(new Set(both.map((x) => x.key)).size).toBe(both.length);
   });
+  it('with today, targets the effective next occurrence instead of the stale anchor date', () => {
+    // Monthly from 10 Nov; on 5 Dec the next renewal is 10 Dec, not the anchor.
+    const items = allReminders([sub], [], '2026-12-05');
+    const targets = new Set(items.filter((x) => x.type === 'renewal').map((x) => x.targetDate));
+    expect(targets).toEqual(new Set(['2026-12-10']));
+    expect(activeReminders(items, '2026-12-07').map((x) => x.offset)).toEqual([3]);
+  });
   it('shows only one reminder per target date', () => {
     const items = allReminders([sub], []);
     expect(activeReminders(items, '2026-11-08').map((x) => x.offset)).toEqual([3]);

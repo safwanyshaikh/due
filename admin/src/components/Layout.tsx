@@ -12,6 +12,7 @@ const NAV: { to: string; label: string; perm?: 'admin' }[] = [
   { to: '/categories', label: 'Categories' },
   { to: '/automation', label: 'Automation' },
   { to: '/users', label: 'Users & access', perm: 'admin' },
+  { to: '/plans', label: 'Plans' },
   { to: '/settings', label: 'Settings' },
 ];
 

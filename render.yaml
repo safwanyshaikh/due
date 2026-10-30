@@ -45,3 +45,23 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      # Optional: public origin used in e-mailed sign-in and invite links (e.g. https://due.example.com).
+      # When unset, Render's RENDER_EXTERNAL_URL is used.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Optional: Razorpay Subscriptions. Checkout stays unavailable (503) until all three are set
+      # and plan ids are configured in the admin panel (Plans).
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      # Optional: email forwarding intake. Forwarding is "not live" until both are set.
+      - key: INBOUND_EMAIL_DOMAIN
+        sync: false
+      - key: INBOUND_WEBHOOK_SECRET
+        sync: false
+      # Optional: 32 random bytes, base64 (openssl rand -base64 32). Without it raw intake text is never stored.
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
