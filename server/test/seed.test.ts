@@ -53,6 +53,13 @@ describe('seed:registry', () => {
     expect(second.sourcesCreated).toBe(0);
     expect(second.offersCreated).toBe(0);
     expect(second.offersExisting).toBe(22);
+
+    // Upgrade from a database seeded before migration 008: provider families are backfilled, admin values kept.
+    await pool.query(`UPDATE offers SET provider_family = NULL`);
+    await pool.query(`UPDATE offers SET provider_family = 'utilities' WHERE id = (SELECT min(id) FROM offers)`);
+    await seedAll(pool, files);
+    expect(await n('SELECT count(*) AS n FROM offers WHERE provider_family IS NULL')).toBe(0);
+    expect(await n(`SELECT count(*) AS n FROM offers WHERE provider_family = 'utilities'`)).toBe(1);
   });
 
   it('keeps offer facts from the catalog with research_snapshot status and their source URLs', async () => {

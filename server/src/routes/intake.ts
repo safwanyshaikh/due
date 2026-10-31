@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { consumerAudit, currentAccount, requireAccount } from '../consumer/context.js';
+import { ACCEPTED_PURPOSES, canonicalPurpose, LEGACY_PURPOSES, recordConsentV2 } from '../consumer/consents.js';
+import { consumerAudit, currentAccount, entitlementOf, requireAccount, requireFeature } from '../consumer/context.js';
+import { FREE_UPLOADS_PER_MONTH, guestUploadsUsed, takeAccountUpload, uploadLimitReached, uploadMonth } from '../consumer/uploads.js';
 import { many, one, withTransaction, type Queryable } from '../db.js';
 import { AppError, notFound, parse } from '../http/errors.js';
 import { EXTRACTED_FIELD_KEYS, type ExtractedFields } from '../intake/parser.js';
@@ -14,7 +16,6 @@ import {
   liveAlias,
   matchOffers,
   MAX_EVENTS_PER_DAY,
-  ownerCols,
   ownerWhere,
   TEMP_SESSION_TTL_MS,
   type AliasRow,
@@ -29,7 +30,8 @@ declare module 'fastify' {
   }
 }
 
-export const CONSENT_PURPOSES = ['email_intake', 'document_parsing', 'reminders_email', 'telemetry', 'sync_backup'] as const;
+/** Accepted on POST /api/account/consents: the v2 purposes plus legacy names (mapped). */
+export const CONSENT_PURPOSES = ACCEPTED_PURPOSES;
 const textVersion = z.string().trim().min(1).max(40);
 const uuidParam = z.object({ id: z.string().uuid() });
 
@@ -72,16 +74,17 @@ function aliasView(app: FastifyInstance, a: AliasRow | null) {
   };
 }
 
-async function recordConsent(q: Queryable, owner: Owner, purpose: (typeof CONSENT_PURPOSES)[number], granted: boolean, version: string, now: Date) {
-  const cols = ownerCols(owner);
-  await q.query('INSERT INTO consent_records (account_id, temp_session_id, purpose, granted, text_version, at) VALUES ($1,$2,$3,$4,$5,$6)', [
-    cols.account_id,
-    cols.temp_session_id,
-    purpose,
-    granted,
-    version,
-    now,
-  ]);
+async function recordConsent(
+  q: Queryable,
+  owner: Owner,
+  purpose: string,
+  granted: boolean,
+  version: string,
+  now: Date,
+  extra: { scope?: Record<string, unknown>; source?: 'app' | 'admin' | 'import' | 'system' | 'email_link' | 'oauth' } = {},
+) {
+  const who = owner.kind === 'account' ? { accountId: owner.id } : { tempSessionId: owner.id };
+  await recordConsentV2(q, who, { purpose, granted, policyVersion: version, scope: extra.scope, source: extra.source }, now);
 }
 
 async function audit(q: Queryable, owner: Owner, action: string, entityId: string | null, before: unknown, after: unknown, now: Date) {
@@ -115,19 +118,23 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
     if (req.account) throw new AppError(409, 'signed_in', 'You are signed in; use your account forwarding address instead');
     const body = parse(z.object({ consentTextVersion: textVersion }).strict(), normaliseKeys(req.body));
     const now = clock();
-    if (req.intakeSession) {
-      const owner: Owner = { kind: 'temp', id: req.intakeSession.id };
-      return { sessionExpiresAt: req.intakeSession.expiresAt, ...aliasView(app, await liveAlias(pool, owner)) };
-    }
-    const out = await withTransaction(pool, async (c) => {
-      const s = await createTempSession(c, config.sessionSecret, now);
-      const owner: Owner = { kind: 'temp', id: s.id };
-      await recordConsent(c, owner, 'email_intake', true, body.consentTextVersion, now);
-      const alias = await createAlias(c, owner, now);
-      return { s, alias };
+    // Guest sessions keep manual entry, pasted text and documents only: forwarding needs a signed-in Plus account.
+    const guestView = (expiresAt: Date) => ({
+      sessionExpiresAt: expiresAt,
+      alias: null,
+      address: null,
+      live: false,
+      forwarding: 'sign_in_required' as const,
+      allowedIntake: ['manual', 'shared_sms', 'document'],
     });
-    setIntakeCookie(app, reply, out.s.token);
-    return reply.code(201).send({ sessionExpiresAt: out.s.expiresAt, ...aliasView(app, out.alias) });
+    if (req.intakeSession) return guestView(req.intakeSession.expiresAt);
+    const s = await withTransaction(pool, async (c) => {
+      const created = await createTempSession(c, config.sessionSecret, now);
+      await recordConsent(c, { kind: 'temp', id: created.id }, 'documents', true, body.consentTextVersion, now, { scope: { guest: true } });
+      return created;
+    });
+    setIntakeCookie(app, reply, s.token);
+    return reply.code(201).send(guestView(s.expiresAt));
   });
 
   app.get('/api/intake/alias', async (req) => {
@@ -136,14 +143,15 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // Signed-in accounts create their alias explicitly, recording consent at the same time.
-  app.post('/api/intake/alias', { preHandler: requireAccount }, async (req, reply) => {
+  // Forwarding is a Plus feature (server-side entitlement).
+  app.post('/api/intake/alias', { preHandler: requireFeature('email_import') }, async (req, reply) => {
     const owner = intakeOwner(req);
     const body = parse(z.object({ consentTextVersion: textVersion }).strict(), normaliseKeys(req.body));
     const now = clock();
     const existing = await liveAlias(pool, owner);
     if (existing) return aliasView(app, existing);
     const a = await withTransaction(pool, async (c) => {
-      await recordConsent(c, owner, 'email_intake', true, body.consentTextVersion, now);
+      await recordConsent(c, owner, 'forwarding', true, body.consentTextVersion, now);
       const row = await createAlias(c, owner, now);
       await audit(c, owner, 'intake.alias_created', row.id, null, { alias: row.alias }, now);
       return row;
@@ -217,9 +225,22 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
     ).rows[0]!.n;
     if (recent >= MAX_EVENTS_PER_DAY) throw new AppError(429, 'quota_exceeded', 'Daily intake limit reached. Try again tomorrow.');
     const manual = body.fields ? (Object.fromEntries(Object.entries(body.fields).filter(([, v]) => v !== null && v !== undefined)) as ExtractedFields) : undefined;
-    const r = await withTransaction(pool, (c) =>
-      ingest(c, { owner, aliasId: null, intakeType: body.intakeType, text: body.text ?? '', subject: body.subject, manualFields: manual }, key(), now),
-    );
+    // Documents count against the monthly upload allowance (Free and guests: 5 a month, India time; Plus: unlimited),
+    // the same allowance as POST /api/account/uploads/count. A duplicate submission is not counted.
+    const isDocument = body.intakeType === 'document';
+    const unlimited = isDocument && owner.kind === 'account' ? (await entitlementOf(req)).plan !== 'free' : false;
+    const r = await withTransaction(pool, async (c) => {
+      if (isDocument && owner.kind === 'temp' && (await guestUploadsUsed(c, owner.id, now)) >= FREE_UPLOADS_PER_MONTH) {
+        throw uploadLimitReached(uploadMonth(now));
+      }
+      const out = await ingest(c, { owner, aliasId: null, intakeType: body.intakeType, text: body.text ?? '', subject: body.subject, manualFields: manual }, key(), now);
+      if (isDocument && owner.kind === 'account' && !out.duplicate) {
+        const count = await takeAccountUpload(c, owner.id, unlimited, now);
+        // Throwing rolls back the inserted document as well.
+        if (count === null) throw uploadLimitReached(uploadMonth(now));
+      }
+      return out;
+    });
     return reply.code(r.duplicate ? 200 : 201).send({ duplicate: r.duplicate, event: eventView(r.event, null) });
   });
 
@@ -309,6 +330,8 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
     await withTransaction(pool, async (c) => {
       const e = await ownedEvent(c, owner, id, true);
       await c.query('DELETE FROM offer_matches WHERE user_event_id = $1', [e.id]);
+      // A deliberately re-forwarded copy of a deleted message is accepted again.
+      await c.query('UPDATE inbound_messages SET message_id_hash = NULL WHERE user_event_id = $1', [e.id]);
       await c.query(
         `UPDATE user_events SET review_status = 'deleted', raw_text = NULL, raw_retention_until = NULL, extracted_fields = '{}'::jsonb,
             confidence = '{}'::jsonb, source_domain = NULL, message_id_hash = NULL, updated_at = $2 WHERE id = $1`,
@@ -358,23 +381,63 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/account/consents', async (req, reply) => {
     const owner = intakeOwner(req);
-    const body = parse(z.object({ purpose: z.enum(CONSENT_PURPOSES), granted: z.boolean(), textVersion }).strict(), normaliseKeys(req.body));
+    const body = parse(
+      z
+        .object({
+          purpose: z.enum(CONSENT_PURPOSES),
+          granted: z.boolean(),
+          textVersion: textVersion.optional(),
+          policyVersion: textVersion.optional(),
+          scope: z.record(z.string(), z.union([z.string().max(200), z.number(), z.boolean()])).optional(),
+        })
+        .strict()
+        .refine((b) => b.textVersion || b.policyVersion, 'policyVersion is required'),
+      normaliseKeys(req.body),
+    );
     const now = clock();
-    await recordConsent(pool, owner, body.purpose, body.granted, body.textVersion, now);
-    if (body.purpose === 'email_intake' && !body.granted) {
+    const purpose = canonicalPurpose(body.purpose);
+    await recordConsent(pool, owner, purpose, body.granted, (body.policyVersion ?? body.textVersion)!, now, { scope: body.scope });
+    if (purpose === 'forwarding' && !body.granted) {
       // Withdrawing intake consent pauses forwarding immediately.
       await pool.query(`UPDATE intake_aliases SET status = 'paused', updated_at = $2 WHERE ${ownerWhere(owner, 1)} AND status = 'active'`, [owner.id, now]);
     }
-    return reply.code(201).send({ ok: true, purpose: body.purpose, granted: body.granted, at: now });
+    return reply.code(201).send({ ok: true, purpose, granted: body.granted, at: now });
   });
 
   app.get('/api/account/consents', async (req) => {
     const owner = intakeOwner(req);
-    const rows = await many(pool, `SELECT purpose, granted, text_version, at FROM consent_records WHERE ${ownerWhere(owner, 1)} ORDER BY at DESC, id DESC`, [owner.id]);
+    const rows = await many<{
+      purpose: string;
+      granted: boolean;
+      text_version: string;
+      policy_version: string;
+      scope: Record<string, unknown>;
+      source: string;
+      granted_at: Date | null;
+      revoked_at: Date | null;
+      at: Date;
+    }>(
+      pool,
+      `SELECT purpose, granted, text_version, policy_version, scope, source, granted_at, revoked_at, at FROM consent_records
+        WHERE ${ownerWhere(owner, 1)} ORDER BY at DESC, id DESC`,
+      [owner.id],
+    );
     const current: Record<string, unknown> = {};
-    for (const r of rows as { purpose: string; granted: boolean; text_version: string; at: Date }[]) {
-      current[r.purpose] ??= { granted: r.granted, textVersion: r.text_version, at: r.at };
+    for (const r of rows) {
+      current[r.purpose] ??= {
+        state: r.granted ? 'granted' : 'revoked',
+        granted: r.granted,
+        policyVersion: r.policy_version,
+        textVersion: r.text_version,
+        scope: r.scope,
+        source: r.source,
+        grantedAt: r.granted_at,
+        revokedAt: r.revoked_at,
+        at: r.at,
+      };
     }
+    // Legacy names mirror their v2 purpose for older clients.
+    for (const [legacy, v2] of Object.entries(LEGACY_PURPOSES)) if (current[v2]) current[legacy] = current[v2];
     return { current, history: camelAll(rows) };
   });
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseTokenKeys, type TokenKeyRing } from './gmail/keys.js';
 
 const boolish = z
   .string()
@@ -32,7 +33,85 @@ const EnvSchema = z.object({
   INBOUND_WEBHOOK_SECRET: z.string().optional(),
   /** 32 random bytes, base64. Without it raw intake text is never stored (structured fields only). */
   DATA_ENCRYPTION_KEY: z.string().optional(),
+  /** Gmail OAuth (read-only). All four are required; otherwise Gmail reports mode 'not_configured'. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().optional(),
+  GMAIL_TOKEN_KEYS: z.string().optional(),
+  /** 'test' (Google app in Testing; only listed test users), 'verification_pending' or 'live'. Default 'test'. */
+  GMAIL_OAUTH_MODE: z.string().optional(),
+  /** Optional Sentry-compatible DSN for privacy-scrubbed error reports. */
+  SENTRY_DSN: z.string().optional(),
+  /** Run the durable-queue worker inside the web process (single-service deployments only). */
+  RUN_QUEUE_WORKER: boolish,
 });
+
+export type GmailMode = 'not_configured' | 'test_mode' | 'verification_pending' | 'live';
+
+export interface GmailEndpoints {
+  authUrl: string;
+  tokenUrl: string;
+  revokeUrl: string;
+  gmailApiBase: string;
+}
+
+export const GOOGLE_ENDPOINTS: GmailEndpoints = {
+  authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenUrl: 'https://oauth2.googleapis.com/token',
+  revokeUrl: 'https://oauth2.googleapis.com/revoke',
+  gmailApiBase: 'https://gmail.googleapis.com/gmail/v1',
+};
+
+export interface GmailConfig {
+  mode: GmailMode;
+  /** Names of missing or invalid variables when mode is 'not_configured' (shown as the exact blocker). */
+  missing: string[];
+  oauth: { clientId: string; clientSecret: string; redirectUri: string; tokenKeys: TokenKeyRing } | null;
+  /** Google endpoints; tests point these at a local mock server. */
+  endpoints: GmailEndpoints;
+}
+
+/** Redirect URIs must be absolute, without fragment, and https except on localhost. */
+function validRedirectUri(v: string): boolean {
+  try {
+    const u = new URL(v);
+    if (u.hash || u.username || u.password) return false;
+    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    return u.protocol === 'https:' || (u.protocol === 'http:' && local);
+  } catch {
+    return false;
+  }
+}
+
+export function loadGmailConfig(e: {
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REDIRECT_URI?: string;
+  GMAIL_TOKEN_KEYS?: string;
+  GMAIL_OAUTH_MODE?: string;
+}): GmailConfig {
+  const missing: string[] = [];
+  const clientId = e.GOOGLE_CLIENT_ID?.trim() ?? '';
+  const clientSecret = e.GOOGLE_CLIENT_SECRET?.trim() ?? '';
+  const redirectUri = e.GOOGLE_REDIRECT_URI?.trim() ?? '';
+  if (!clientId) missing.push('GOOGLE_CLIENT_ID');
+  if (!clientSecret) missing.push('GOOGLE_CLIENT_SECRET');
+  if (!redirectUri) missing.push('GOOGLE_REDIRECT_URI');
+  else if (!validRedirectUri(redirectUri)) missing.push('GOOGLE_REDIRECT_URI (must be an absolute https URL)');
+  let tokenKeys: TokenKeyRing | null = null;
+  try {
+    tokenKeys = parseTokenKeys(e.GMAIL_TOKEN_KEYS);
+    if (!tokenKeys) missing.push('GMAIL_TOKEN_KEYS');
+  } catch {
+    missing.push('GMAIL_TOKEN_KEYS (invalid: expected "kid:base64-32-byte-key,...")');
+  }
+  const rawMode = (e.GMAIL_OAUTH_MODE?.trim() || 'test').toLowerCase();
+  const modes: Record<string, GmailMode> = { test: 'test_mode', test_mode: 'test_mode', verification_pending: 'verification_pending', live: 'live' };
+  const mode = modes[rawMode];
+  if (!mode) missing.push('GMAIL_OAUTH_MODE (must be test, verification_pending or live)');
+  if (missing.length || !tokenKeys || !mode) return { mode: 'not_configured', missing, oauth: null, endpoints: { ...GOOGLE_ENDPOINTS } };
+  return { mode, missing: [], oauth: { clientId, clientSecret, redirectUri, tokenKeys }, endpoints: { ...GOOGLE_ENDPOINTS } };
+}
 
 export interface MonitorOptions {
   userAgent: string;
@@ -73,6 +152,9 @@ export interface AppConfig {
   inboundEmailDomain: string | null;
   inboundWebhookSecret: string | null;
   dataEncryptionKey: Buffer | null;
+  gmail: GmailConfig;
+  sentryDsn: string | null;
+  runQueueWorker: boolean;
   schedulerTickMs: number;
   monitor: MonitorOptions;
 }
@@ -127,6 +209,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     inboundEmailDomain: e.INBOUND_EMAIL_DOMAIN?.trim() ? e.INBOUND_EMAIL_DOMAIN.trim().toLowerCase() : null,
     inboundWebhookSecret: e.INBOUND_WEBHOOK_SECRET?.trim() ? e.INBOUND_WEBHOOK_SECRET.trim() : null,
     dataEncryptionKey: parseEncryptionKey(e.DATA_ENCRYPTION_KEY),
+    gmail: loadGmailConfig(e),
+    sentryDsn: e.SENTRY_DSN?.trim() ? e.SENTRY_DSN.trim() : null,
+    runQueueWorker: e.RUN_QUEUE_WORKER ?? false,
     schedulerTickMs: 60_000,
     monitor: {
       userAgent: userAgentFor(e.PUBLIC_BASE_URL ?? e.RENDER_EXTERNAL_URL ?? null),

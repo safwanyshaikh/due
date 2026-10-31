@@ -1,11 +1,22 @@
 import { addMinutes } from '../clock.js';
 import { many, one } from '../db.js';
 import { checkSource, type MonitorContext, type Outcome } from '../monitor/engine.js';
-import { runConsumerReminders } from '../consumer/reminders.js';
-import { runIntakePurge } from '../intake/service.js';
+import { enqueueDueReminders } from '../consumer/notifications.js';
+import { enqueue } from '../queue/index.js';
+import { enqueueDueOfferRefreshes } from '../monitor/offers.js';
 import { getSettings } from '../settings.js';
 
-export const JOB_IDS = ['monitor_sources', 'retry_failed', 'retention_cleanup', 'consumer_reminders', 'intake_purge'] as const;
+export const JOB_IDS = [
+  'monitor_sources',
+  'retry_failed',
+  'retention_cleanup',
+  'consumer_reminders',
+  'intake_purge',
+  'reminder_reconcile',
+  'billing_reconcile',
+  'offers_refresh',
+  'offers_status',
+] as const;
 export type JobId = (typeof JOB_IDS)[number];
 
 const JOB_LOCK_NS = 724_190_002;
@@ -122,11 +133,27 @@ async function execute(ctx: MonitorContext, job: JobRow, jobRunId: number): Prom
       return monitorBatch(ctx, jobRunId, 'retry', job.config);
     case 'retention_cleanup':
       return retentionCleanup(ctx);
+    // The scheduler is the clock; the work itself runs on the durable queue (retries, dead letters, visibility).
     case 'consumer_reminders':
-      return runConsumerReminders(ctx, job.config);
+      return enqueueDueReminders(ctx, job.config);
     case 'intake_purge':
-      return runIntakePurge(ctx);
+      return enqueueScheduled(ctx, 'retention.purge', ctx.clock().toISOString().slice(0, 13));
+    case 'reminder_reconcile':
+      return enqueueScheduled(ctx, 'reminder.reconcile', ctx.clock().toISOString().slice(0, 10));
+    case 'billing_reconcile':
+      return enqueueScheduled(ctx, 'billing.reconcile', ctx.clock().toISOString().slice(0, 10));
+    // Offer intelligence: one offers.refresh job per due source; hourly stale-policy recompute.
+    case 'offers_refresh':
+      return enqueueDueOfferRefreshes(ctx.pool, ctx.clock(), job.config);
+    case 'offers_status':
+      return enqueueScheduled(ctx, 'offers.recompute', ctx.clock().toISOString().slice(0, 13));
   }
+}
+
+/** One queue job per period: the idempotency key carries the period, so overlapping ticks never double-run it. */
+async function enqueueScheduled(ctx: MonitorContext, type: string, period: string): Promise<Record<string, unknown>> {
+  const r = await enqueue(ctx.pool, { type, idempotencyKey: `${type}:${period}`, maxAttempts: 5, now: ctx.clock() });
+  return { enqueued: r.deduped ? 0 : 1, jobId: r.id, period };
 }
 
 export interface StartedJob {

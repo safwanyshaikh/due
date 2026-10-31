@@ -6,6 +6,7 @@ import { useCan } from '../lib/auth';
 import { companyPayload, type CompanyInput } from '../lib/payloads';
 import type { Category, Company, CompanyKind, DataRecord, Intel, Source } from '../lib/types';
 import { checkedEvery, formatIST, humanize, inaccessibleReason, sourceStatusText } from '../lib/format';
+import { PROVIDER_FAMILIES, familyLabel } from '../lib/offers';
 import { Badge, ExternalLink, Field, JsonBlock, LiveStatus, Loadable, PageHeader, TableWrap, Tabs, statusTone } from '../components/ui';
 
 const KIND_LABEL: Record<CompanyKind, { one: string; many: string }> = {
@@ -21,6 +22,7 @@ const emptyCompany = (kind: CompanyKind): CompanyInput => ({
   categoryId: '',
   description: '',
   monitoringEnabled: true,
+  providerFamily: '',
 });
 
 function fromCompany(c: Company): CompanyInput {
@@ -32,6 +34,7 @@ function fromCompany(c: Company): CompanyInput {
     categoryId: c.categoryId ?? '',
     description: c.description ?? '',
     monitoringEnabled: !!c.monitoringEnabled,
+    providerFamily: c.providerFamily ?? '',
   };
 }
 
@@ -86,6 +89,18 @@ export function CompanyForm({
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
+      <Field label="Provider family" hint="Groups providers for offer intelligence and plan matching.">
+        {(id, h) => (
+          <select id={id} aria-describedby={h} value={form.providerFamily ?? ''} onChange={(e) => set('providerFamily', e.target.value)}>
+            <option value="">No family</option>
+            {PROVIDER_FAMILIES.map((f) => (
+              <option key={f} value={f}>
+                {familyLabel(f)}
               </option>
             ))}
           </select>
@@ -233,6 +248,7 @@ export function CompaniesPage() {
               <th scope="col">Name</th>
               <th scope="col">Website</th>
               <th scope="col">Country</th>
+              <th scope="col">Family</th>
               <th scope="col">Status</th>
               <th scope="col">Verification</th>
               <th scope="col">Monitoring</th>
@@ -249,6 +265,7 @@ export function CompaniesPage() {
                   <ExternalLink href={c.officialWebsite} />
                 </td>
                 <td>{c.country || '—'}</td>
+                <td>{c.providerFamily ? familyLabel(c.providerFamily) : '—'}</td>
                 <td>{humanize(c.status)}</td>
                 <td>
                   <Badge tone={statusTone(c.verificationStatus)}>{humanize(c.verificationStatus)}</Badge>
@@ -375,6 +392,8 @@ export function CompanyDetailPage() {
               <dd>{c.country || '—'}</dd>
               <dt>Category</dt>
               <dd>{c.categoryName || '—'}</dd>
+              <dt>Provider family</dt>
+              <dd>{c.providerFamily ? familyLabel(c.providerFamily) : '—'}</dd>
               <dt>Monitoring</dt>
               <dd>{c.monitoringEnabled ? 'On' : 'Off'}</dd>
               <dt>Verification</dt>

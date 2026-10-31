@@ -32,6 +32,7 @@ export interface Company {
   verifiedAt?: string | null;
   verificationNote?: string | null;
   monitoringEnabled: boolean;
+  providerFamily?: string | null;
   createdAt?: string;
   updatedAt?: string;
   sourceCount?: number;

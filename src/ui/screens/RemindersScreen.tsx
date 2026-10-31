@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { RemindersResponse } from '../../lib/account/types';
 import {
   acknowledgeReminder,
@@ -15,6 +15,16 @@ import { useApp } from '../store';
 import { useAccount } from '../account/AccountContext';
 import { describeApiError } from '../account/useIntake';
 import { Badge, Field, Notice, Panel } from '../components/ui';
+import { REMINDERS_EMAIL_CONSENT_VERSION } from '../../content/privacy';
+import { modeLabel, usePublicStatus } from '../lib/platform';
+import { serverAllows } from '../lib/entitlement';
+import { useToast } from '../components/Toast';
+import {
+  readReminderConsent,
+  writeReminderConsent,
+  type ReminderChannelChoice,
+  type ReminderConsent,
+} from '../lib/reminderConsent';
 import { download } from '../common';
 import { localDateTime } from '../lib/format';
 
@@ -43,6 +53,7 @@ export function RemindersScreen() {
   const [server, setServer] = useState<RemindersResponse | null>(null);
   const [serverErr, setServerErr] = useState<string | null>(null);
   const [now] = useState(() => new Date().toISOString());
+  const [consent, setConsent] = useState<ReminderConsent | null>(() => readReminderConsent());
 
   useEffect(() => {
     if (status !== 'signed_in') return;
@@ -98,7 +109,18 @@ export function RemindersScreen() {
         </Panel>
       )}
 
-      <Panel title="Settings" id="rm-settings">
+      <ChannelsPanel
+        server={server}
+        consent={consent}
+        setConsent={setConsent}
+        onChannel={(ch) => {
+          if (ch === 'in_app' && s.deliveryChannel === 'email')
+            track('notification_opt_out', { channel: 'email' });
+          setSettings({ deliveryChannel: ch });
+        }}
+      />
+
+      <Panel title="Quiet hours and timezone" id="rm-settings">
         <div className="inline-row">
           <Field label="Quiet hours from" htmlFor="rm-q1">
             <input
@@ -135,38 +157,6 @@ export function RemindersScreen() {
               ))}
             </select>
           </Field>
-          <Field
-            label="Default channel"
-            htmlFor="rm-ch"
-            hint={
-              status !== 'signed_in'
-                ? 'Email needs sign-in. Push isn’t available yet.'
-                : server?.emailDelivery === 'email_unavailable'
-                  ? 'Email isn’t available on Due’s server yet.'
-                  : server?.emailDelivery === 'premium_required'
-                    ? 'Email reminders are part of Plus.'
-                    : 'Push isn’t available yet.'
-            }
-          >
-            <select
-              id="rm-ch"
-              value={s.deliveryChannel ?? 'in_app'}
-              onChange={(e) => {
-                const ch = e.target.value as DeliveryChannel;
-                if (ch === 'in_app' && s.deliveryChannel === 'email')
-                  track('notification_opt_out', { channel: 'email' });
-                setSettings({ deliveryChannel: ch });
-              }}
-            >
-              <option value="in_app">In the app</option>
-              <option value="email" disabled={status !== 'signed_in'}>
-                Email
-              </option>
-              <option value="push" disabled>
-                Push (not available yet)
-              </option>
-            </select>
-          </Field>
         </div>
         <p className="muted small">
           Lead times, severity and channel can also be set on each item. Reminders that fall in
@@ -175,6 +165,11 @@ export function RemindersScreen() {
       </Panel>
 
       <Panel title="Upcoming reminders" id="rm-plan">
+        {!consent && (
+          <Notice tone="info" title="Reminders are off">
+            Nothing is shown or sent until you choose a channel and agree above. This is a preview.
+          </Notice>
+        )}
         {plan.length === 0 ? (
           <p className="muted">No reminders planned in the next 60 days.</p>
         ) : (
@@ -195,7 +190,7 @@ export function RemindersScreen() {
                       {r.shiftedForQuietHours ? ' · moved out of quiet hours' : ''} · {r.leadDays}{' '}
                       day
                       {r.leadDays === 1 ? '' : 's'} before · {r.channel.replace('_', ' ')} ·{' '}
-                      {STATUS_COPY[st]}
+                      {consent ? STATUS_COPY[st] : 'Off: no channel chosen'}
                       {r.snoozedUntil
                         ? ` · snoozed until ${localDateTime(r.snoozedUntil, r.timezone)}`
                         : ''}
@@ -290,5 +285,167 @@ export function RemindersScreen() {
         Season and offer reminders (calendar file)
       </a>
     </div>
+  );
+}
+
+const CHANNEL_NAME: Record<ReminderChannelChoice, string> = {
+  in_app: 'in the app',
+  email: 'by email',
+  calendar: 'with a calendar file',
+};
+
+/**
+ * Reminder channels: in-app, email (needs sign-in, consent, Plus and live email on the server), calendar
+ * file, and WhatsApp (not available). Nothing is shown or sent before a channel is chosen and agreed to.
+ */
+function ChannelsPanel({
+  server,
+  consent,
+  setConsent,
+  onChannel,
+}: {
+  server: RemindersResponse | null;
+  consent: ReminderConsent | null;
+  setConsent: (c: ReminderConsent | null) => void;
+  onChannel: (ch: DeliveryChannel) => void;
+}) {
+  const { client, status, entitlements } = useAccount();
+  const toast = useToast();
+  const st = usePublicStatus();
+  const id = useId();
+  const [choice, setChoice] = useState<ReminderChannelChoice>(consent?.channel ?? 'in_app');
+  const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const signedIn = status === 'signed_in';
+  const smtp = st.state === 'ok' ? st.value.integrations.smtp : 'unknown';
+  const plus = serverAllows(entitlements, 'reminder_email') || server?.emailDelivery === 'active';
+  const emailBlocker = !signedIn
+    ? 'Sign in first'
+    : smtp !== 'live'
+      ? `Email ${modeLabel(smtp).toLowerCase()}`
+      : server?.emailDelivery === 'email_unavailable'
+        ? 'Not available on this server yet'
+        : server?.emailDelivery === 'premium_required' || !plus
+          ? 'Plus required'
+          : null;
+
+  const turnOn = async () => {
+    setBusy(true);
+    try {
+      if (choice === 'email') {
+        await client.recordConsent('reminders_email', true, REMINDERS_EMAIL_CONSENT_VERSION);
+        onChannel('email');
+      } else {
+        onChannel('in_app');
+      }
+      const c: ReminderConsent = {
+        channel: choice,
+        version: REMINDERS_EMAIL_CONSENT_VERSION,
+        at: new Date().toISOString(),
+      };
+      writeReminderConsent(c);
+      setConsent(c);
+      setAgree(false);
+      toast.show({ message: `Reminders on, ${CHANNEL_NAME[choice]}.`, tone: 'success' });
+    } catch (e) {
+      toast.show({ message: describeApiError(e), tone: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const turnOff = async () => {
+    if (consent?.channel === 'email' && signedIn)
+      await client
+        .recordConsent('reminders_email', false, REMINDERS_EMAIL_CONSENT_VERSION)
+        .catch(() => undefined);
+    onChannel('in_app');
+    writeReminderConsent(null);
+    setConsent(null);
+    toast.show({ message: 'Reminders turned off.' });
+  };
+
+  const options: {
+    value: ReminderChannelChoice | 'whatsapp';
+    label: string;
+    hint: string;
+    blocked: string | null;
+  }[] = [
+    { value: 'in_app', label: 'In the app', hint: 'Shown when you open Due.', blocked: null },
+    {
+      value: 'email',
+      label: 'Email',
+      hint: 'Sent by Due’s server. Subjects never include amounts.',
+      blocked: emailBlocker,
+    },
+    {
+      value: 'calendar',
+      label: 'Calendar file (.ics)',
+      hint: 'Add dates to your own calendar. Due sends nothing.',
+      blocked: null,
+    },
+    {
+      value: 'whatsapp',
+      label: 'WhatsApp',
+      hint: 'Needs an approved opt-in and message templates.',
+      blocked: 'Not available',
+    },
+  ];
+
+  return (
+    <Panel title="Reminder channel" id="rm-channel">
+      {consent ? (
+        <div className="stack-8" data-testid="reminders-on">
+          <p>
+            <Badge tone="calm">On</Badge> Reminders {CHANNEL_NAME[consent.channel]} since{' '}
+            {localDateTime(consent.at)}.
+          </p>
+          <button type="button" className="btn btn-secondary press" onClick={() => void turnOff()}>
+            Turn off reminders
+          </button>
+        </div>
+      ) : (
+        <form
+          className="stack-12"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void turnOn();
+          }}
+        >
+          <fieldset className="stack-8">
+            <legend className="h-small">How should Due remind you?</legend>
+            {options.map((o) => (
+              <label key={o.value} className="switch-row">
+                <input
+                  type="radio"
+                  name={`${id}-ch`}
+                  value={o.value}
+                  checked={choice === o.value}
+                  disabled={!!o.blocked}
+                  onChange={() => setChoice(o.value as ReminderChannelChoice)}
+                />
+                <span>
+                  <strong>{o.label}</strong> {o.blocked && <Badge tone="warm">{o.blocked}</Badge>}
+                  <span className="muted small"> {o.hint}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="switch-row">
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+            <span>
+              I agree to get reminders {CHANNEL_NAME[choice]}. I can turn them off any time.
+            </span>
+          </label>
+          <button
+            type="submit"
+            className="btn btn-primary press jelly"
+            disabled={!agree || busy || (choice === 'email' && !!emailBlocker)}
+          >
+            Turn on reminders
+          </button>
+        </form>
+      )}
+    </Panel>
   );
 }

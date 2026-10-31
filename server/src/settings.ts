@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Queryable } from './db.js';
+import { LEGAL_DEFAULTS, LEGAL_SCHEMAS } from './legal/index.js';
 
 export const SETTING_SCHEMAS = {
   frequency_defaults: z
@@ -44,6 +45,10 @@ export const SETTING_SCHEMAS = {
       legal_review_status: z.enum(['pending', 'reviewed']),
     })
     .strict(),
+  /** Tax wording shown next to prices (GET /api/public/plans), e.g. "Prices include 18% GST". */
+  'billing.tax_note': z.string().trim().max(300).nullable(),
+  'billing.prices_include_tax': z.boolean(),
+  ...LEGAL_SCHEMAS,
 } as const;
 
 export type SettingKey = keyof typeof SETTING_SCHEMAS;
@@ -64,6 +69,9 @@ export const DEFAULT_SETTINGS: Settings = {
       'Refund terms are pending legal review and have not been finalised. Contact support before purchasing if you need a refund commitment.',
     legal_review_status: 'pending',
   },
+  'billing.tax_note': null,
+  'billing.prices_include_tax': true,
+  ...LEGAL_DEFAULTS,
 };
 
 export const SETTING_KEYS = Object.keys(SETTING_SCHEMAS) as SettingKey[];

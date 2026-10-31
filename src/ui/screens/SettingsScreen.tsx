@@ -14,9 +14,10 @@ const LINKS: { href: string; icon: GlyphName; label: string }[] = [
   { href: '#/account', icon: 'user', label: 'Account, sync and devices' },
   { href: '#/plans', icon: 'shield', label: 'Plans and purchases' },
   { href: '#/reminders', icon: 'clock', label: 'Reminders' },
-  { href: '#/connections', icon: 'link', label: 'Connections' },
+  { href: '#/connections', icon: 'link', label: 'Connections and email identities' },
   { href: '#/import', icon: 'upload', label: 'Import' },
-  { href: '#/all', icon: 'grid', label: 'All items and categories' },
+  { href: '#/all', icon: 'grid', label: 'All items list' },
+  { href: '#/legal', icon: 'info', label: 'Legal: privacy, terms, deletion, grievance' },
 ];
 
 export function SettingsScreen() {
@@ -80,7 +81,9 @@ export function SettingsScreen() {
             checked={reduceMotion}
             onChange={(e) => setReduceMotion(e.target.checked)}
           />
-          <span>Reduce motion (also follows your device setting)</span>
+          <span>
+            Reduce motion: no press or spring animations (also follows your device setting)
+          </span>
         </label>
       </Panel>
 

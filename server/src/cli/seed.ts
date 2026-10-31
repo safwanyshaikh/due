@@ -11,7 +11,7 @@ if (!url) {
 const pool = createPool(url, 2);
 try {
   const stats = await seedAll(pool, {
-    registries: [resolve(SEED_DIR, 'registry.json'), resolve(SEED_DIR, 'registry-payments.json')],
+    registries: [resolve(SEED_DIR, 'registry.json'), resolve(SEED_DIR, 'registry-payments.json'), resolve(SEED_DIR, 'registry-families.json')],
     offers: resolve(SEED_DIR, 'offers.json'),
   });
   console.log(JSON.stringify(stats, null, 2));

@@ -14,6 +14,11 @@ import { UsersPage } from './pages/Users';
 import { AutomationPage } from './pages/Automation';
 import { SettingsPage } from './pages/Settings';
 import { PlansPage } from './pages/Plans';
+import { OfferDetailPage, OffersPage } from './pages/Offers';
+import { ReviewPage } from './pages/Review';
+import { ParsersPage } from './pages/Parsers';
+import { LegalPage } from './pages/Legal';
+import { IncidentPage, IntegrationsPage, PrivacyPage, QueuePage } from './pages/Operations';
 
 export function AuthProvider({ children, initialMe }: { children: ReactNode; initialMe?: Me | null }) {
   const [me, setMe] = useState<Me | null>(initialMe ?? null);
@@ -97,7 +102,23 @@ export function AppRoutes() {
             </RequireAuth>
           }
         />
+        <Route path="offers" element={<OffersPage />} />
+        <Route path="offers/:id" element={<OfferDetailPage />} />
+        <Route path="review" element={<ReviewPage />} />
+        <Route path="parsers" element={<ParsersPage />} />
+        <Route path="integrations" element={<IntegrationsPage />} />
+        <Route path="queue" element={<QueuePage />} />
+        <Route path="incident" element={<IncidentPage />} />
+        <Route
+          path="privacy"
+          element={
+            <RequireAuth perm="admin">
+              <PrivacyPage />
+            </RequireAuth>
+          }
+        />
         <Route path="plans" element={<PlansPage />} />
+        <Route path="legal" element={<LegalPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="account" element={<ChangePasswordPage />} />
         <Route path="*" element={<div className="empty">Page not found.</div>} />

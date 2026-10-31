@@ -1,0 +1,455 @@
+{
+  "generatedAt": "2026-10-31T00:00:00Z",
+  "method": "provider_family_registry",
+  "description": "Provider families for the offer intelligence engine. Candidate sources are official homepages or plan pages only; they carry no offers, prices or dates and stay unverified (status inaccessible, candidate=true) until the engine fetches them in production. Education fees have no provider list: institutions vary, so that family is assigned per company by admins.",
+  "candidateNote": "Candidate official URL added from the registry; not fetched yet. Unverified until the engine fetches it in production.",
+  "vendors": [
+    {
+      "name": "Reliance Jio",
+      "slug": "reliance-jio",
+      "kind": "vendor",
+      "providerFamily": "jio",
+      "sources": []
+    },
+    {
+      "name": "Bharti Airtel",
+      "slug": "bharti-airtel",
+      "kind": "vendor",
+      "providerFamily": "airtel",
+      "sources": []
+    },
+    {
+      "name": "Vodafone Idea (Vi)",
+      "slug": "vodafone-idea",
+      "kind": "vendor",
+      "providerFamily": "vi",
+      "sources": []
+    },
+    {
+      "name": "Amazon Prime (India)",
+      "slug": "amazon-india-prime",
+      "kind": "vendor",
+      "providerFamily": "amazon_prime_ott",
+      "sources": []
+    },
+    {
+      "name": "Google One / Gemini",
+      "slug": "google-one-gemini",
+      "kind": "vendor",
+      "providerFamily": "google_one_gemini",
+      "sources": [
+        {
+          "url": "https://one.google.com/about/plans",
+          "label": "Google One plans",
+          "sourceCategory": "pricing",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Google Pay (India)",
+      "slug": "google-pay-india",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "NPCI",
+      "slug": "npci",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "Paytm",
+      "slug": "paytm",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "BSNL",
+      "slug": "bsnl",
+      "kind": "vendor",
+      "providerFamily": "broadband_dth",
+      "sources": [
+        {
+          "url": "https://www.bsnl.co.in",
+          "label": "BSNL home",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "JioHotstar",
+      "slug": "jiohotstar",
+      "kind": "vendor",
+      "providerFamily": "amazon_prime_ott",
+      "sources": [
+        {
+          "url": "https://www.jiohotstar.com",
+          "label": "JioHotstar home",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Netflix (India)",
+      "slug": "netflix-india",
+      "kind": "vendor",
+      "providerFamily": "amazon_prime_ott",
+      "sources": [
+        {
+          "url": "https://www.netflix.com/in/",
+          "label": "Netflix India home",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Apple (India)",
+      "slug": "apple-india",
+      "kind": "vendor",
+      "providerFamily": "apple",
+      "sources": [
+        {
+          "url": "https://www.apple.com/in/apple-one/",
+          "label": "Apple One (India)",
+          "sourceCategory": "product_page",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "PhonePe",
+      "slug": "phonepe",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "Amazon Pay (India)",
+      "slug": "amazon-pay-india",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "MobiKwik",
+      "slug": "mobikwik",
+      "kind": "vendor",
+      "providerFamily": "upi_payments",
+      "sources": []
+    },
+    {
+      "name": "CRED",
+      "slug": "cred",
+      "kind": "vendor",
+      "providerFamily": "banks_cards",
+      "sources": []
+    },
+    {
+      "name": "HDFC Bank",
+      "slug": "hdfc-bank",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.hdfcbank.com",
+      "providerFamily": "banks_cards",
+      "sources": [
+        {
+          "url": "https://www.hdfcbank.com",
+          "label": "HDFC Bank official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "ICICI Bank",
+      "slug": "icici-bank",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.icicibank.com",
+      "providerFamily": "banks_cards",
+      "sources": [
+        {
+          "url": "https://www.icicibank.com",
+          "label": "ICICI Bank official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Axis Bank",
+      "slug": "axis-bank",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.axisbank.com",
+      "providerFamily": "banks_cards",
+      "sources": [
+        {
+          "url": "https://www.axisbank.com",
+          "label": "Axis Bank official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "SBI Card",
+      "slug": "sbi-card",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.sbicard.com",
+      "providerFamily": "banks_cards",
+      "sources": [
+        {
+          "url": "https://www.sbicard.com",
+          "label": "SBI Card official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Tata Play",
+      "slug": "tata-play",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.tataplay.com",
+      "providerFamily": "broadband_dth",
+      "sources": [
+        {
+          "url": "https://www.tataplay.com",
+          "label": "Tata Play official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Dish TV",
+      "slug": "dish-tv",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.dishtv.in",
+      "providerFamily": "broadband_dth",
+      "sources": [
+        {
+          "url": "https://www.dishtv.in",
+          "label": "Dish TV official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "ACT Fibernet",
+      "slug": "act-fibernet",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.actcorp.in",
+      "providerFamily": "broadband_dth",
+      "sources": [
+        {
+          "url": "https://www.actcorp.in",
+          "label": "ACT Fibernet official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "LIC of India",
+      "slug": "lic-india",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://licindia.in",
+      "providerFamily": "insurance",
+      "sources": [
+        {
+          "url": "https://licindia.in",
+          "label": "LIC of India official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Star Health Insurance",
+      "slug": "star-health",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.starhealth.in",
+      "providerFamily": "insurance",
+      "sources": [
+        {
+          "url": "https://www.starhealth.in",
+          "label": "Star Health Insurance official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "HDFC ERGO",
+      "slug": "hdfc-ergo",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.hdfcergo.com",
+      "providerFamily": "insurance",
+      "sources": [
+        {
+          "url": "https://www.hdfcergo.com",
+          "label": "HDFC ERGO official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Tata Power",
+      "slug": "tata-power",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.tatapower.com",
+      "providerFamily": "utilities",
+      "sources": [
+        {
+          "url": "https://www.tatapower.com",
+          "label": "Tata Power official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Adani Electricity Mumbai",
+      "slug": "adani-electricity",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.adanielectricity.com",
+      "providerFamily": "utilities",
+      "sources": [
+        {
+          "url": "https://www.adanielectricity.com",
+          "label": "Adani Electricity Mumbai official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "Spotify (India)",
+      "slug": "spotify-india",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.spotify.com/in-en/premium/",
+      "providerFamily": "generic_subscriptions",
+      "sources": [
+        {
+          "url": "https://www.spotify.com/in-en/premium/",
+          "label": "Spotify (India) official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    },
+    {
+      "name": "YouTube Premium",
+      "slug": "youtube-premium",
+      "kind": "vendor",
+      "country": "IN",
+      "officialWebsite": "https://www.youtube.com/premium",
+      "providerFamily": "generic_subscriptions",
+      "sources": [
+        {
+          "url": "https://www.youtube.com/premium",
+          "label": "YouTube Premium official site",
+          "sourceCategory": "official_site",
+          "isOfficial": true,
+          "extractionMethod": "html_text",
+          "priority": "secondary",
+          "frequencyMinutes": 10080,
+          "candidate": true
+        }
+      ]
+    }
+  ]
+}

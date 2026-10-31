@@ -197,7 +197,14 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
     logoutAll: () => request<{ ok: true; revoked: number }>('POST', '/api/account/logout-all', {}),
     requestAccountDeletion: () => request<DeleteRequest>('POST', '/api/account/delete-request', {}),
     deleteAccount: (confirmationToken: string) =>
-      request<{ ok: true; deleted: true }>('DELETE', '/api/account', { confirmationToken }),
+      // Asynchronous (202): poll createPlatformClient().deletionStatus({ requestId, token: statusToken }).
+      request<{
+        ok: true;
+        status: 'queued';
+        requestId: string;
+        statusToken: string;
+        statusUrl: string;
+      }>('DELETE', '/api/account', { confirmationToken }),
     exportAccount: () => request<Record<string, unknown>>('GET', '/api/account/export'),
 
     // ---- Backup / sync -------------------------------------------------------------------------

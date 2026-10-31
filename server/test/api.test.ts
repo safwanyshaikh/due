@@ -166,7 +166,7 @@ describe('dashboard', () => {
     expect(d.newRecords7d).toBe(1);
     expect(d.updatedRecords7d).toBe(1);
     expect(d.latestRuns.length).toBe(await n('SELECT least(count(*), 10) AS n FROM job_runs'));
-    expect(d.automation.jobs).toHaveLength(5);
+    expect(d.automation.jobs).toHaveLength(await n('SELECT count(*) AS n FROM jobs'));
   });
 });
 

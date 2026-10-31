@@ -1,4 +1,5 @@
 import type { Queryable } from './db.js';
+import { computeStatus, effectiveConfidence } from './monitor/status.js';
 
 const KIND_TO_CATEGORY: Record<string, string> = {
   plan_page: 'pricing',
@@ -32,6 +33,18 @@ interface OfferRow {
   observed_at: Date | null;
   last_confirmed_at: Date | null;
   updated_at: Date;
+  // Migration 008 (offer intelligence).
+  sku?: string | null;
+  geography?: string | null;
+  official_start_at?: string | null;
+  superseded_by?: string | null;
+  last_successful_check_at?: Date | null;
+  last_attempted_check_at?: Date | null;
+  last_check_error?: string | null;
+  freshness_window_hours?: number;
+  provider_family?: string | null;
+  status_reason?: string | null;
+  status_changed_at?: Date | null;
 }
 
 export interface CatalogSource {
@@ -42,8 +55,21 @@ export interface CatalogSource {
   status: string;
 }
 
-export function offerToApi(o: OfferRow): Record<string, unknown> {
+/**
+ * API shape of an offer. `status`/`computedStatus` are computed on read with the server-side rules (including
+ * the stale-data policy), so a stored status can never stay confidently active past its freshness window.
+ */
+export function offerToApi(o: OfferRow, now: Date = new Date()): Record<string, unknown> {
   const { sources: _s, ...details } = o.details ?? {};
+  const st = computeStatus(
+    {
+      ...o,
+      official_end_at: o.official_end_at,
+      last_successful_check_at: o.last_successful_check_at ?? null,
+      freshness_window_hours: o.freshness_window_hours ?? 168,
+    },
+    now,
+  );
   return {
     ...details,
     id: o.id,
@@ -58,8 +84,21 @@ export function offerToApi(o: OfferRow): Record<string, unknown> {
     officialEndAt: o.official_end_at,
     termsStatus: o.terms_status,
     pageStatus: o.page_status,
-    computedStatus: o.computed_status,
+    computedStatus: st.status,
+    status: st.status,
+    statusReason: st.reason,
+    storedStatus: o.computed_status,
     confidence: o.confidence,
+    effectiveConfidence: effectiveConfidence(o.confidence, st),
+    freshness: st.freshness,
+    sku: o.sku ?? null,
+    geography: o.geography ?? null,
+    officialStartAt: o.official_start_at ?? null,
+    providerFamily: o.provider_family ?? null,
+    supersededBy: o.superseded_by ?? null,
+    lastSuccessfulCheckAt: o.last_successful_check_at ?? null,
+    lastAttemptedCheckAt: o.last_attempted_check_at ?? null,
+    freshnessWindowHours: o.freshness_window_hours ?? 168,
     notes: o.notes,
     verificationStatus: o.verification_status,
     observedAt: o.observed_at,
@@ -73,8 +112,13 @@ export function offerToApi(o: OfferRow): Record<string, unknown> {
  * monitored source; otherwise status is 'not_monitored' with lastCheckedAt null.
  */
 export async function buildPublicCatalog(q: Queryable, now: Date) {
+  return { generatedAt: now.toISOString(), offers: await catalogOffers(q, now) };
+}
+
+/** Live offers with their sources' monitoring state (shared by the catalog and the match endpoint). */
+export async function catalogOffers(q: Queryable, now: Date): Promise<(Record<string, unknown> & { sources: CatalogSource[] })[]> {
   const offers = (
-    await q.query<OfferRow>(`SELECT * FROM offers WHERE verification_status <> 'rejected' ORDER BY provider, id`)
+    await q.query<OfferRow>(`SELECT * FROM offers WHERE verification_status <> 'rejected' AND superseded_by IS NULL ORDER BY provider, id`)
   ).rows;
   const urls = [...new Set(offers.flatMap((o) => o.source_urls))];
   const monitored = new Map<string, { label: string; source_category: string; last_checked_at: Date | null; status: string }>();
@@ -88,9 +132,7 @@ export async function buildPublicCatalog(q: Queryable, now: Date) {
     ).rows;
     for (const r of rows) monitored.set(r.url, r);
   }
-  return {
-    generatedAt: now.toISOString(),
-    offers: offers.map((o) => {
+  return offers.map((o) => {
       const labels = new Map((o.details?.sources ?? []).map((s) => [s.url, s]));
       const sources: CatalogSource[] = o.source_urls.map((url) => {
         const m = monitored.get(url);
@@ -105,7 +147,6 @@ export async function buildPublicCatalog(q: Queryable, now: Date) {
               status: 'not_monitored',
             };
       });
-      return { ...offerToApi(o), sources };
-    }),
-  };
+      return { ...offerToApi(o, now), sources };
+    });
 }

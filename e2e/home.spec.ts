@@ -1,48 +1,78 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addGuestObligation, BLOCKS } from './helpers';
+import { addGuestObligation, TILE_NAMES, TILE_ORDER } from './helpers';
+
+async function box(page: Page, sel: string) {
+  const b = await page.locator(sel).first().boundingBox();
+  expect(b, sel).not.toBeNull();
+  return b!;
+}
 
 test.describe('Home first viewport at 390×844', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('a guest adds one obligation and sees the six blocks in order with spec heights', async ({
+  test('summary card and the first row of tiles are fully visible, tiles in launch order', async ({
     page,
   }) => {
     await addGuestObligation(page);
     await page.reload();
-    const boxes: { name: string; x: number; y: number; width: number; height: number }[] = [];
-    for (const b of BLOCKS) {
-      const box = await page.locator(`[data-block="${b}"]`).boundingBox();
-      expect(box, b).not.toBeNull();
-      boxes.push({ name: b, ...box! });
-    }
-    for (let i = 1; i < boxes.length; i++)
-      expect(boxes[i].y, `${boxes[i].name} below ${boxes[i - 1].name}`).toBeGreaterThanOrEqual(
-        boxes[i - 1].y + boxes[i - 1].height - 1,
-      );
-    const h = Object.fromEntries(boxes.map((b) => [b.name, b.height]));
-    expect(Math.abs(h.topbar - 56)).toBeLessThanOrEqual(2);
-    expect(Math.abs(h.header - 56)).toBeLessThanOrEqual(2);
-    expect(h.hero).toBeGreaterThanOrEqual(176);
-    expect(Math.abs(h.strip - 72)).toBeLessThanOrEqual(2);
-    expect(h.timeline).toBeGreaterThanOrEqual(180);
-    expect(h.timeline).toBeLessThanOrEqual(220);
-    expect(Math.abs(h.actions - 64)).toBeLessThanOrEqual(2);
-    const last = boxes[boxes.length - 1];
-    expect(last.y + last.height, 'all six blocks fit the first viewport').toBeLessThanOrEqual(844);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const top = await box(page, '[data-block="topbar"]');
+    const header = await box(page, '[data-block="header"]');
+    const summary = await box(page, '[data-block="summary"]');
+    expect(top.height).toBeLessThanOrEqual(58);
+    expect(header.y).toBeGreaterThanOrEqual(top.y + top.height - 1);
+    expect(summary.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+    expect(summary.y + summary.height, 'summary card inside first viewport').toBeLessThanOrEqual(
+      844,
+    );
 
-    const hero = page.locator('[data-block="hero"]');
-    const geo = await hero.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { r: s.borderTopLeftRadius, p: s.paddingTop };
-    });
-    expect(geo).toEqual({ r: '24px', p: '20px' });
-    await expect(page.locator('.ctile')).toHaveCount(0);
-    await expect(hero).toContainText('Netflix');
-    await expect(hero).toContainText('₹649');
-    await expect(hero).toContainText('Date entered by you');
-    await expect(hero.getByRole('button', { name: /^Review/ })).toBeVisible();
-    await expect(hero.getByRole('button', { name: /^Snooze/ })).toBeVisible();
-    await expect(hero.getByRole('link', { name: /^Edit/ })).toBeVisible();
+    const keys = await page
+      .locator('[data-tile]')
+      .evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.tile));
+    expect(keys).toEqual([...TILE_ORDER]);
+    const names = await page.locator('[data-tile] .htile-name').allTextContents();
+    expect(names).toEqual([...TILE_NAMES]);
+
+    const first = await box(page, '[data-tile="subscription"]');
+    const second = await box(page, '[data-tile="emi"]');
+    expect(first.y).toBeGreaterThan(summary.y + summary.height);
+    expect(Math.abs(first.y - second.y), 'first row shares a line').toBeLessThanOrEqual(1);
+    for (const b of [first, second]) {
+      expect(b.y + b.height, 'first row of tiles fully visible').toBeLessThanOrEqual(844);
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width).toBeLessThanOrEqual(390);
+    }
+    // Mobile page padding 16–20px.
+    expect(summary.x).toBeGreaterThanOrEqual(16);
+    expect(summary.x).toBeLessThanOrEqual(20);
+
+    const card = page.locator('[data-block="summary"]');
+    await expect(card).toContainText('Netflix');
+    await expect(card).toContainText('₹649');
+    await expect(card).toContainText('Date entered by you');
+    await expect(card.getByRole('button', { name: /^Review/ })).toBeVisible();
+    await expect(card.getByRole('button', { name: /^Snooze/ })).toBeVisible();
+    await expect(card.getByRole('link', { name: /^Edit/ })).toBeVisible();
+    await page.screenshot({ path: 'e2e/__screenshots__/home-first-viewport-390.png' });
+  });
+
+  test('empty Home still starts the tiles inside the first viewport, with first-use choices', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    const first = await box(page, '[data-tile="subscription"]');
+    expect(first.y + first.height).toBeLessThanOrEqual(844);
+    await expect(page.locator('[data-choice]')).toHaveCount(5);
+    await expect(page.locator('[data-tile="emi"]')).toContainText('Add an EMI');
+  });
+
+  test('a tile opens its category view', async ({ page }) => {
+    await addGuestObligation(page);
+    await page.locator('[data-tile="subscription"]').click();
+    await expect(page).toHaveURL(/#\/all\/subscription$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Subscriptions');
   });
 
   test('every visible interactive element is at least 48×48', async ({ page }) => {
@@ -71,18 +101,20 @@ test.describe('Home first viewport at 390×844', () => {
     expect(small).toEqual([]);
   });
 
-  test('keyboard Tab reaches Review, Snooze, Edit, Add due item, Import in order', async ({
+  test('keyboard Tab reaches Review, Snooze, Edit and then the tiles in order', async ({
     page,
   }) => {
     await addGuestObligation(page);
     await page.reload();
-    const names: string[] = [];
+    const seen: string[] = [];
     for (let i = 0; i < 40; i++) {
       await page.keyboard.press('Tab');
-      names.push(
+      seen.push(
         await page.evaluate(() => {
           const el = document.activeElement as HTMLElement | null;
-          return (el?.getAttribute('aria-label') ?? el?.textContent ?? '').trim();
+          return el?.dataset.tile
+            ? `tile:${el.dataset.tile}`
+            : (el?.getAttribute('aria-label') ?? el?.textContent ?? '').trim();
         }),
       );
     }
@@ -90,32 +122,47 @@ test.describe('Home first viewport at 390×844', () => {
       /^Review Netflix/,
       /^Snooze Netflix/,
       /^Edit Netflix/,
-      /Add due item/,
-      /^Import$/,
-    ].map((re) => names.findIndex((n) => re.test(n)));
-    for (const i of order) expect(i, names.join(' | ')).toBeGreaterThanOrEqual(0);
+      ...TILE_ORDER.map((t) => new RegExp(`^tile:${t}$`)),
+    ].map((re) => seen.findIndex((n) => re.test(n)));
+    for (const i of order) expect(i, seen.join(' | ')).toBeGreaterThanOrEqual(0);
     for (let i = 1; i < order.length; i++) expect(order[i]).toBeGreaterThan(order[i - 1]);
   });
 });
 
-test.describe('reduced motion', () => {
+test.describe('jelly interaction and reduced motion', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  async function pressedTransform(page: Page) {
-    const btn = page.locator('[data-block="hero"]').getByRole('button', { name: /^Review/ });
-    const box = (await btn.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  async function pressedTransform(page: Page, sel: string) {
+    const el = page.locator(sel).first();
+    const b = (await el.boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
     await page.mouse.down();
     await page.waitForTimeout(150);
-    const t = await btn.evaluate((el) => getComputedStyle(el).transform);
+    const t = await el.evaluate((e) => getComputedStyle(e).transform);
     await page.mouse.up();
+    // A completed press may navigate or open a sheet; let that settle before the next step.
+    await page.waitForTimeout(300);
     return t;
   }
+  const scaleOf = (t: string) => Number(/matrix\(([^,]+)/.exec(t)?.[1] ?? '1');
 
-  test('press scales to 0.985 normally', async ({ page }) => {
+  test('tiles and primary buttons scale to 0.97–0.985 while pressed', async ({ page }) => {
     await addGuestObligation(page);
     await page.reload();
-    expect(await pressedTransform(page)).toContain('0.985');
+    const ms = await page
+      .locator('[data-tile="emi"]')
+      .evaluate((e) => getComputedStyle(e).transitionDuration.split(',')[0].trim());
+    const release = parseFloat(ms) * (ms.endsWith('ms') ? 1 : 1000);
+    expect(release).toBeGreaterThanOrEqual(180);
+    expect(release).toBeLessThanOrEqual(260);
+    // The summary button first (it opens a sheet), then the tile (it navigates).
+    for (const sel of ['[data-block="summary"] button.btn-primary', '[data-tile="emi"]']) {
+      await page.keyboard.press('Escape');
+      await expect(page.locator('[role="dialog"]')).toHaveCount(0);
+      const s = scaleOf(await pressedTransform(page, sel));
+      expect(s, sel).toBeGreaterThanOrEqual(0.97);
+      expect(s, sel).toBeLessThanOrEqual(0.985);
+    }
   });
 
   test('prefers-reduced-motion removes the transform', async ({ page }) => {
@@ -123,6 +170,54 @@ test.describe('reduced motion', () => {
     await addGuestObligation(page);
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/reduce-motion/);
-    expect(await pressedTransform(page)).toBe('none');
+    expect(await pressedTransform(page, '[data-block="summary"] button.btn-primary')).toBe('none');
+    await page.keyboard.press('Escape');
+    await page.goto('/#/');
+    expect(await pressedTransform(page, '[data-tile="emi"]')).toBe('none');
+  });
+
+  test('the in-app Reduce motion setting removes the transform and persists', async ({ page }) => {
+    await addGuestObligation(page);
+    await page.goto('/#/settings');
+    await page.getByLabel(/Reduce motion/).check();
+    await page.goto('/#/');
+    await page.reload();
+    await expect(page.locator('html')).toHaveClass(/reduce-motion/);
+    expect(await pressedTransform(page, '[data-tile="emi"]')).toBe('none');
+    // Without the setting (and without the media query), the same press does scale.
+    await page.evaluate(() => localStorage.removeItem('due:reduce-motion'));
+    await page.goto('/#/');
+    await page.reload();
+    await expect(page.locator('html')).not.toHaveClass(/reduce-motion/);
+  });
+});
+
+test.describe('document intake', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('a PNG bill is read on-device with self-hosted OCR assets and redacted', async ({
+    page,
+  }) => {
+    const foreign: string[] = [];
+    page.on('request', (r) => {
+      const u = new URL(r.url());
+      if (!['localhost', '127.0.0.1'].includes(u.hostname) && u.protocol.startsWith('http'))
+        foreign.push(r.url());
+    });
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/#/upload');
+    await expect(page.getByTestId('upload-remaining')).toContainText('5 of 5');
+    await page
+      .getByLabel('Choose a PDF, JPG, PNG or TXT file')
+      .setInputFiles('e2e/fixtures/bill-photo.png');
+    await expect(page.getByText(/with on-device text recognition/)).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByText(/Masked before reading:.*pan/i)).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('ABCDE1234F');
+    expect(foreign).toEqual([]);
+    await page.reload();
+    await expect(page.getByTestId('upload-remaining')).toContainText('4 of 5');
   });
 });

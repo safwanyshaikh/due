@@ -100,6 +100,8 @@ export interface IngestInput {
   subject?: string | null;
   envelopeSenderDomain?: string | null;
   messageId?: string | null;
+  /** Pre-computed Message-ID hash (inbound.parse stores only the hash). */
+  messageIdHash?: string | null;
   manualFields?: ExtractedFields;
 }
 
@@ -116,6 +118,10 @@ export interface EventRow {
   raw_text: string | null;
   raw_retention_until: Date | null;
   parser_version: string;
+  /** Gmail identity that produced the event (migration 007); null for other intake types. */
+  identity_id?: string | null;
+  /** Source metadata (no content): e.g. Gmail message id, from domain, subject hash, class. */
+  source_meta?: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -124,10 +130,14 @@ export interface EventRow {
  * Stores one private intake candidate. Dedupes per owner by Message-ID and normalised fingerprint
  * (deleted events are ignored for dedupe). Raw text is kept only encrypted, and only when a key exists.
  */
+export function messageIdHashOf(messageId: string | null | undefined): string | null {
+  return messageId ? sha256(messageId.trim().replace(/^<|>$/g, '').toLowerCase()) : null;
+}
+
 export async function ingest(q: Queryable, input: IngestInput, key: Buffer | null, now: Date): Promise<{ duplicate: boolean; event: EventRow }> {
   const templates = await activeTemplates(q);
   const parsed = parseMessage({ text: input.text, subject: input.subject, envelopeSenderDomain: input.envelopeSenderDomain }, templates);
-  const messageIdHash = input.messageId ? sha256(input.messageId.trim().replace(/^<|>$/g, '').toLowerCase()) : null;
+  const messageIdHash = input.messageIdHash ?? (input.messageId ? sha256(input.messageId.trim().replace(/^<|>$/g, '').toLowerCase()) : null);
   await q.query('SELECT pg_advisory_xact_lock(724190010, hashtext($1))', [`${input.owner.kind}:${input.owner.id}`]);
   const dup = await one<EventRow>(
     q,
@@ -191,6 +201,8 @@ export function eventView(e: EventRow, key: Buffer | null, includeRaw = false) {
     rawAvailable: e.raw_text !== null,
     rawRetentionUntil: e.raw_retention_until,
     parserVersion: e.parser_version,
+    identityId: e.identity_id ?? null,
+    sourceMeta: e.source_meta ?? {},
     createdAt: e.created_at,
     updatedAt: e.updated_at,
     ...(includeRaw ? { rawText } : {}),

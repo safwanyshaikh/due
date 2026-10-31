@@ -1,6 +1,7 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import type { Mailer } from '../src/alerts.js';
-import { buildApp } from '../src/app.js';
+import { buildApp, workerDepsOf } from '../src/app.js';
+import { drainQueue, type WorkerDeps } from '../src/queue/index.js';
 import { hashPassword } from '../src/auth/password.js';
 import type { Role } from '../src/auth/roles.js';
 import { loadConfig, type AppConfig } from '../src/config.js';
@@ -199,4 +200,9 @@ export async function grantPlan(pool: Pool, accountEmail: string, plan: 'plus' |
      ON CONFLICT (account_id) DO UPDATE SET plan = EXCLUDED.plan, status = 'active', current_period_end = EXCLUDED.current_period_end`,
     [accountEmail, plan, periodEnd],
   );
+}
+
+/** Runs every due queue job in-process with the app's deps (the test clock, mailer and config). */
+export async function drain(app: FastifyInstance, overrides: Partial<WorkerDeps> = {}) {
+  return drainQueue({ ...workerDepsOf(app), log: silentLog, ...overrides });
 }

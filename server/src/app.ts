@@ -21,11 +21,25 @@ import { adminRoutes } from './routes/admin/index.js';
 import { billingRoutes } from './routes/billing.js';
 import { householdRoutes } from './routes/household.js';
 import { inboundRoutes } from './routes/inbound.js';
+import { gmailRoutes } from './routes/gmail.js';
+import { identitiesRoutes } from './routes/identities.js';
 import { intakeRoutes } from './routes/intake.js';
 import { INTAKE_COOKIE, resolveTempSession } from './intake/service.js';
 import { telemetryRoutes } from './routes/telemetry.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
+import { deletionRoutes } from './consumer/deletion.js';
+import { notificationRoutes } from './consumer/notifications.js';
+import { uploadRoutes } from './consumer/uploads.js';
+import { healthRoutes } from './health/index.js';
+import { legalRoutes } from './legal/index.js';
+import { enterCorrelation, requestIdFrom } from './observability/context.js';
+import { configureErrorReporter, errorReporter } from './observability/errorReporter.js';
+import { metrics } from './observability/metrics.js';
+import { LOG_REDACT_PATHS } from './observability/redact.js';
+import { registerPlatformHandlers } from './queue/handlers.js';
+import { registerOfferHandlers } from './monitor/handlers.js';
+import type { WorkerDeps } from './queue/index.js';
 
 export interface BuildAppOptions {
   pool: Pool;
@@ -40,9 +54,10 @@ export interface BuildAppOptions {
 
 /**
  * Query parameters that carry bearer secrets: magic-link tokens (`/api/account/verify?token=` and the app's
- * confirmation screen `/?account=confirm&token=`) and household-invite tokens (`?household_invite=`).
+ * confirmation screen `/?account=confirm&token=`), household-invite tokens (`?household_invite=`), and the Google
+ * OAuth authorization code and state on `/api/account/gmail/callback?code=&state=`.
  */
-const SECRET_QUERY = /([?&](?:token|household_invite)=)[^&#]*/gi;
+const SECRET_QUERY = /([?&](?:token|household_invite|code|state)=)[^&#]*/gi;
 
 /** Request URL as logged: secret query values are replaced so log readers cannot reuse them. */
 export function redactUrl(url: string): string {
@@ -53,7 +68,7 @@ export function redactUrl(url: string): string {
 export function loggerOptions(isProduction: boolean) {
   return {
     level: isProduction ? 'info' : 'debug',
-    redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+    redact: LOG_REDACT_PATHS,
     serializers: {
       req: (req: { method: string; url: string; host?: string; ip?: string }) => ({
         method: req.method,
@@ -73,6 +88,22 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     bodyLimit: 256 * 1024,
     trustProxy: config.trustProxy,
     routerOptions: { ignoreTrailingSlash: true },
+    // Correlation id: a caller's x-request-id is reused only when it is a short opaque token.
+    genReqId: (req) => requestIdFrom(req.headers['x-request-id']),
+    requestIdLogLabel: 'requestId',
+  });
+  if (config.sentryDsn && !errorReporter().configured) configureErrorReporter(config.sentryDsn, config.env);
+  registerPlatformHandlers();
+  registerOfferHandlers();
+
+  app.addHook('onRequest', async (req, reply) => {
+    enterCorrelation(req.id);
+    reply.header('x-request-id', req.id);
+  });
+  app.addHook('onResponse', async (req, reply) => {
+    const route = req.routeOptions?.url ?? 'unmatched';
+    metrics.inc('http.requests', { status: `${Math.floor(reply.statusCode / 100)}xx` });
+    metrics.timing('http.request_ms', reply.elapsedTime, { route: route.startsWith('/api/') || route.startsWith('/health') ? route : 'static' });
   });
 
   const runtime = opts.runtime ?? new MonitorRuntime(config.monitor);
@@ -159,12 +190,18 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     }
     const e = err as { statusCode?: number; code?: string; message: string; validation?: unknown };
     const status = e.statusCode && e.statusCode >= 400 && e.statusCode < 600 ? e.statusCode : 500;
-    if (status >= 500) req.log.error({ err }, 'unhandled error');
+    if (status >= 500) {
+      req.log.error({ err }, 'unhandled error');
+      metrics.inc('http.errors_5xx');
+      void errorReporter().capture(err, { correlation_id: req.id, route: req.routeOptions?.url ?? 'unmatched', method: req.method });
+    }
     const code =
       status === 429 ? 'rate_limited' : status === 413 ? 'payload_too_large' : status === 415 ? 'unsupported_media_type' : status >= 500 ? 'internal_error' : 'bad_request';
     return reply.code(status).send({ error: { code, message: status >= 500 ? 'Internal server error' : e.message } });
   });
 
+  await app.register(healthRoutes);
+  await app.register(legalRoutes);
   await app.register(authRoutes);
   await app.register(publicRoutes);
   await app.register(adminRoutes, { prefix: '/api/admin' });
@@ -174,6 +211,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(telemetryRoutes);
   await app.register(intakeRoutes);
   await app.register(inboundRoutes);
+  await app.register(notificationRoutes);
+  await app.register(deletionRoutes);
+  await app.register(uploadRoutes);
+  await app.register(identitiesRoutes);
+  await app.register(gmailRoutes);
 
   const adminDist = config.adminDist ?? resolve(SERVER_ROOT, '../admin/dist');
   if (existsSync(resolve(adminDist, 'index.html'))) {
@@ -212,4 +254,10 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   return app;
+}
+
+/** Dependencies for queue handlers, taken from a built app (tests and the in-process worker). */
+export function workerDepsOf(app: FastifyInstance): WorkerDeps {
+  const d = app.deps;
+  return { pool: d.pool, config: d.config, clock: d.clock, mailer: d.mailer, log: app.log };
 }

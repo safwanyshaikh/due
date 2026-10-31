@@ -16,7 +16,11 @@
     "dev:migrate": "npm run build && npm run migrate",
     "test": "vitest run",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "backup": "bash scripts/backup.sh",
+    "restore": "bash scripts/restore.sh",
+    "backup:verify": "bash scripts/backup-verify.sh",
+    "worker:once": "node dist/worker.js --once"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

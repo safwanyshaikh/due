@@ -2,7 +2,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { addMinutes } from '../clock.js';
 import { consumerAudit, currentAccount, entitlementOf, requireAccount, requireFeature } from '../consumer/context.js';
-import { consentWithdrawn } from '../consumer/consents.js';
+import { consentWithdrawn, hasConsent } from '../consumer/consents.js';
+import { requestDeletion, RETENTION_EXCEPTIONS } from '../consumer/deletion.js';
 import { computeEntitlement } from '../consumer/entitlements.js';
 import { ReminderPlan, replaceSchedule } from '../consumer/reminders.js';
 import {
@@ -127,10 +128,15 @@ function deleteToken(secret: string, accountId: string, sessionHash: string, exp
   return `${exp}.${hmacSha256(secret, `account-delete:${accountId}:${sessionHash}:${exp}`)}`;
 }
 
-export async function reminderDeliveryState(app: FastifyInstance, req: FastifyRequest): Promise<'active' | 'premium_required' | 'email_unavailable'> {
+export async function reminderDeliveryState(
+  app: FastifyInstance,
+  req: FastifyRequest,
+): Promise<'active' | 'premium_required' | 'email_unavailable' | 'consent_required'> {
   const ent = await entitlementOf(req);
   if (!ent.features.includes('reminder_email')) return 'premium_required';
-  return app.deps.mailer ? 'active' : 'email_unavailable';
+  if (!app.deps.mailer) return 'email_unavailable';
+  // Reminders are only sent after explicit consent for the channel.
+  return (await hasConsent(app.deps.pool, currentAccount(req).id, 'reminders_email')) ? 'active' : 'consent_required';
 }
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
@@ -417,6 +423,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       confirmationToken: deleteToken(config.sessionSecret, a.id, req.accountSessionHash!, exp),
       expiresAt: new Date(exp).toISOString(),
       warning: 'Deleting your account permanently removes your synced data, devices, reminders and household membership. Data on this device is not affected.',
+      retentionExceptions: RETENTION_EXCEPTIONS,
     };
   });
 
@@ -433,19 +440,17 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     if (ent.channel === 'razorpay' && ent.status === 'active') {
       throw new AppError(409, 'active_subscription', 'Cancel your subscription first (it stays active until the period ends), then delete your account.');
     }
-    await withTransaction(pool, async (c) => {
-      await c.query('DELETE FROM households WHERE owner_account_id = $1', [a.id]);
-      // Forwarding aliases become tombstones (never re-issued); events, consents and matches cascade.
-      await c.query(`UPDATE intake_aliases SET status = 'rotated', updated_at = $2 WHERE account_id = $1`, [a.id, now]);
-      await c.query('DELETE FROM magic_links WHERE email = $1', [a.email]);
-      await c.query('DELETE FROM household_invites WHERE email = $1', [a.email]);
-      await c.query('DELETE FROM consumer_audit WHERE account_id = $1', [a.id]);
-      await c.query('DELETE FROM consumer_accounts WHERE id = $1', [a.id]);
-      // Tombstone without personal data so operators can see a deletion happened.
-      await consumerAudit(c, null, 'account.deleted', 'account', a.id, null, null, now);
-    });
+    // Asynchronous: the account and its sessions are disabled now; the account.delete job removes the data and
+    // records progress (GET /api/account/deletion-status?requestId=&token=).
+    const r = await withTransaction(pool, (c) => requestDeletion(c, config.sessionSecret, a.id, now, req.id));
     clearAccountCookie(app, reply);
-    return { ok: true, deleted: true };
+    return reply.code(202).send({
+      ok: true,
+      status: 'queued',
+      requestId: r.requestId,
+      statusToken: r.statusToken,
+      statusUrl: `/api/account/deletion-status?requestId=${r.requestId}&token=${r.statusToken}`,
+    });
   });
 }
 

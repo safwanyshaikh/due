@@ -9,6 +9,7 @@ import { useAccount } from '../account/AccountContext';
 import { describeApiError } from '../account/useIntake';
 import { useToast } from '../components/Toast';
 import { Badge, ConfirmButton, Notice, Panel } from '../components/ui';
+import { modeLabel, usePublicStatus } from '../lib/platform';
 
 export const PAYMENTS_UNAVAILABLE_COPY =
   'Payments aren’t available yet. Due stays free to use and nothing will be charged.';
@@ -54,10 +55,25 @@ export function featureLabel(key: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * What Plus includes at launch, each tied to the integration it needs. A feature whose integration is not
+ * live is shown as "not included yet" so it is never sold before it works.
+ */
+export const PLUS_FEATURES: { key: string; label: string; needs?: 'gmail' | 'inbound' | 'smtp' }[] =
+  [
+    { key: 'gmail', label: 'Gmail scanning (read-only)', needs: 'gmail' },
+    { key: 'forwarding', label: 'Email forwarding to your private Due address', needs: 'inbound' },
+    { key: 'documents', label: 'Unlimited document uploads (Free: 5 a month)' },
+    { key: 'reminders', label: 'Advanced reminders, including email', needs: 'smtp' },
+    { key: 'offers', label: 'Offer intelligence matches for your plans' },
+    { key: 'sync', label: 'Cross-device sync and backup' },
+  ];
+
 function fromApi(p: PublicPlansResponse): ShownPlan[] {
-  // The server already lists only active plans; never show an inactive one even if sent.
+  // The server already lists only active plans; never show an inactive one even if sent. Household is
+  // hidden until sharing works end to end.
   return p.plans
-    .filter((x) => x.active !== false)
+    .filter((x) => x.active !== false && x.id !== 'household')
     .map((x) => ({
       id: x.id,
       name: x.name,
@@ -71,7 +87,7 @@ function fromApi(p: PublicPlansResponse): ShownPlan[] {
 /** Fallback only when the API is unreachable: product constants, labelled indicative. */
 function fromConstants(): ShownPlan[] {
   return (Object.keys(PLANS) as PlanId[])
-    .filter((id) => PLANS[id].onSale)
+    .filter((id) => PLANS[id].onSale && id !== 'household')
     .map((id) => {
       const p = PLANS[id];
       const price = (c: 'monthly' | 'yearly') => {
@@ -95,6 +111,7 @@ export function PlansScreen() {
   const { client, status, entitlements, setEntitlements } = useAccount();
   const { today } = useApp();
   const toast = useToast();
+  const st = usePublicStatus();
   const [state, setState] = useState<PlansState>({ kind: 'loading' });
   const [choice, setChoice] = useState<{ plan: PlanId; cadence: BillingPeriod } | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
@@ -114,6 +131,13 @@ export function PlansScreen() {
         ? fromConstants()
         : [];
   const live = state.kind === 'live' ? state.plans : null;
+  const taxNote = (live as (PublicPlansResponse & { tax?: { note: string | null } }) | null)?.tax
+    ?.note;
+  const featureState = (needs?: 'gmail' | 'inbound' | 'smtp') => {
+    if (!needs) return null;
+    const m = st.state === 'ok' ? st.value.integrations[needs] : 'unknown';
+    return m === 'live' ? null : `Not included yet: ${modeLabel(m).toLowerCase()}`;
+  };
   const paymentsOn = !!live?.paymentsAvailable;
   const current = entitlements?.plan ?? 'free';
   const chosen = choice ? plans.find((p) => p.id === choice.plan) : null;
@@ -151,6 +175,17 @@ export function PlansScreen() {
         </Notice>
       )}
       {live && !paymentsOn && <Notice tone="warn">{PAYMENTS_UNAVAILABLE_COPY}</Notice>}
+      <p className="muted small" data-testid="tax-note">
+        All prices in Indian rupees (INR).{' '}
+        {taxNote ? taxNote : 'Any applicable tax is shown before you pay.'}
+      </p>
+      {status === 'signed_in' && current !== 'free' && entitlements?.periodEnd && (
+        <Notice tone="info" title={`Your plan: ${current === 'plus' ? 'Plus' : current}`}>
+          {entitlements.status === 'cancelled'
+            ? `Cancelled. Access continues until ${formatDate(entitlements.periodEnd.slice(0, 10))}; no further charges.`
+            : `Renews on ${formatDate(entitlements.periodEnd.slice(0, 10))}${entitlements.billingPeriod ? ` (${entitlements.billingPeriod})` : ''}. Manage or cancel below.`}
+        </Notice>
+      )}
 
       <ul className="plans">
         {plans.map((p) => (
@@ -172,11 +207,24 @@ export function PlansScreen() {
                     .filter(Boolean)
                     .join(' or ')}
             </p>
-            <ul className="feat-list">
-              {p.features.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
+            {p.id === 'plus' ? (
+              <ul className="feat-list" data-testid="plus-features">
+                {PLUS_FEATURES.map((f) => {
+                  const blocked = featureState(f.needs);
+                  return (
+                    <li key={f.key}>
+                      {f.label} {blocked && <Badge tone="warm">{blocked}</Badge>}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <ul className="feat-list">
+                {p.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            )}
             {p.id !== 'free' && (
               <div className="btn-row">
                 {p.monthlyInr !== null && (
@@ -311,7 +359,8 @@ export function PlansScreen() {
       )}
 
       {status === 'signed_in' && (
-        <Panel title="Already paid?" id="pl-restore">
+        <Panel title="Manage, cancel or restore" id="pl-restore">
+          {live?.cancellationPath && <p className="muted small">{live.cancellationPath}</p>}
           <div className="btn-row">
             <button
               type="button"

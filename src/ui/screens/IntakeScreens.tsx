@@ -1,4 +1,4 @@
-import { useId, useState, type ChangeEvent } from 'react';
+import { useEffect, useId, useState, type ChangeEvent } from 'react';
 import { importItemFromText, type ImportItem } from '../../lib/imports';
 import { exportStructuredRecord, organiseSharedSms, type UserEvent } from '../../lib/intake';
 import { redactSensitive, type Redaction } from '../../lib/sensitive';
@@ -10,7 +10,11 @@ import { ReviewCard } from '../components/ReviewCard';
 import { useImportActions } from '../components/importActions';
 import { Badge, Field, Notice } from '../components/ui';
 import { download } from '../common';
-import { ACCEPTED_TYPES, IMAGE_UNAVAILABLE, readDocumentText } from '../lib/documentText';
+import { ACCEPTED_TYPES, PHOTO_NOTE, readDocumentText } from '../lib/documentText';
+import { useAccount } from '../account/AccountContext';
+import { AccountApiError } from '../../lib/account/client';
+import { platform } from '../lib/platform';
+import { countGuestUpload, guestUploadsRemaining, remainingText } from '../lib/uploads';
 import { inr } from '../lib/format';
 import { nav } from '../lib/nav';
 
@@ -35,6 +39,7 @@ function useDraftBuilder() {
     kind: 'document' | 'receipt_text' | 'shared_sms',
     origin: string,
     file?: { name: string; type: string },
+    earlier: Redaction[] = [],
   ): Draft => {
     const red = redactSensitive(text);
     const { item, userEvent } = importItemFromText(current(), {
@@ -46,7 +51,7 @@ function useDraftBuilder() {
     return {
       item,
       userEvent,
-      redactions: mergeRedactions(red.redactions, item.redactions),
+      redactions: mergeRedactions(mergeRedactions(earlier, red.redactions), item.redactions),
       origin,
     };
   };
@@ -115,22 +120,79 @@ function DraftReview({
   );
 }
 
+export const UPLOAD_LIMIT_COPY =
+  'You’ve used this month’s 5 free document uploads. Plus has unlimited uploads, or paste the text or add it manually — those are always free.';
+
+/** Remaining uploads this month: server count when signed in, this device's count for guests. */
+function useUploadAllowance() {
+  const { status } = useAccount();
+  const signedIn = status === 'signed_in';
+  // Server value for signed-in accounts: number left, null for unlimited, undefined while unknown.
+  const [server, setServer] = useState<number | null | undefined>(undefined);
+  const [guestTick, setGuestTick] = useState(0);
+  useEffect(() => {
+    if (!signedIn) return;
+    let live = true;
+    platform()
+      .uploadCount()
+      .then((c) => live && setServer(c.unlimited ? null : (c.remaining ?? 0)))
+      .catch(() => live && setServer(undefined));
+    return () => {
+      live = false;
+    };
+  }, [signedIn]);
+  void guestTick;
+  const remaining = signedIn ? server : guestUploadsRemaining();
+  const setRemaining = (v: number | null | undefined) =>
+    signedIn ? setServer(v) : setGuestTick((n) => n + 1);
+
+  /** Counts one upload before processing. Returns false when the allowance is used up. */
+  const take = async (): Promise<boolean> => {
+    if (signedIn) {
+      try {
+        const c = await platform().countUpload();
+        setRemaining(c.unlimited ? null : (c.remaining ?? 0));
+        return true;
+      } catch (e) {
+        if (e instanceof AccountApiError && (e.status === 402 || e.isPremiumRequired)) {
+          setRemaining(0);
+          return false;
+        }
+        // Server unreachable: fall back to this device's allowance rather than blocking or ignoring it.
+      }
+    }
+    const ok = countGuestUpload();
+    setRemaining(guestUploadsRemaining());
+    return ok;
+  };
+  return { remaining, take };
+}
+
 export function UploadScreen() {
   const toast = useToast();
   const build = useDraftBuilder();
   const id = useId();
+  const allowance = useUploadAllowance();
   const [phase, setPhase] = useState<'choose' | 'reading' | 'review'>('choose');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [pasted, setPasted] = useState('');
+  const [progress, setProgress] = useState<number | null>(null);
+  const limitReached = allowance.remaining === 0;
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     setProblem(null);
+    if (!(await allowance.take())) {
+      setProblem(UPLOAD_LIMIT_COPY);
+      return;
+    }
     setPhase('reading');
-    const r = await readDocumentText(file);
+    setProgress(null);
+    const r = await readDocumentText(file, (p) => setProgress(p));
+    setProgress(null);
     if (!r.ok) {
       setProblem(r.message);
       setPhase('choose');
@@ -140,11 +202,12 @@ export function UploadScreen() {
       build(
         r.text,
         'document',
-        `${file.name}${r.pages ? ` (${r.pages} page${r.pages === 1 ? '' : 's'})` : ''}`,
+        `${file.name}${r.pages ? ` (${r.pages} page${r.pages === 1 ? '' : 's'})` : ''}${r.ocr ? ' with on-device text recognition' : ''}`,
         {
           name: file.name,
           type: file.type,
         },
+        r.redactions ?? [],
       ),
     );
     setPhase('review');
@@ -169,19 +232,42 @@ export function UploadScreen() {
           <section className="panel2 stack-16" aria-labelledby={`${id}-file`}>
             <h2 id={`${id}-file`}>Choose a file</h2>
             <p className="muted small">PDF, JPG, PNG or TXT, up to 15 MB.</p>
-            <label className="btn btn-primary press file-btn">
+            <p className="small" data-testid="upload-remaining">
+              {allowance.remaining === undefined ? (
+                'Checking your upload allowance…'
+              ) : (
+                <Badge tone={allowance.remaining === 0 ? 'warm' : 'plain'}>
+                  {remainingText(allowance.remaining)}
+                </Badge>
+              )}
+            </p>
+            <label
+              className={`btn btn-primary press jelly file-btn ${limitReached ? 'is-disabled' : ''}`}
+              aria-disabled={limitReached || phase === 'reading' ? true : undefined}
+            >
               <input
                 type="file"
                 accept={ACCEPTED_TYPES}
                 onChange={onFile}
                 className="sr-only"
                 aria-label="Choose a PDF, JPG, PNG or TXT file"
+                disabled={limitReached || phase === 'reading'}
               />
-              {phase === 'reading' ? 'Reading…' : 'Choose file'}
+              {phase === 'reading'
+                ? progress !== null
+                  ? `Reading… ${Math.round(progress * 100)}%`
+                  : 'Reading…'
+                : 'Choose file'}
             </label>
             <p className="muted small">
-              <Badge>Photos</Badge> {IMAGE_UNAVAILABLE}.
+              <Badge>Photos</Badge> {PHOTO_NOTE}.
             </p>
+            {limitReached && !problem && <Notice tone="warn">{UPLOAD_LIMIT_COPY}</Notice>}
+            {limitReached && (
+              <a className="btn btn-secondary press" href="#/plans">
+                See Plus
+              </a>
+            )}
             {problem && <Notice tone="warn">{problem}</Notice>}
           </section>
 

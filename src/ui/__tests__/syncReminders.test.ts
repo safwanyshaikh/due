@@ -15,8 +15,20 @@ describe('sync reminder upload', () => {
       { type: 'bill', provider: 'P'.repeat(250), amountPaise: 10000, rule: rules.monthly(due) },
       { now: new Date().toISOString() },
     );
-    const items = serverReminders(r.data);
+    const items = serverReminders(r.data, true);
     expect(items.length).toBeGreaterThan(0);
     for (const it of items) expect(it.title.length).toBeLessThanOrEqual(200);
+  });
+
+  it('sends nothing until email was chosen as the channel and consented to', () => {
+    const base = emptyData();
+    const data = { ...base, settings: { ...base.settings, deliveryChannel: 'email' as const } };
+    const due = addDays(todayInTz(), 5);
+    const r = createObligation(
+      data,
+      { type: 'bill', provider: 'Power', amountPaise: 10000, rule: rules.monthly(due) },
+      { now: new Date().toISOString() },
+    );
+    expect(serverReminders(r.data, false)).toEqual([]);
   });
 });

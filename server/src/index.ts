@@ -3,6 +3,8 @@ import { createMailer } from './alerts.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db.js';
 import { Scheduler } from './jobs/scheduler.js';
+import { QueueWorker } from './queue/index.js';
+import { workerDepsOf } from './app.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -14,6 +16,8 @@ async function main(): Promise<void> {
     if (n > 0) app.log.warn('ADMIN_SETUP_TOKEN is set but users exist: setup is disabled. Remove the variable.');
   }
   const scheduler = config.runScheduler ? new Scheduler(app.deps.monitor, config.schedulerTickMs) : null;
+  // Normally the separate due-worker service processes the queue; RUN_QUEUE_WORKER=true runs it here instead.
+  const queueWorker = config.runQueueWorker ? new QueueWorker(workerDepsOf(app)) : null;
 
   let shuttingDown = false;
   const shutdown = async (signal: string) => {
@@ -24,6 +28,7 @@ async function main(): Promise<void> {
     force.unref();
     try {
       await scheduler?.stop();
+      await queueWorker?.stop();
       await app.close();
       await pool.end();
       process.exit(0);
@@ -37,6 +42,7 @@ async function main(): Promise<void> {
 
   await app.listen({ port: config.port, host: config.host });
   scheduler?.start();
+  await queueWorker?.start();
 }
 
 main().catch((err) => {
