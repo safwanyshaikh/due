@@ -1,21 +1,32 @@
 /**
  * Reads text from a user-chosen file entirely in the browser. Nothing is uploaded.
- * PDFs use pdf.js with its worker served from Due's own origin (bundled by Vite).
+ * PDFs use pdf.js with its worker served from Due's own origin (bundled by Vite). JPG/PNG photos use
+ * on-device OCR (tesseract.js, assets self-hosted under /ocr/); the recognised text is redacted first.
  */
+import type { Redaction } from '../../lib/sensitive';
+import { recognizeImage, browserOcrAssets } from './ocr';
 
 export type DocumentRead =
-  | { ok: true; text: string; pages?: number }
+  | { ok: true; text: string; pages?: number; ocr?: boolean; redactions?: Redaction[] }
   | {
       ok: false;
-      reason: 'image_unsupported' | 'unsupported' | 'empty' | 'unreadable';
+      reason: 'ocr_failed' | 'unsupported' | 'empty' | 'unreadable';
       message: string;
     };
 
 export const ACCEPTED_TYPES =
   '.pdf,.jpg,.jpeg,.png,.txt,application/pdf,image/jpeg,image/png,text/plain';
 
-export const IMAGE_UNAVAILABLE =
-  'Text recognition for photos isn’t available yet — upload a PDF, paste the text, or add it manually';
+export const PHOTO_NOTE =
+  'Photos are read with text recognition on this device. Results can be imperfect, so check every field';
+
+function baseUrl(): string {
+  try {
+    return (import.meta.env?.BASE_URL as string | undefined) ?? '/';
+  } catch {
+    return '/';
+  }
+}
 
 export const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
@@ -63,12 +74,19 @@ async function readPdf(buf: ArrayBuffer): Promise<{ text: string; pages: number 
   };
 }
 
-export async function readDocumentText(file: File): Promise<DocumentRead> {
+export async function readDocumentText(
+  file: File,
+  onProgress?: (p: number) => void,
+): Promise<DocumentRead> {
   if (file.size > MAX_FILE_BYTES)
     return { ok: false, reason: 'unsupported', message: 'This file is larger than 15 MB.' };
   const kind = kindOf(file);
-  if (kind === 'image')
-    return { ok: false, reason: 'image_unsupported', message: IMAGE_UNAVAILABLE };
+  if (kind === 'image') {
+    const r = await recognizeImage(file, browserOcrAssets(baseUrl()), onProgress);
+    return r.ok
+      ? { ok: true, text: r.text, ocr: true, redactions: r.redactions }
+      : { ok: false, reason: r.reason === 'empty' ? 'empty' : 'ocr_failed', message: r.message };
+  }
   if (kind === 'other')
     return {
       ok: false,

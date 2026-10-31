@@ -23,7 +23,8 @@ import { Sheet } from '../components/Sheet';
 import { download } from '../common';
 import { localDateTime } from '../lib/format';
 import { serverAllows } from '../lib/entitlement';
-import { readPref } from '../lib/prefs';
+import { readJsonPref, readPref, writeJsonPref } from '../lib/prefs';
+import { platform, type DeletionStatus } from '../lib/platform';
 import { setTelemetryOptOut, telemetryOptedOut } from '../lib/telemetrySink';
 
 export const EMAIL_UNAVAILABLE_COPY =
@@ -116,6 +117,7 @@ export function AccountScreen() {
             You can keep using Due on this device. Sign-in will work once the server is reachable.
           </Notice>
         )}
+        <DeletionProgress />
         {readPref('household-invite') && (
           <Notice title="Household invite waiting">Sign in with the invited email to join.</Notice>
         )}
@@ -658,10 +660,19 @@ function DataPanel() {
               className="btn btn-danger press"
               disabled={typed !== 'DELETE'}
               onClick={() =>
-                client
+                platform()
                   .deleteAccount(req.confirmationToken)
-                  .then(() => {
-                    toast.show({ message: 'Your account was deleted.', tone: 'success' });
+                  .then((r) => {
+                    if (r?.requestId && r.statusToken)
+                      writeJsonPref(DELETION_KEY, {
+                        requestId: r.requestId,
+                        token: r.statusToken,
+                        at: new Date().toISOString(),
+                      });
+                    toast.show({
+                      message: 'Account deletion started. Progress is shown on this page.',
+                      tone: 'success',
+                    });
                     setReq(null);
                     void refresh();
                   })
@@ -675,6 +686,115 @@ function DataPanel() {
             </button>
           </div>
         </div>
+      )}
+    </Panel>
+  );
+}
+
+const DELETION_KEY = 'deletion-request';
+
+const STEP_LABEL: Record<string, string> = {
+  sessions: 'Sign-ins ended',
+  households: 'Household membership removed',
+  forwarding_aliases: 'Forwarding address removed',
+  inbound_messages: 'Forwarded emails deleted',
+  intake_events: 'Imported items deleted',
+  gmail_and_identities: 'Gmail access revoked and identities removed',
+  reminders_and_notifications: 'Reminders and notifications deleted',
+  sign_in_links_and_invites: 'Sign-in links and invites deleted',
+  audit_trail: 'Account audit trail removed',
+  account_record: 'Account record deleted',
+};
+
+/**
+ * Account deletion runs asynchronously on the server. This polls GET /api/account/deletion-status with the
+ * request id and token returned when deletion was requested (the session has already ended by then).
+ */
+export function DeletionProgress() {
+  const [req, setReq] = useState(() =>
+    readJsonPref<{ requestId: string; token: string; at: string } | null>(DELETION_KEY, null),
+  );
+  const [st, setSt] = useState<DeletionStatus | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!req) return;
+    let live = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const tick = () =>
+      platform()
+        .deletionStatus(req.requestId, req.token)
+        .then((r) => {
+          if (!live) return;
+          setSt(r);
+          setErr(null);
+          if (r.status !== 'completed' && r.status !== 'failed') timer = setTimeout(tick, 3000);
+        })
+        .catch((e) => {
+          if (!live) return;
+          setErr(describeApiError(e));
+          timer = setTimeout(tick, 10_000);
+        });
+    void tick();
+    return () => {
+      live = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [req]);
+  if (!req) return null;
+  const done = st?.status === 'completed';
+  return (
+    <Panel title="Account deletion" id="acc-deletion">
+      <p>
+        {done
+          ? 'Your account and its data have been deleted.'
+          : st?.status === 'failed'
+            ? 'Deletion hit a problem and will be retried by Due’s team. Contact support if this persists.'
+            : 'Deleting your account. You can close this page; deletion continues on the server.'}
+      </p>
+      <div
+        className="progress"
+        role="progressbar"
+        aria-label="Deletion progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={st?.progress ?? 0}
+      >
+        <span style={{ width: `${st?.progress ?? 0}%` }} />
+      </div>
+      {st?.steps?.length ? (
+        <ul className="plain-list small">
+          {st.steps.map((x) => (
+            <li key={x.step}>
+              {x.done ? '✓' : '…'} {STEP_LABEL[x.step] ?? x.step.replace(/_/g, ' ')}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {Array.isArray(st?.retentionExceptions) && st.retentionExceptions.length > 0 && (
+        <p className="muted small">
+          Kept where the law requires:{' '}
+          {(st.retentionExceptions as unknown[])
+            .map((x) => {
+              if (typeof x === 'string') return x;
+              const o = x as { record?: string; reason?: string };
+              return [o.record, o.reason].filter(Boolean).join(' — ');
+            })
+            .filter(Boolean)
+            .join('; ')}
+        </p>
+      )}
+      {err && <Notice tone="warn">{err}</Notice>}
+      {done && (
+        <button
+          type="button"
+          className="btn btn-secondary press"
+          onClick={() => {
+            writeJsonPref(DELETION_KEY, null);
+            setReq(null);
+          }}
+        >
+          Dismiss
+        </button>
       )}
     </Panel>
   );

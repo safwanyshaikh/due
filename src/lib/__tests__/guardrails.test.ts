@@ -21,6 +21,8 @@ const shipped = [
 ];
 // The privacy page and the input blocklist name the things the app refuses to store.
 const PRIVACY_COPY = /(content\/privacy|lib\/sensitive)\.ts$/;
+// The read-only Gmail connector (LAUNCH_SPEC) is the one sanctioned place that names Google OAuth.
+const GMAIL_WRAPPER = /lib\/account\/gmail\.ts$/;
 
 const forbidden: [string, RegExp][] = [
   [
@@ -42,6 +44,7 @@ describe('MVP guardrails', () => {
     it(`shipped code contains no ${name}`, () => {
       const hits = shipped
         .filter((f) => !PRIVACY_COPY.test(f))
+        .filter((f) => !(name === 'mailbox tokens' && GMAIL_WRAPPER.test(f)))
         .filter((f) => re.test(readFileSync(f, 'utf8')));
       expect(hits).toEqual([]);
     });
@@ -56,6 +59,7 @@ describe('MVP guardrails', () => {
     );
     expect(hits.map((f) => f.slice(root.length + 1)).sort()).toEqual([
       'src/lib/account/client.ts',
+      'src/lib/account/identities.ts',
       'src/lib/offers/api.ts',
     ]);
   });

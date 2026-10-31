@@ -4,7 +4,7 @@
   --s-2: 16px;
   --s-3: 24px;
   --s-4: 32px;
-  --gutter: 24px;
+  --gutter: 16px;
   --accent-strong: #0b6660;
   --risk-ink: #8a3333;
   --risk-bg: #f8e7e7;
@@ -42,7 +42,17 @@
 :root[data-theme='light'] {
   color-scheme: light;
 }
+@media (min-width: 390px) {
+  :root {
+    --gutter: 20px;
+  }
+}
 @media (min-width: 768px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+@media (min-width: 1200px) {
   :root {
     --gutter: 32px;
   }
@@ -1327,4 +1337,385 @@ h1.reassure-title {
   box-shadow:
     0 0 0 2px var(--accent),
     0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Launch Home: greeting, summary card, eight tiles (8px system) ---------- */
+.stack-12 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+.greet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--s-1);
+  margin-bottom: calc(-1 * var(--s-1));
+}
+h1.greet-hello {
+  font-size: 1.15rem;
+  line-height: 24px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.greet-date {
+  font-size: 0.85rem;
+  line-height: 20px;
+}
+.summary {
+  border-radius: var(--radius-panel);
+  padding: var(--s-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.summary-risk {
+  border-color: var(--risk-ink);
+}
+.summary-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-1);
+}
+.summary-month {
+  min-width: 0;
+}
+.summary-total {
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.summary-next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--s-1);
+  border-top: 1px solid var(--line);
+}
+.summary-next-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.summary-date {
+  font-size: 0.88rem;
+}
+.summary-actions {
+  display: flex;
+  gap: var(--s-1);
+}
+.summary-actions .btn {
+  flex: 1 1 0;
+  padding: 0 10px;
+}
+.summary-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.htiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .htiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s-2);
+  }
+}
+.htiles li {
+  display: flex;
+  min-width: 0;
+}
+.htile {
+  flex: 1;
+  min-width: 0;
+  min-height: 104px;
+  border-radius: var(--radius-panel);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  border: 2px solid transparent;
+  position: relative;
+}
+.htile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.htile-ic {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.htile-ic svg {
+  width: 20px;
+  height: 20px;
+}
+.htile-count {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.htile-name {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+.htile-value,
+.htile-sub {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.htile-empty .htile-sub {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.htile:hover {
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+}
+.htile[aria-current='page'],
+.htile.is-selected {
+  border-color: currentColor;
+}
+.path {
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.paths {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 560px) {
+  .paths {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.paths li,
+.path,
+.path-text {
+  min-width: 0;
+}
+.path-tag {
+  margin-left: auto;
+  flex: 0 1 auto;
+  max-width: 40%;
+  align-self: flex-start;
+}
+.path-tag .chip {
+  white-space: normal;
+  text-align: right;
+}
+.paths-compact {
+  gap: 12px;
+}
+.consent-copy {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+.kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-1);
+}
+.h-small {
+  font-size: 0.95rem;
+  margin-bottom: var(--s-1);
+}
+.scope-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding-left: 18px;
+}
+.scope-list code,
+.md code {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+.md {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.md ul,
+.md ol {
+  padding-left: 20px;
+}
+.sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.sub-table th,
+.sub-table td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.ident-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ident {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.ident-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-1);
+  flex-wrap: wrap;
+}
+.offer-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.offer-match {
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* ---------- Jelly interaction (tiles and primary buttons) ----------
+ * Press: scale 0.975 quickly; release: a gentle spring back over 240ms. The icon lifts slightly and the
+ * surface brightens. Disabled entirely by prefers-reduced-motion and Settings → Display → Reduce motion. */
+.jelly {
+  transition:
+    transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.jelly:active:not(:disabled),
+.jelly.is-pressed {
+  transform: scale(0.975);
+  transition-duration: 90ms;
+  transition-timing-function: ease-out;
+}
+.jelly:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+.jelly .jelly-ic,
+.jelly > .glyph {
+  transition: transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.jelly:hover .jelly-ic,
+.jelly:focus-visible .jelly-ic {
+  transform: translateY(-2px);
+}
+.jelly:active .jelly-ic {
+  transform: translateY(1px) scale(0.96);
+}
+.jelly:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.jelly[aria-pressed='true'],
+.jelly.is-selected {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+@keyframes jelly-success {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  60% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.jelly.is-success {
+  animation: jelly-success 900ms ease-out 2;
+  border-color: var(--accent);
+}
+.jelly.is-undo {
+  border-color: var(--amber-ink, #8a6a12);
+  border-style: dashed;
+}
+.reduce-motion .jelly,
+.reduce-motion .jelly:active,
+.reduce-motion .jelly.is-pressed,
+.reduce-motion .jelly .jelly-ic,
+.reduce-motion .jelly:hover .jelly-ic,
+.reduce-motion .jelly:active .jelly-ic {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+.reduce-motion .jelly.is-success {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .jelly,
+  .jelly:active,
+  .jelly.is-pressed,
+  .jelly .jelly-ic,
+  .jelly:hover .jelly-ic,
+  .jelly:active .jelly-ic {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -254,11 +254,20 @@ export interface IntakeAlias {
 
 export interface IntakeSessionResponse extends IntakeAlias {
   sessionExpiresAt: string;
+  /** Guest sessions never get a forwarding address: forwarding needs a signed-in Plus account. */
+  forwarding?: 'sign_in_required';
+  /** Intake types a guest session may submit (manual, shared_sms, document). */
+  allowedIntake?: string[];
 }
 
 export interface UserEvent {
   id: string;
-  intakeType: IntakeType;
+  /** 'gmail' marks candidates found by a Gmail scan (see ./gmail.ts); they are never created by the client. */
+  intakeType: IntakeType | 'gmail';
+  /** Email identity that produced the event (Gmail), when known. */
+  identityId?: string | null;
+  /** Source metadata only (e.g. gmailMessageId, fromDomain, subjectHash, messageClass); never message content. */
+  sourceMeta?: Record<string, unknown>;
   messageFingerprint: string | null;
   sourceDomain: string | null;
   extractedFields: IntakeFields;

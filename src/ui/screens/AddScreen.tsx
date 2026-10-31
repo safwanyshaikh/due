@@ -12,6 +12,7 @@ import { useApp } from '../store';
 import { useAccount } from '../account/AccountContext';
 import { RuleEditor, evaluateDraft } from '../components/RuleEditor';
 import { Field, Notice } from '../components/ui';
+import { OfferMatches } from '../components/OfferMatches';
 import { defaultDraft, type RuleDraft } from '../lib/ruleDraft';
 import { nav } from '../lib/nav';
 
@@ -219,8 +220,14 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
         </div>
       </details>
 
+      <OfferMatches
+        provider={provider}
+        type={type}
+        amountPaise={amount.trim() ? parseRupees(amount) : null}
+      />
+
       <div className="btn-row sticky-actions">
-        <button type="submit" className="btn btn-primary press">
+        <button type="submit" className="btn btn-primary press jelly">
           Save due item
         </button>
         <a className="btn btn-quiet press" href="#/">

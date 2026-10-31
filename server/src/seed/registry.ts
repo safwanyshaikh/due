@@ -4,6 +4,7 @@ import { writeAudit } from '../audit.js';
 import { withTransaction, type Pool, type PoolClient } from '../db.js';
 import { DEFAULT_SETTINGS, getSettings } from '../settings.js';
 import { canonicalJson, sha256, slugify } from '../util.js';
+import { freshnessHoursForCadence, PROVIDER_FAMILIES } from '../monitor/status.js';
 
 const SOURCE_CATEGORIES = ['official_site', 'product_page', 'pricing', 'terms', 'press', 'news', 'rss', 'help', 'api', 'document', 'social', 'secondary'] as const;
 
@@ -28,6 +29,8 @@ const sourceSchema = z
     priority: z.enum(['critical', 'regular', 'secondary']).catch('regular'),
     frequencyMinutes: z.number().int().min(15).optional(),
     evidence: evidenceSchema.nullable().optional(),
+    /** Candidate official URL that has never been fetched: imported unverified (inaccessible until fetched). */
+    candidate: z.boolean().optional(),
   })
   .passthrough();
 
@@ -42,6 +45,7 @@ const vendorSchema = z
     country: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
+    providerFamily: z.enum(PROVIDER_FAMILIES).optional(),
     sources: z.array(sourceSchema).default([]),
     offerPatterns: z.array(intelSchema).optional(),
     partners: z.array(z.union([intelSchema, z.string()])).optional(),
@@ -104,6 +108,7 @@ export function mergeRegistries(regs: Registry[]): MergedVendor[] {
       cur.country ??= v.country;
       cur.description ??= v.description;
       cur.category ??= v.category;
+      cur.providerFamily ??= v.providerFamily;
       const urls = new Set(cur.sources.map((s) => s.url));
       for (const s of v.sources) {
         if (!urls.has(s.url)) {
@@ -175,9 +180,9 @@ export async function importVendors(pool: Pool, vendors: MergedVendor[], stats: 
         ).rows[0]!.id;
       }
       const ins = await c.query<{ id: string }>(
-        `INSERT INTO companies (kind, name, slug, official_website, description, country, category_id, verification_status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,'unverified') ON CONFLICT (slug) DO NOTHING RETURNING id`,
-        [v.kind, v.name, slug, v.officialWebsite ?? null, v.description ?? null, v.country ?? null, categoryId],
+        `INSERT INTO companies (kind, name, slug, official_website, description, country, category_id, verification_status, provider_family)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,'unverified',$8) ON CONFLICT (slug) DO NOTHING RETURNING id`,
+        [v.kind, v.name, slug, v.officialWebsite ?? null, v.description ?? null, v.country ?? null, categoryId, v.providerFamily ?? null],
       );
       let companyId: string;
       if (ins.rows[0]) {
@@ -187,18 +192,23 @@ export async function importVendors(pool: Pool, vendors: MergedVendor[], stats: 
       } else {
         companyId = (await c.query<{ id: string }>('SELECT id FROM companies WHERE slug = $1', [slug])).rows[0]!.id;
         stats.companiesExisting++;
+        // Families are filled in, never overwritten (an admin may have changed it).
+        if (v.providerFamily) await c.query('UPDATE companies SET provider_family = $2 WHERE id = $1 AND provider_family IS NULL', [companyId, v.providerFamily]);
       }
       for (const s of v.sources) {
-        const st = evidenceState(s.evidence);
+        const st = s.candidate && !s.evidence
+          ? { status: 'inaccessible' as const, lastSuccessAt: null, lastError: 'Unverified candidate URL: not fetched yet. It stays unverified until the engine fetches it.' }
+          : evidenceState(s.evidence);
         const freq = s.frequencyMinutes ?? settings.frequency_defaults[s.priority];
         const r = await c.query<{ id: string }>(
           `INSERT INTO sources (company_id, url, label, source_category, is_official, extraction_method, css_selector,
-                                priority, frequency_minutes, enabled, status, last_success_at, last_checked_at, last_error, next_check_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true,$10,$11,$12,$13,now())
+                                priority, frequency_minutes, enabled, status, last_success_at, last_checked_at, last_error, next_check_at, candidate)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true,$10,$11,$12,$13,now(),$14)
            ON CONFLICT (company_id, url) DO NOTHING RETURNING id`,
           [companyId, s.url, s.label, s.sourceCategory, s.isOfficial, s.extractionMethod, s.cssSelector ?? null,
             s.priority, freq, st.status, st.lastSuccessAt,
-            s.evidence?.fetchedAt && !Number.isNaN(Date.parse(s.evidence.fetchedAt)) ? s.evidence.fetchedAt : null, st.lastError],
+            s.evidence?.fetchedAt && !Number.isNaN(Date.parse(s.evidence.fetchedAt)) ? s.evidence.fetchedAt : null, st.lastError,
+            Boolean(s.candidate && !s.evidence)],
         );
         if (!r.rows[0]) {
           stats.sourcesExisting++;
@@ -240,6 +250,30 @@ const offerSeedSchema = z.object({
   details: z.record(z.string(), z.unknown()),
 });
 
+const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+/** Provider family for a seeded offer (catalog provider ids, with the ecosystem split by product family). */
+export function familyForOffer(provider: string, productFamily: string): string | null {
+  switch (provider) {
+    case 'jio':
+      return 'jio';
+    case 'airtel':
+      return 'airtel';
+    case 'vi':
+      return 'vi';
+    case 'amazon':
+      return /pay/i.test(productFamily) ? 'upi_payments' : 'amazon_prime_ott';
+    case 'google':
+      return 'google_one_gemini';
+    case 'apple':
+      return 'apple';
+    case 'ecosystem':
+      return /rupay|card/i.test(productFamily) ? 'banks_cards' : 'upi_payments';
+    default:
+      return null;
+  }
+}
+
 /** Imports the research-snapshot offers (never overwrites an existing offer, so admin edits survive). */
 export async function importOffers(pool: Pool, json: unknown, stats: SeedStats): Promise<void> {
   const doc = z.object({ offers: z.array(offerSeedSchema) }).parse(json);
@@ -249,18 +283,27 @@ export async function importOffers(pool: Pool, json: unknown, stats: SeedStats):
       const r = await c.query(
         `INSERT INTO offers (id, provider, product_family, name, benefit_type, price_inr, billing_period, benefit_value,
                              source_ids, source_urls, official_end_at, terms_status, page_status, computed_status, confidence,
-                             notes, details, verification_status, observed_at, last_confirmed_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+                             notes, details, verification_status, observed_at, last_confirmed_at,
+                             sku, geography, official_start_at, freshness_window_hours, provider_family)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
          ON CONFLICT (id) DO NOTHING`,
         [o.id, o.provider, o.productFamily, o.name, o.benefitType, o.priceInr, o.billingPeriod, JSON.stringify(o.benefitValue),
           ids, o.sourceUrls, o.officialEndAt, o.termsStatus, o.pageStatus, o.computedStatus, o.confidence, o.notes,
-          JSON.stringify(o.details), o.verificationStatus, o.observedAt, o.lastConfirmedAt],
+          JSON.stringify(o.details), o.verificationStatus, o.observedAt, o.lastConfirmedAt,
+          str(o.details.skuOrPlanCode), str(o.details.geography),
+          typeof o.details.officialStartAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.details.officialStartAt) ? o.details.officialStartAt : null,
+          freshnessHoursForCadence(o.details.cadence), familyForOffer(o.provider, o.productFamily)],
       );
       if ((r.rowCount ?? 0) > 0) stats.offersCreated++;
       else {
         stats.offersExisting++;
         // Link sources that were imported after the offer.
         await c.query(`UPDATE offers SET source_ids = $2 WHERE id = $1 AND cardinality(source_ids) = 0 AND cardinality($2::uuid[]) > 0`, [o.id, ids]);
+        // Offers seeded before migration 008 get their provider family (never overwriting an admin's value).
+        await c.query('UPDATE offers SET provider_family = $2 WHERE id = $1 AND provider_family IS NULL AND $2::text IS NOT NULL', [
+          o.id,
+          familyForOffer(o.provider, o.productFamily),
+        ]);
       }
     }
   });

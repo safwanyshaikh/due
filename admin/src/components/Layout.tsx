@@ -1,18 +1,28 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '../lib/api';
 import { can, useAuth } from '../lib/auth';
 import { humanize } from '../lib/format';
+import { useApi } from '../lib/useApi';
+import { LegalBanner, type PublicLegalStatus } from '../pages/Legal';
 
 const NAV: { to: string; label: string; perm?: 'admin' }[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/companies', label: 'Companies & vendors' },
   { to: '/sources', label: 'Sources' },
   { to: '/records', label: 'Data' },
+  { to: '/offers', label: 'Offers' },
+  { to: '/review', label: 'Change review' },
+  { to: '/parsers', label: 'Parser versions' },
   { to: '/categories', label: 'Categories' },
   { to: '/automation', label: 'Automation' },
+  { to: '/queue', label: 'Queue & jobs' },
+  { to: '/integrations', label: 'Integration health' },
+  { to: '/incident', label: 'Incident status' },
+  { to: '/privacy', label: 'Privacy requests', perm: 'admin' },
   { to: '/users', label: 'Users & access', perm: 'admin' },
   { to: '/plans', label: 'Plans' },
+  { to: '/legal', label: 'Legal details' },
   { to: '/settings', label: 'Settings' },
 ];
 
@@ -20,6 +30,9 @@ export function Layout() {
   const { me, setMe } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  // Launch gate: "Legal details incomplete" until GET /api/public/legal reports complete.
+  const legal = useApi<PublicLegalStatus>('/public/legal', { raw: true });
+  const onLegalPage = useLocation().pathname === '/legal';
 
   async function logout() {
     try {
@@ -81,6 +94,7 @@ export function Layout() {
           </ul>
         </nav>
         <main id="main" tabIndex={-1}>
+          {onLegalPage ? null : <LegalBanner status={legal.data} />}
           <Outlet />
         </main>
       </div>

@@ -20,6 +20,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
+  // Large on-device OCR assets are fetched only when a photo is read; don't copy them into this cache.
+  if (url.pathname.startsWith('/ocr/')) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {

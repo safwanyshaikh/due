@@ -9,7 +9,15 @@ import { importItemFromServerEvent, serverRef } from '../lib/serverEvents';
 import { useAccount } from './AccountContext';
 
 export type AliasPhase =
-  'idle' | 'loading' | 'none' | 'ready' | 'not_live' | 'unreachable' | 'needs_session' | 'error';
+  | 'idle'
+  | 'loading'
+  | 'none'
+  | 'ready'
+  | 'not_live'
+  | 'unreachable'
+  | 'needs_session'
+  | 'needs_plus'
+  | 'error';
 
 export function describeApiError(e: unknown): string {
   if (e instanceof AccountApiError) {
@@ -43,13 +51,24 @@ export function useIntake() {
   const [eventsError, setEventsError] = useState<string | null>(null);
 
   const take = useCallback((a: IntakeAlias) => {
+    // A guest session answers without an address: forwarding needs a signed-in Plus account.
+    if ((a as { forwarding?: string }).forwarding === 'sign_in_required') {
+      setAlias(null);
+      setMessage(null);
+      setPhase('needs_session');
+      return;
+    }
     setAlias(a);
     setMessage(a.liveReason ?? null);
     setPhase(!a.live ? 'not_live' : a.alias ? 'ready' : 'none');
   }, []);
 
   const fail = useCallback((e: unknown) => {
-    if (e instanceof AccountApiError && (e.isUnavailable || e.status === 503)) {
+    if (e instanceof AccountApiError && (e.isPremiumRequired || e.status === 402)) {
+      // Forwarding is a Plus feature (server-side entitlement).
+      setPhase('needs_plus');
+      setMessage(null);
+    } else if (e instanceof AccountApiError && (e.isUnavailable || e.status === 503)) {
       setPhase('not_live');
       setMessage(e.message);
     } else if (e instanceof AccountApiError && (e.status === 401 || e.status === 403)) {
@@ -75,13 +94,14 @@ export function useIntake() {
 
   /** Creates an address after the user agreed to the shown copy (consent is recorded server-side). */
   const create = useCallback(async () => {
+    // Guests cannot get a forwarding address (the server refuses); they sign in first.
+    if (status !== 'signed_in') {
+      setPhase('needs_session');
+      return;
+    }
     setPhase('loading');
     try {
-      const a =
-        status === 'signed_in'
-          ? await client.createIntakeAlias(EMAIL_INTAKE_CONSENT_VERSION)
-          : await client.startIntakeSession(EMAIL_INTAKE_CONSENT_VERSION);
-      take(a);
+      take(await client.createIntakeAlias(EMAIL_INTAKE_CONSENT_VERSION));
     } catch (e) {
       fail(e);
     }

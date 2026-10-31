@@ -102,7 +102,23 @@ export function ForwardAddress({
         </button>
       </div>
     );
-  if (phase === 'none' || phase === 'needs_session')
+  if (phase === 'needs_session')
+    return (
+      <Notice tone="info" title="Sign in to use forwarding">
+        A forwarding address belongs to a signed-in account with Plus, so forwarded emails are never
+        held for an anonymous session. <a href="#/account">Sign in</a>, or meanwhile{' '}
+        <a href="#/upload">paste the email text</a> or <a href="#/add">add it manually</a> — those
+        work without an account.
+      </Notice>
+    );
+  if (phase === 'needs_plus')
+    return (
+      <Notice tone="info" title="Forwarding is part of Plus">
+        <a href="#/plans">See Plus</a>. Pasting the email text in <a href="#/upload">Upload</a> or{' '}
+        <a href="#/add">adding it manually</a> stays free.
+      </Notice>
+    );
+  if (phase === 'none')
     return (
       <div className="stack-16">
         <label className="switch-row">
@@ -117,10 +133,6 @@ export function ForwardAddress({
         >
           Get my forwarding address
         </button>
-        <p className="muted small">
-          Without an account, the address lasts for a temporary session. Sign in later to keep what
-          arrives.
-        </p>
       </div>
     );
   const address = alias?.address ?? null;

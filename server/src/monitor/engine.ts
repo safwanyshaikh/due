@@ -63,6 +63,7 @@ interface SourceRow {
   consecutive_failures: number;
   http_etag: string | null;
   http_last_modified: string | null;
+  request_timeout_ms: number | null;
   monitoring_enabled: boolean;
   company_status: string;
 }
@@ -249,7 +250,7 @@ export async function checkSource(ctx: MonitorContext, sourceId: string, opts: C
   try {
     const conditional =
       opts.mode === 'run' && prev ? { etag: src.http_etag, lastModified: src.http_last_modified } : {};
-    const out = await ctx.runtime.fetch(src.url, conditional);
+    const out = await ctx.runtime.fetch(src.url, conditional, { timeoutMs: src.request_timeout_ms });
     if (out.kind === 'robots') {
       result.robotsAllowed = false;
       result.outcome = 'skipped_robots';
@@ -380,7 +381,7 @@ export async function checkSource(ctx: MonitorContext, sourceId: string, opts: C
     }
     const next = addMinutes(now, src.frequency_minutes);
     await c.query(
-      `UPDATE sources SET status = 'active', consecutive_failures = 0, last_error = NULL, last_checked_at = $2,
+      `UPDATE sources SET status = 'active', consecutive_failures = 0, last_error = NULL, last_checked_at = $2, candidate = false,
               last_success_at = $2, next_check_at = $3,
               last_change_at = CASE WHEN $4 THEN $2 ELSE last_change_at END,
               http_etag = CASE WHEN $5::text IS NOT NULL OR $6::text IS NOT NULL THEN $5 ELSE http_etag END,

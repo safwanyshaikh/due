@@ -8,6 +8,7 @@ import { isPrivateAddress } from '../src/monitor/net.js';
 import { csvCell } from '../src/routes/admin/exportRoutes.js';
 import { lineDiff } from '../src/routes/admin/sources.js';
 import { createPool } from '../src/db.js';
+import { redactUrl } from '../src/app.js';
 import { makeApp, TEST_DB } from './helpers.js';
 
 describe('extraction', () => {
@@ -41,6 +42,12 @@ describe('helpers', () => {
     expect(csvCell('=HYPERLINK("x")')).toBe(`"'=HYPERLINK(""x"")"`);
     expect(csvCell(null)).toBe('');
   });
+  it('request logs never carry bearer secrets from query strings (magic links, invites, OAuth code/state)', () => {
+    expect(redactUrl('/api/account/gmail/callback?state=abc123&code=4/0AXyz&scope=x')).toBe('/api/account/gmail/callback?state=[redacted]&code=[redacted]&scope=x');
+    expect(redactUrl('/api/account/verify?token=secret')).toBe('/api/account/verify?token=[redacted]');
+    expect(redactUrl('/?household_invite=inv&x=1')).toBe('/?household_invite=[redacted]&x=1');
+    expect(redactUrl('/api/public/offers/match?provider=jio')).toBe('/api/public/offers/match?provider=jio');
+  });
   it('private address detection', () => {
     for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.0.1', '169.254.169.254', '::1', 'fd00::1', '::ffff:127.0.0.1']) expect(isPrivateAddress(ip)).toBe(true);
     for (const ip of ['8.8.8.8', '2606:4700::1111']) expect(isPrivateAddress(ip)).toBe(false);
@@ -73,6 +80,36 @@ describe('admin SPA serving', () => {
     expect(js.headers['content-type']).toMatch(/javascript/);
     expect((await app.inject({ method: 'GET', url: '/admin' })).body).toContain('<title>Admin</title>');
     expect((await app.inject({ method: 'GET', url: '/api/unknown' })).statusCode).toBe(404);
+    await app.close();
+    await pool.end();
+  });
+});
+
+describe('consumer app CSP', () => {
+  it('allows only WebAssembly compilation and same-origin workers for on-device OCR; admin and API stay strict', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'due-app-'));
+    writeFileSync(join(dir, 'index.html'), '<!doctype html><title>Due</title>');
+    mkdirSync(join(dir, 'ocr'));
+    writeFileSync(join(dir, 'ocr', 'worker.min.js'), 'self.onmessage = () => {}');
+    const adminDir = mkdtempSync(join(tmpdir(), 'due-admin-'));
+    writeFileSync(join(adminDir, 'index.html'), '<!doctype html><title>Admin</title>');
+    const pool = createPool(TEST_DB, 2);
+    const app = await makeApp(pool, { env: { APP_DIST: dir, ADMIN_DIST: adminDir } });
+    const directives = (h: unknown) => new Map(String(h).split(';').map((d) => { const [k, ...v] = d.trim().split(/\s+/); return [k, v.join(' ')]; }));
+    for (const url of ['/', '/ocr/worker.min.js', '/some/deep/link']) {
+      const r = await app.inject({ method: 'GET', url });
+      expect(r.statusCode, url).toBe(200);
+      const d = directives(r.headers['content-security-policy']);
+      expect(d.get('script-src')).toBe("'self' 'wasm-unsafe-eval'");
+      expect(d.get('worker-src')).toBe("'self'");
+      expect(d.get('default-src')).toBe("'self'");
+      expect(d.get('connect-src')).toBe("'self'");
+      expect(String(r.headers['content-security-policy'])).not.toMatch(/'unsafe-eval'|blob:|https?:/);
+    }
+    const admin = directives((await app.inject({ method: 'GET', url: '/admin/' })).headers['content-security-policy']);
+    expect(admin.get('script-src')).toBe("'self'");
+    const api = await app.inject({ method: 'GET', url: '/api/public/status' });
+    expect(api.headers['content-security-policy']).toBe("default-src 'none'; frame-ancestors 'none'");
     await app.close();
     await pool.end();
   });

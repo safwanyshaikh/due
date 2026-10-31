@@ -15,6 +15,8 @@ export interface CompanyInput {
   categoryId: string;
   description: string;
   monitoringEnabled: boolean;
+  /** Offer intelligence provider family ('' = none). */
+  providerFamily?: string;
 }
 
 export function companyPayload(c: CompanyInput) {
@@ -26,6 +28,7 @@ export function companyPayload(c: CompanyInput) {
     categoryId: c.categoryId || null,
     description: c.description.trim() || null,
     monitoringEnabled: c.monitoringEnabled,
+    ...(c.providerFamily !== undefined ? { providerFamily: c.providerFamily || null } : {}),
   };
 }
 

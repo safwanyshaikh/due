@@ -3,7 +3,12 @@ import { getSettings } from './settings.js';
 
 export interface Mailer {
   /** Resolves with the provider message id when the transport reports one. */
-  send(to: string[], subject: string, text: string): Promise<{ messageId?: string } | void>;
+  send(to: string[], subject: string, text: string, options?: MailOptions): Promise<{ messageId?: string } | void>;
+}
+
+export interface MailOptions {
+  /** Extra headers, e.g. List-Unsubscribe. */
+  headers?: Record<string, string>;
 }
 
 export interface AlertInput {
@@ -56,8 +61,9 @@ export async function createMailer(smtpUrl: string | null, from: string | null):
   const transport = nodemailer.createTransport(smtpUrl);
   const sender = from ?? 'Due monitor <no-reply@localhost>';
   return {
-    async send(to, subject, text) {
-      const info = await transport.sendMail({ from: sender, to: to.join(', '), subject, text });
+    async send(to, subject, text, options) {
+      // Resolves only after the SMTP server accepted the message (nodemailer rejects otherwise).
+      const info = await transport.sendMail({ from: sender, to: to.join(', '), subject, text, headers: options?.headers });
       return { messageId: typeof info.messageId === 'string' ? info.messageId : undefined };
     },
   };

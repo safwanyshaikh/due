@@ -17,6 +17,7 @@ import type {
 import { useApp } from '../store';
 import { useAccount } from '../account/AccountContext';
 import { RuleEditor, evaluateDraft } from '../components/RuleEditor';
+import { OfferMatches } from '../components/OfferMatches';
 import { Field, Notice, Panel } from '../components/ui';
 import { draftFromRule } from '../lib/ruleDraft';
 import { AMOUNT_CONFIDENCE_CHOICES } from './AddScreen';
@@ -299,7 +300,8 @@ function EditForms({ ob }: { ob: Commitment }) {
               </select>
             </Field>
           </div>
-          <button type="submit" className="btn btn-primary press">
+          <OfferMatches provider={provider} type={type} amountPaise={v.amountPaise} />
+          <button type="submit" className="btn btn-primary press jelly">
             Save details
           </button>
         </form>

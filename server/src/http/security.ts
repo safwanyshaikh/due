@@ -18,7 +18,21 @@ export const ADMIN_CSP = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+/**
+ * Consumer app policy: the admin policy plus exactly what on-device photo text recognition (tesseract.js, served from
+ * our own origin under /ocr/) needs: 'wasm-unsafe-eval' so its WebAssembly core can be compiled (this does not allow
+ * JavaScript eval), and a same-origin worker (the worker script is loaded by URL, not from a blob).
+ */
+export const APP_CSP = ADMIN_CSP.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'");
+
 const API_CSP = "default-src 'none'; frame-ancestors 'none'";
+
+/** Policy for a request path: strict API policy, the admin SPA policy, or the consumer app policy. */
+export function cspFor(path: string): string {
+  if (path === '/api' || path.startsWith('/api/')) return API_CSP;
+  if (path === '/admin' || path.startsWith('/admin/')) return ADMIN_CSP;
+  return APP_CSP;
+}
 
 function requestOrigin(req: FastifyRequest): string {
   return `${req.protocol}://${req.host}`;
@@ -68,7 +82,7 @@ export function registerSecurityHeaders(app: FastifyInstance, isProduction: bool
     if (isProduction) reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     const path = req.url.split('?')[0]!;
     // Admin SPA and the consumer app are both self-contained; API responses get the strict policy.
-    reply.header('Content-Security-Policy', path.startsWith('/api') ? API_CSP : ADMIN_CSP);
+    reply.header('Content-Security-Policy', cspFor(path));
     if (path.startsWith('/api/public')) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
     }

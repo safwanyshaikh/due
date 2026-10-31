@@ -6,14 +6,23 @@ test.use({ viewport: { width: 390, height: 844 } });
 
 const PAGES = [
   ['Home', '#/'],
-  ['Import', '#/import'],
+  ['Empty home', '#/'],
+  ['Connections', '#/connections'],
   ['Plans', '#/plans'],
+  ['Legal', '#/legal'],
+  ['Privacy notice', '#/legal/privacy'],
+  ['Reminders', '#/reminders'],
+  ['Upload', '#/upload'],
+  ['Import', '#/import'],
   ['Account', '#/account'],
 ] as const;
 
 for (const [name, hash] of PAGES) {
   test(`${name} has no serious or critical axe violations`, async ({ page }) => {
-    await addGuestObligation(page);
+    if (name === 'Empty home') {
+      await page.goto('/');
+      await page.evaluate(() => localStorage.clear());
+    } else await addGuestObligation(page);
     await page.goto(`/${hash}`);
     await page.reload();
     await page.waitForTimeout(400);

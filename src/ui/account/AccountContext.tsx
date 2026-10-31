@@ -31,6 +31,7 @@ import { readJsonPref, writeJsonPref } from '../lib/prefs';
 import { compactAudit } from '../../lib/audit';
 import { normaliseSyncPref, reconcileAction, type SyncPref } from '../../lib/account/sync';
 import { SYNC_BACKUP_CONSENT_VERSION } from '../../content/privacy';
+import { hasReminderConsent } from '../lib/reminderConsent';
 import { installTelemetry } from '../lib/telemetrySink';
 
 export type AccountStatus = 'checking' | 'signed_out' | 'signed_in' | 'unreachable';
@@ -103,8 +104,15 @@ function parseServerData(doc: SyncDocument<AppData>): AppData | null {
   return loadData({ getItem: () => raw });
 }
 
-/** Reminder items the server can deliver (email only; push is not available in this release). */
-export function serverReminders(data: AppData): ReminderPlanItem[] {
+/**
+ * Reminder items the server can deliver (email only; push is not available in this release). Nothing is
+ * sent until the person chose email as their reminder channel and agreed to it (see lib/reminderConsent).
+ */
+export function serverReminders(
+  data: AppData,
+  consented: boolean = hasReminderConsent('email'),
+): ReminderPlanItem[] {
+  if (!consented) return [];
   const plan = planReminders(data, new Date(), { available: { email: true } });
   return plan
     .filter((r) => r.channel === 'email' && !r.acknowledged)

@@ -1,8 +1,13 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { consentWithdrawn } from '../consumer/consents.js';
+import { computeEntitlement } from '../consumer/entitlements.js';
 import { withTransaction, one } from '../db.js';
 import { AppError } from '../http/errors.js';
-import { ALIAS_RE, ingest, MAX_EVENTS_PER_DAY, ownerWhere, type Owner } from '../intake/service.js';
+import { ALIAS_RE, MAX_EVENTS_PER_DAY, messageIdHashOf, ownerWhere, type Owner } from '../intake/service.js';
+import { metrics } from '../observability/metrics.js';
+import { enqueue } from '../queue/index.js';
+import { sealInbound } from '../queue/handlers.js';
 import { safeEqual } from '../util.js';
 
 export interface InboundMessage {
@@ -13,6 +18,9 @@ export interface InboundMessage {
   messageId: string | null;
   text: string;
 }
+
+/** Largest message text accepted for parsing (attachments are never stored). */
+export const MAX_INBOUND_TEXT_BYTES = 512 * 1024;
 
 /** Requests per IP and minute that may name an unknown alias before the webhook answers 429. */
 export const UNKNOWN_ALIAS_LIMIT_PER_MIN = 30;
@@ -113,8 +121,8 @@ export function parseMultipart(body: Buffer, contentType: string): Record<string
 /**
  * Provider-agnostic inbound e-mail webhook. Authenticated by HTTP Basic (password = INBOUND_WEBHOOK_SECRET,
  * Postmark), Mailgun's timestamp/token signature (signing key = secret) or X-Due-Signature (HMAC of raw body).
- * Routes only by the unique alias in the recipient address, dedupes by Message-ID and fingerprint, never follows
- * links and never replies.
+ * Routes only by the unique alias of a Plus account, stores a minimal sealed message, dedupes by Message-ID and
+ * enqueues inbound.parse (which also dedupes by fingerprint). Never follows links and never replies.
  */
 export async function inboundRoutes(app: FastifyInstance): Promise<void> {
   const { pool, clock, config } = app.deps;
@@ -154,7 +162,10 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
       throw new AppError(503, 'intake_unavailable', 'Inbound email is not configured on this server');
     }
     const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
-    if (!authenticated(req, config.inboundWebhookSecret, body)) throw new AppError(401, 'invalid_signature', 'Webhook authentication failed');
+    if (!authenticated(req, config.inboundWebhookSecret, body)) {
+      metrics.inc('inbound.rejected', { reason: 'invalid_signature' });
+      throw new AppError(401, 'invalid_signature', 'Webhook authentication failed');
+    }
     const ct = String(req.headers['content-type'] ?? '');
     const msg = ct.includes('application/json') ? fromPostmark(body) : fromMailgun(body as Record<string, string>);
     // Mailgun stops retrying on 406; Postmark on 403.
@@ -176,19 +187,27 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
       return reject('alias_rejected', 'Unknown recipient');
     };
     if (!local) return unknown();
-    const alias = await one<{ id: string; status: string; account_id: string | null; temp_session_id: string | null; expires_at: Date | null; claimed_at: Date | null }>(
+    const alias = await one<{ id: string; status: string; account_id: string | null }>(
       pool,
-      `SELECT a.id, a.status, a.account_id, a.temp_session_id, t.expires_at, t.claimed_at
-         FROM intake_aliases a LEFT JOIN intake_temp_sessions t ON t.id = a.temp_session_id WHERE a.alias = $1`,
+      `SELECT a.id, a.status, a.account_id FROM intake_aliases a WHERE a.alias = $1`,
       [local],
     );
     if (!alias) return unknown();
     if (alias.status !== 'active') return reject('alias_rejected', 'Unknown or paused recipient');
-    let owner: Owner;
-    if (alias.account_id) owner = { kind: 'account', id: alias.account_id };
-    else if (alias.temp_session_id && alias.expires_at && alias.expires_at > now && !alias.claimed_at) owner = { kind: 'temp', id: alias.temp_session_id };
-    else return reject('alias_rejected', 'Unknown or expired recipient');
-
+    // Forwarding belongs to signed-in Plus accounts; guest (temporary) aliases issued earlier no longer route.
+    if (!alias.account_id) return reject('alias_rejected', 'Unknown or expired recipient');
+    const accountId = alias.account_id;
+    const ent = await computeEntitlement(pool, accountId, now);
+    if (!ent.features.includes('email_import')) {
+      metrics.inc('inbound.rejected', { reason: 'premium_required' });
+      return reject('premium_required', 'Email forwarding needs a Plus plan');
+    }
+    if (await consentWithdrawn(pool, accountId, 'forwarding')) return reject('consent_withdrawn', 'Forwarding consent was withdrawn');
+    if (Buffer.byteLength(msg.text, 'utf8') > MAX_INBOUND_TEXT_BYTES) {
+      metrics.inc('inbound.rejected', { reason: 'too_large' });
+      return reject('message_too_large', 'Message text is too large');
+    }
+    const owner: Owner = { kind: 'account', id: accountId };
     const recent = (
       await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM user_events WHERE ${ownerWhere(owner, 1)} AND created_at > $2`, [
         owner.id,
@@ -197,22 +216,35 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
     ).rows[0]!.n;
     if (recent >= MAX_EVENTS_PER_DAY) return reject('quota_exceeded', 'Daily intake limit reached');
 
-    const r = await withTransaction(pool, (c) =>
-      ingest(
-        c,
-        {
-          owner,
-          aliasId: alias.id,
-          intakeType: 'forwarded_email',
-          text: msg.text,
-          subject: msg.subject,
-          envelopeSenderDomain: msg.from ? msg.from.slice(msg.from.indexOf('@') + 1) : null,
-          messageId: msg.messageId,
-        },
-        config.dataEncryptionKey,
+    // Store the minimal message (sealed) and parse it on the queue; the webhook never parses inline.
+    const out = await withTransaction(pool, async (c) => {
+      const ins = await c.query<{ id: string }>(
+        `INSERT INTO inbound_messages (alias_id, account_id, provider, message_id_hash, sender_domain, body, status, received_at)
+         VALUES ($1,$2,$3,$4,$5,$6,'received',$7)
+         ON CONFLICT (account_id, message_id_hash) WHERE message_id_hash IS NOT NULL DO NOTHING RETURNING id`,
+        [
+          alias.id,
+          accountId,
+          msg.provider,
+          messageIdHashOf(msg.messageId),
+          msg.from ? msg.from.slice(msg.from.indexOf('@') + 1) : null,
+          sealInbound(config.dataEncryptionKey, { subject: msg.subject, text: msg.text }),
+          now,
+        ],
+      );
+      const row = ins.rows[0];
+      if (!row) return { duplicate: true as const, inboundMessageId: null, jobId: null };
+      const job = await enqueue(c, {
+        type: 'inbound.parse',
+        payload: { inboundMessageId: row.id },
+        accountId,
+        idempotencyKey: `inbound.parse:${row.id}`,
+        correlationId: req.id,
         now,
-      ),
-    );
-    return reply.code(200).send({ ok: true, duplicate: r.duplicate, eventId: r.event.id, reviewStatus: r.event.review_status });
+      });
+      return { duplicate: false as const, inboundMessageId: row.id, jobId: job.id };
+    });
+    metrics.inc('inbound.received', { duplicate: String(out.duplicate) });
+    return reply.code(200).send({ ok: true, queued: !out.duplicate, ...out });
   });
 }

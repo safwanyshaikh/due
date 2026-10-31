@@ -177,3 +177,44 @@ What changed since the first production report:
 | Email forwarding | 🔑 need `INBOUND_EMAIL_DOMAIN`, `INBOUND_WEBHOOK_SECRET` and an inbound provider (Postmark or Mailgun) |
 | Raw email storage | 🔑 needs `DATA_ENCRYPTION_KEY` (without it, only structured fields are kept) |
 | Photo (JPG/PNG) text recognition, push notifications, household sharing UI | ✖ not built yet; the app says so |
+
+## Update: commercial launch build (31 Oct 2026)
+
+Built to `LAUNCH_SPEC.md`, with four build agents and two independent QA passes (16 more bugs fixed).
+
+- **Home:** compact header with greeting and IST date, one summary card, and the eight tiles in launch order inside the first viewport. Tiles and primary buttons have tactile press feedback, off under reduced motion (system setting or in-app toggle).
+- **Platform:** durable Postgres job queue with retries and dead-letters, run by a separate `due-worker` service. Health endpoints: `/health/live`, `/health/ready`, `/api/admin/health/integrations` and `/api/public/status`. Correlation IDs and redacted logs.
+- **Reminders:** a reminder is marked sent only after SMTP accepts it. Emails carry an unsubscribe link (a confirmation page plus RFC 8058 one-click) and a daily reconciliation job catches missed sends.
+- **Consent and deletion:** consent is versioned per purpose. Account deletion runs asynchronously and shows progress.
+- **Backups:** encrypted backup and restore scripts. The restore was proven locally: 57 tables, every row count matched. RPO 24h, RTO 1h (see `BACKUP.md`).
+- **CI:** lint, typecheck, tests (including a Postgres service), npm audit and gitleaks.
+- **Gmail:** read-only OAuth with state and PKCE, encrypted tokens with key rotation, revoke on disconnect, and deduplicated scanning into the review queue. Several email identities per account. Modes are shown honestly.
+- **Offer intelligence:** append-only observations, status rules including staleness, and a change review queue in admin. Includes a "possible included benefits" match endpoint. 14 more provider families seeded as unverified candidates.
+- **Admin:** offers, change review, parser versions, queue and dead-letters, integration health, incident banner, privacy requests, legal details, plans.
+- **Documents:** photos are read on the device (self-hosted tesseract). PDFs use pdf.js. Sensitive numbers are masked before reading. Free and guest users get 5 uploads a month, enforced on the server.
+- **Plans:** Gmail scanning and forwarding are Plus features. Prices in INR with a tax note. Features that aren't live are marked "Not included yet". Household stays off sale.
+- **Legal:** pages are rendered from admin-entered details. They show "Legal details are being finalised" until the details are complete, and placeholder contacts are rejected.
+
+**Tests at release:**
+
+| Suite | Result |
+| --- | --- |
+| App | 351 unit and 25 browser tests (including 320–1440 px layouts, 48px targets, axe, reduced motion, on-device OCR) |
+| Server | 167 tests on real Postgres |
+| Admin | 44 tests |
+| npm audit (high) | Clean in all three packages |
+| Render rehearsal | Clean build from render.yaml, migrations 001–008 on fresh and upgraded databases, web and worker running, health green, photo OCR through the real server's CSP |
+
+**Launch blockers that need the owner (external):**
+
+| Item | What's needed |
+| --- | --- |
+| Email | `SMTP_URL`, `SMTP_FROM`, `PUBLIC_BASE_URL` |
+| Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, plus plan IDs in Admin → Plans and the webhook URL set in Razorpay |
+| Forwarding | `INBOUND_EMAIL_DOMAIN`, `INBOUND_WEBHOOK_SECRET`, plus Postmark or Mailgun inbound with an MX record |
+| Gmail | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GMAIL_TOKEN_KEYS`, `GMAIL_OAUTH_MODE`, plus Google OAuth verification and a CASA assessment for the restricted scope (see `GOOGLE_VERIFICATION.md`) |
+| Encryption | `DATA_ENCRYPTION_KEY` |
+| Backups | `BACKUP_ENCRYPTION_KEY`, optional `BACKUP_S3_*`, and a restore test against a copy of production |
+| Error tracking | `SENTRY_DSN` (optional) |
+| Legal | Real company and grievance details entered in Admin → Legal details |
+| Live check | A live smoke test on Render. This session cannot reach the deployed site. |

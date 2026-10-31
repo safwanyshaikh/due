@@ -1,6 +1,8 @@
 import cors from '@fastify/cors';
 import type { FastifyInstance } from 'fastify';
 import { buildPublicCatalog } from '../catalog.js';
+import { parse } from '../http/errors.js';
+import { MatchQuery, matchOffers } from '../monitor/match.js';
 
 const CACHE_MS = 5 * 60 * 1000;
 
@@ -21,6 +23,13 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     }
     reply.header('Cache-Control', 'public, max-age=300');
     return cache.body;
+  });
+
+  // Cross-calculation: possible included benefits for a plan the user added (no personal data is sent or stored).
+  app.get('/api/public/offers/match', { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const q = parse(MatchQuery, req.query);
+    reply.header('Cache-Control', 'no-store');
+    return matchOffers(pool, q, clock());
   });
 
   app.get('/api/health', async (_req, reply) => {

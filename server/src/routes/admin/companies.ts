@@ -6,6 +6,7 @@ import { actorOf, currentUser, requireRole } from '../../http/context.js';
 import { conflict, notFound, parse } from '../../http/errors.js';
 import { camel, camelAll, normaliseKeys, slugify } from '../../util.js';
 import { buildSet, count, httpUrl, paging, uuidParam } from './helpers.js';
+import { PROVIDER_FAMILIES } from '../../monitor/status.js';
 
 const companyBody = z.object({
   kind: z.enum(['company', 'vendor']).default('company'),
@@ -21,6 +22,8 @@ const companyBody = z.object({
   country: z.string().trim().max(80).nullable().optional(),
   categoryId: z.string().uuid().nullable().optional(),
   monitoringEnabled: z.boolean().optional(),
+  /** Offer intelligence provider family (migration 008). */
+  providerFamily: z.enum(PROVIDER_FAMILIES).nullable().optional(),
 });
 
 const companyPatch = companyBody
@@ -49,12 +52,14 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
         kind: z.enum(['company', 'vendor']).optional(),
         status: z.enum(['active', 'archived']).optional(),
         q: z.string().trim().max(200).optional(),
+        providerFamily: z.enum(PROVIDER_FAMILIES).optional(),
       }),
-      req.query,
+      normaliseKeys(req.query),
     );
     const where = ['($1::text IS NULL OR c.kind = $1)', '($2::text IS NULL OR c.status = $2)',
-      `($3::text IS NULL OR c.name ILIKE '%' || $3 || '%' OR c.slug ILIKE '%' || $3 || '%' OR c.official_website ILIKE '%' || $3 || '%')`];
-    const params = [q.kind ?? null, q.status ?? null, q.q || null];
+      `($3::text IS NULL OR c.name ILIKE '%' || $3 || '%' OR c.slug ILIKE '%' || $3 || '%' OR c.official_website ILIKE '%' || $3 || '%')`,
+      '($4::text IS NULL OR c.provider_family = $4)'];
+    const params = [q.kind ?? null, q.status ?? null, q.q || null, q.providerFamily ?? null];
     const total = await count(pool, `SELECT count(*) AS n FROM companies c WHERE ${where.join(' AND ')}`, params);
     const rows = await many(
       pool,
@@ -63,7 +68,7 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
               (SELECT count(*) FROM sources s WHERE s.company_id = c.id AND s.status IN ('failing','inaccessible')) AS failing_source_count
          FROM companies c LEFT JOIN categories cat ON cat.id = c.category_id
         WHERE ${where.join(' AND ')}
-        ORDER BY c.name LIMIT $4 OFFSET $5`,
+        ORDER BY c.name LIMIT $5 OFFSET $6`,
       [...params, q.limit, q.offset],
     );
     return { items: camelAll(rows), total };
@@ -78,10 +83,10 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
       const row = await withTransaction(pool, async (c) => {
         const r = await one<Record<string, unknown>>(
           c,
-          `INSERT INTO companies (kind, name, slug, official_website, description, country, category_id, monitoring_enabled, created_at, updated_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9) RETURNING *`,
+          `INSERT INTO companies (kind, name, slug, official_website, description, country, category_id, monitoring_enabled, created_at, updated_at, provider_family)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10) RETURNING *`,
           [body.kind, body.name, slug, body.officialWebsite ?? null, body.description ?? null, body.country ?? null,
-            body.categoryId ?? null, body.monitoringEnabled ?? true, now],
+            body.categoryId ?? null, body.monitoringEnabled ?? true, now, body.providerFamily ?? null],
         );
         await writeAudit(c, actorOf(req), 'company.create', 'company', r!.id as string, null, r);
         return r!;

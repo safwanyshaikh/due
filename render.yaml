@@ -1,12 +1,79 @@
 # Render Blueprint for Due (production).
-# One web service serves the Due app (/), the admin panel (/admin/) and the API (/api/),
-# and runs the monitoring scheduler. One managed Postgres database.
+# - due (web): the Due app (/), the admin panel (/admin/) and the API (/api/). It enqueues work but does not run it.
+# - due-worker (background worker): processes the durable job queue (inbound parsing, reminder delivery, Gmail scans,
+#   offer refreshes, account deletion, retention, billing reconciliation) and runs the scheduler (RUN_SCHEDULER=true).
+# - due-db: managed Postgres 16 (daily backups by Render; see docs/production/BACKUP.md for the encrypted
+#   off-site backup script and restore drill).
+# Shared configuration lives in the env group `due-shared` so both services always agree.
 databases:
   - name: due-db
     databaseName: due
     plan: basic-256mb
     postgresMajorVersion: '16'
     ipAllowList: []
+
+envVarGroups:
+  - name: due-shared
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      # Both services must share the same value (session hashes, signed unsubscribe/deletion tokens).
+      - key: SESSION_SECRET
+        generateValue: true
+      # Optional: SMTP for sign-in links, invites, alerts and email reminders.
+      - key: SMTP_URL
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # Public origin used in e-mailed links (e.g. https://due.example.com). Falls back to RENDER_EXTERNAL_URL on
+      # the web service only, so set it explicitly: the worker builds reminder links too.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Optional: Razorpay Subscriptions (Due's own SaaS billing only).
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      # Optional: email forwarding intake (Plus).
+      - key: INBOUND_EMAIL_DOMAIN
+        sync: false
+      - key: INBOUND_WEBHOOK_SECRET
+        sync: false
+      # Optional: 32 random bytes, base64 (openssl rand -base64 32). Without it raw intake text is never stored.
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+      # Optional: Gmail OAuth (read-only). See docs/production/GOOGLE_VERIFICATION.md.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: GMAIL_TOKEN_KEYS
+        sync: false
+      # test | verification_pending | live
+      - key: GMAIL_OAUTH_MODE
+        sync: false
+      # Optional: Sentry-compatible DSN for privacy-scrubbed error reports.
+      - key: SENTRY_DSN
+        sync: false
+      # Optional: encrypted off-site backups (server/scripts/backup.sh); see docs/production/BACKUP.md.
+      - key: BACKUP_ENCRYPTION_KEY
+        sync: false
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_ENDPOINT
+        sync: false
+      - key: BACKUP_S3_REGION
+        sync: false
+      - key: BACKUP_S3_ACCESS_KEY_ID
+        sync: false
+      - key: BACKUP_S3_SECRET_ACCESS_KEY
+        sync: false
 
 services:
   - type: web
@@ -18,50 +85,47 @@ services:
       npm ci --include=dev && npm run build &&
       npm --prefix admin ci --include=dev && npm --prefix admin run build &&
       npm --prefix server ci --include=dev && npm --prefix server run build
+    # migrate takes a Postgres advisory lock, so a concurrent worker start cannot run migrations twice.
     startCommand: >-
       npm --prefix server run migrate &&
       npm --prefix server run seed:registry &&
       npm --prefix server start
+    # Liveness for deploys (database reachable). /health/ready also requires a fresh worker heartbeat: point
+    # uptime monitoring at it, not the deploy health check (a worker outage must not block web deploys).
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: '22'
+      - fromGroup: due-shared
       - key: RUN_SCHEDULER
-        value: 'true'
+        value: 'false'
       - key: DATABASE_URL
         fromDatabase:
           name: due-db
           property: connectionString
-      - key: SESSION_SECRET
-        generateValue: true
       # You set this once in the Render dashboard, create the owner at /admin/setup, then delete it.
       - key: ADMIN_SETUP_TOKEN
         sync: false
-      # Optional: set to enable important-alert emails (otherwise alerts stay in the admin panel).
-      - key: SMTP_URL
-        sync: false
-      - key: SMTP_FROM
-        sync: false
-      # Optional: public origin used in e-mailed sign-in and invite links (e.g. https://due.example.com).
-      # When unset, Render's RENDER_EXTERNAL_URL is used.
-      - key: PUBLIC_BASE_URL
-        sync: false
-      # Optional: Razorpay Subscriptions. Checkout stays unavailable (503) until all three are set
-      # and plan ids are configured in the admin panel (Plans).
-      - key: RAZORPAY_KEY_ID
-        sync: false
-      - key: RAZORPAY_KEY_SECRET
-        sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
-        sync: false
-      # Optional: email forwarding intake. Forwarding is "not live" until both are set.
-      - key: INBOUND_EMAIL_DOMAIN
-        sync: false
-      - key: INBOUND_WEBHOOK_SECRET
-        sync: false
-      # Optional: 32 random bytes, base64 (openssl rand -base64 32). Without it raw intake text is never stored.
-      - key: DATA_ENCRYPTION_KEY
-        sync: false
+
+  - type: worker
+    name: due-worker
+    runtime: node
+    plan: starter
+    region: oregon
+    # Same build as the web service (one artifact per commit; rollbacks move both services together).
+    buildCommand: >-
+      npm ci --include=dev && npm run build &&
+      npm --prefix admin ci --include=dev && npm --prefix admin run build &&
+      npm --prefix server ci --include=dev && npm --prefix server run build
+    # Waits for the web service's migrations via the same advisory lock (migrate is idempotent).
+    startCommand: npm --prefix server run migrate && npm --prefix server run worker
+    autoDeploy: true
+    envVars:
+      - fromGroup: due-shared
+      - key: RUN_SCHEDULER
+        value: 'true'
+      - key: QUEUE_CONCURRENCY
+        value: '2'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: due-db
+          property: connectionString

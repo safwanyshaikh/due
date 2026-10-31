@@ -27,7 +27,12 @@ export class MonitorRuntime {
   }
 
   /** Robots-checked, throttled GET that follows redirects (each hop is robots-checked too). */
-  async fetch(url: string, conditional: { etag?: string | null; lastModified?: string | null } = {}): Promise<FetchOutcome> {
+  async fetch(
+    url: string,
+    conditional: { etag?: string | null; lastModified?: string | null } = {},
+    /** Per-source request timeout (sources.request_timeout_ms); defaults to the process-wide timeout. */
+    opts: { timeoutMs?: number | null } = {},
+  ): Promise<FetchOutcome> {
     let current = url;
     for (let hop = 0; hop <= this.opts.maxRedirects; hop++) {
       const decision = await this.robots.check(current);
@@ -38,7 +43,7 @@ export class MonitorRuntime {
       if (hop === 0 && conditional.lastModified) headers['if-modified-since'] = conditional.lastModified;
       const res = await httpGet(current, {
         userAgent: this.opts.userAgent,
-        timeoutMs: this.opts.timeoutMs,
+        timeoutMs: opts.timeoutMs ?? this.opts.timeoutMs,
         maxBytes: this.opts.maxBytes,
         allowPrivateHosts: this.opts.allowPrivateHosts,
         headers,

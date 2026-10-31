@@ -1,130 +1,255 @@
-import { useMemo, useState } from 'react';
-import { homeSummary, obligationViews } from '../../lib/home';
+import { useEffect, useMemo, useState } from 'react';
+import { homeSummary, obligationViews, type ObligationView } from '../../lib/home';
 import { cashForecast } from '../../lib/totals';
-import { monthPeriod, parseISO, monthName } from '../../lib/dates';
-import { weeklyDigest } from '../../lib/retention';
+import { addDays, monthName, monthPeriod, parseISO } from '../../lib/dates';
+import { pendingImports } from '../../lib/imports';
 import { useApp } from '../store';
-import { HeroCard, TimelineRow } from '../components/obligation';
-import { AttentionList, CashCalendar, ObligationList, TotalsNote } from '../components/lists';
+import { ReviewSheet, SnoozeSheet, TimelineRow } from '../components/obligation';
+import { AttentionList, CashCalendar, TotalsNote } from '../components/lists';
 import { Sheet } from '../components/Sheet';
 import { Glyph } from '../components/Glyph';
-import { inr } from '../lib/format';
+import { Badge, ConfidenceBadge } from '../components/ui';
+import { StartChoices } from '../components/StartChoices';
+import { Icon } from '../Icon';
+import { useCatalog } from '../offers/catalogStore';
+import { offersTileText } from '../lib/offersTile';
+import { greeting, homeTiles, type HomeTile } from '../lib/homeTiles';
+import { inr, weekdayDate } from '../lib/format';
+import { readJsonPref, writeJsonPref } from '../lib/prefs';
 
-export const DEFAULT_TITLE = 'Your next commitment is clear.';
+/** Compact summary card: planned this month, next due item with its confidence and source, actions. */
+function SummaryCard({
+  monthTotal,
+  monthLabel,
+  unknown,
+  next,
+  onWhy,
+}: {
+  monthTotal: number;
+  monthLabel: string;
+  unknown: number;
+  next: ObligationView | null;
+  onWhy: () => void;
+}) {
+  const [sheet, setSheet] = useState<null | 'review' | 'snooze'>(null);
+  const risk = next?.status === 'overdue';
+  return (
+    <section
+      className={`summary ${risk ? 'summary-risk' : ''}`}
+      data-block="summary"
+      aria-labelledby="summary-title"
+    >
+      <div className="summary-top">
+        <div className="summary-month">
+          <h2 id="summary-title" className="eyebrow">
+            Planned in {monthLabel}
+          </h2>
+          <p className="summary-total amt">
+            {inr(monthTotal)}
+            {unknown > 0 && <span className="muted small"> + {unknown} without amount</span>}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="text-btn press"
+          onClick={onWhy}
+          aria-label="How is this worked out?"
+        >
+          How?
+        </button>
+      </div>
+      {next ? (
+        <>
+          <div className="summary-next" data-testid="summary-next">
+            <p className="summary-next-line">
+              <span className="muted">Next due · </span>
+              <strong className="summary-name">{next.nickname}</strong>
+              <span className="amt"> · {next.amountText}</span>
+            </p>
+            <p className={`summary-date ${risk ? 'status-risk' : ''}`}>
+              {next.date ? weekdayDate(next.date) : 'No date yet'} · {next.statusText}
+            </p>
+            <div className="chips">
+              <ConfidenceBadge field="Date" c={next.dateConfidence} />
+              <Badge>{next.sourceBadge}</Badge>
+            </div>
+          </div>
+          <div className="summary-actions">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm press jelly"
+              onClick={() => setSheet('review')}
+              aria-label={`Review ${next.nickname}`}
+            >
+              Review
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm press jelly"
+              onClick={() => setSheet('snooze')}
+              aria-label={`Snooze ${next.nickname}`}
+            >
+              <Glyph name="clock" size={18} /> Snooze
+            </button>
+            <a
+              className="btn btn-secondary btn-sm press jelly"
+              href={`#/edit/${encodeURIComponent(next.id)}`}
+              aria-label={`Edit ${next.nickname}`}
+            >
+              <Glyph name="edit" size={18} /> Edit
+            </a>
+          </div>
+          {sheet === 'review' && <ReviewSheet v={next} onClose={() => setSheet(null)} />}
+          {sheet === 'snooze' && <SnoozeSheet v={next} onClose={() => setSheet(null)} />}
+        </>
+      ) : (
+        <div className="summary-empty">
+          <p className="muted small">
+            Nothing planned yet. Add one subscription, EMI or bill to see what’s next.
+          </p>
+          <a className="btn btn-primary btn-sm press jelly" href="#/start">
+            <Glyph name="plus" size={18} /> Get started
+          </a>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Tile that briefly shows the success state when its count went up since the last Home visit. */
+function Tile({ t, success }: { t: HomeTile; success: boolean }) {
+  return (
+    <li>
+      <a
+        className={`htile c-${t.color} press jelly ${t.empty ? 'htile-empty' : ''} ${success ? 'is-success' : ''}`}
+        href={t.href}
+        data-tile={t.key}
+      >
+        <span className="htile-top">
+          <span className="htile-ic jelly-ic">
+            <Icon name={t.icon} />
+          </span>
+        </span>
+        <strong className="htile-name">{t.name}</strong>{' '}
+        <span className="htile-value">{t.value}</span>
+        <span className="sr-only">, </span>
+        <span className="htile-sub">{t.sub}</span>
+        {!t.empty && (
+          <span className="htile-count" aria-hidden="true">
+            {t.count}
+          </span>
+        )}
+      </a>
+    </li>
+  );
+}
+
+function useTileSuccess(tiles: HomeTile[]): Set<string> {
+  const [grown] = useState(() => {
+    const prev = readJsonPref<Record<string, number>>('tile-counts', {});
+    return new Set(
+      tiles.filter((t) => prev[t.key] !== undefined && t.count > prev[t.key]).map((t) => t.key),
+    );
+  });
+  const counts = JSON.stringify(Object.fromEntries(tiles.map((t) => [t.key, t.count])));
+  useEffect(() => {
+    writeJsonPref('tile-counts', JSON.parse(counts));
+  }, [counts]);
+  return grown;
+}
 
 export function Home() {
   const { data, today } = useApp();
+  const { offers } = useCatalog();
   const tz = data.settings.timezone;
   const s = useMemo(() => homeSummary(data, today, tz), [data, today, tz]);
   const views = useMemo(() => obligationViews(data, today, tz), [data, today, tz]);
-  const digest = useMemo(() => weeklyDigest(data, today), [data, today]);
   const t = parseISO(today);
   const month = useMemo(() => cashForecast(data, monthPeriod(t.y, t.m)), [data, t.y, t.m]);
+  const offersLine = offersTileText(data, today, offers).line;
+  const tiles = useMemo(
+    () => homeTiles(data, views, today, offersLine),
+    [data, views, today, offersLine],
+  );
+  const success = useTileSuccess(tiles);
   const [why, setWhy] = useState(false);
-  const title = s.coveredMessage ?? DEFAULT_TITLE;
-  const attention = s.needsAttention.length;
+  const hi = greeting(new Date(), tz || 'Asia/Kolkata');
+  const empty = views.length === 0 && pendingImports(data).length === 0;
+  const week = useMemo(() => {
+    const end = addDays(today, 6);
+    return views.filter((v) => v.date && v.date <= end && v.id !== s.next?.id).slice(0, 6);
+  }, [views, today, s.next]);
 
   return (
-    <div className="home-grid">
-      <div className="home-main">
-        <section className="reassure" data-block="header" aria-labelledby="home-title">
-          <div className="reassure-text">
-            <p className="eyebrow">Next 7 days</p>
-            <h1 id="home-title" className="reassure-title">
-              {title}
-            </h1>
-          </div>
-          <button
-            type="button"
-            className="text-btn press"
-            onClick={() => setWhy(true)}
-            aria-label="Why? How this summary is worked out"
-          >
-            Why?
-          </button>
+    <div className="home">
+      <header className="greet" data-block="header">
+        <h1 className="greet-hello">{hi.hello}</h1>
+        <p className="greet-date muted">
+          {hi.date} · <span title="India Standard Time">IST</span>
+        </p>
+      </header>
+
+      <SummaryCard
+        monthTotal={month.totalPaise}
+        monthLabel={monthName(t.y, t.m).split(' ')[0]}
+        unknown={month.unknownAmountCount}
+        next={s.next}
+        onWhy={() => setWhy(true)}
+      />
+
+      <section aria-labelledby="tiles-title" data-block="tiles">
+        <h2 id="tiles-title" className="sr-only">
+          Categories
+        </h2>
+        <ul className="htiles">
+          {tiles.map((x) => (
+            <Tile key={x.key} t={x} success={success.has(x.key)} />
+          ))}
+        </ul>
+      </section>
+
+      {empty ? (
+        <section aria-labelledby="start-title" className="stack-12">
+          <h2 id="start-title">Ways to start</h2>
+          <p className="muted small">
+            No account needed. What you add stays on this device unless you sign in and turn on
+            backup.
+          </p>
+          <StartChoices headingId="start-title" compact />
         </section>
-
-        {s.next ? (
-          <HeroCard v={s.next} />
-        ) : (
-          <article className="hero" data-block="hero">
-            <h2 className="hero-name">Nothing upcoming</h2>
-            <p className="muted">
-              Everything you track is paid, paused or has no date yet. Add a date when you know it.
-            </p>
-            <div className="hero-actions">
-              <a className="btn btn-primary press" href="#/all">
-                Review all items
-              </a>
-            </div>
-          </article>
-        )}
-
-        <section className="strip2" data-block="strip" aria-label="Totals">
-          <div className="strip-cell">
-            <span className="strip-label">Next 7 days</span>
-            <span className="strip-value amt">{inr(s.next7Total)}</span>
-          </div>
-          <div className="strip-cell">
-            <span className="strip-label">Next 30 days</span>
-            <span className="strip-value amt">{inr(s.next30Total)}</span>
-          </div>
-          <a
-            className={`strip-cell strip-link press ${attention ? 'strip-attn' : ''}`}
-            href="#needs-attention"
-          >
-            <span className="strip-label">Needs attention</span>
-            <span className="strip-value amt">{attention}</span>
-          </a>
-        </section>
-
-        <section className="timeline" data-block="timeline" aria-labelledby="tl-title">
-          <h2 id="tl-title" className="timeline-title">
-            Coming up
-          </h2>
-          {s.timeline.length ? (
-            <ol className="trow-list">
-              {s.timeline.map((v) => (
-                <TimelineRow key={`${v.id}:${v.occurrenceDate}`} v={v} />
-              ))}
-            </ol>
-          ) : (
-            <p className="muted timeline-empty">
-              Nothing else is scheduled yet. Items you add appear here by date.
-            </p>
-          )}
-        </section>
-
-        <div className="action-row" data-block="actions">
-          <a className="btn btn-primary press" href="#/add">
-            <Glyph name="plus" size={18} /> Add due item
-          </a>
-          <a className="btn btn-secondary press" href="#/import">
-            <Glyph name="upload" size={18} /> Import
-          </a>
-        </div>
-
-        <div className="below-fold">
+      ) : (
+        <>
           <section
             id="needs-attention"
             aria-labelledby="na-title"
-            className="stack-16"
+            className="stack-12"
             tabIndex={-1}
           >
             <h2 id="na-title">Needs attention</h2>
             <AttentionList items={s.needsAttention} />
           </section>
 
-          {digest && (
-            <section aria-labelledby="wk-title" className="panel2">
-              <h2 id="wk-title">This week</h2>
-              <p>{digest.text}</p>
-            </section>
-          )}
+          <section aria-labelledby="tl-title" className="stack-12" data-block="timeline">
+            <div className="section-head">
+              <h2 id="tl-title">Next 7 days</h2>
+              <span className="muted small amt">{inr(s.next7Total)}</span>
+            </div>
+            {week.length ? (
+              <ol className="trow-list">
+                {week.map((v) => (
+                  <TimelineRow key={`${v.id}:${v.occurrenceDate}`} v={v} />
+                ))}
+              </ol>
+            ) : (
+              <p className="muted">
+                {s.next ? 'Nothing else in the next 7 days.' : 'Nothing due in the next 7 days.'}
+              </p>
+            )}
+          </section>
 
-          <section aria-labelledby="cf-title" className="stack-16">
+          <section aria-labelledby="cf-title" className="stack-12">
             <h2 id="cf-title">Next 30 days</h2>
-            <p className="muted">
+            <p className="muted small">
               {inr(s.next30.totalPaise)} across {s.next30.count} due date
               {s.next30.count === 1 ? '' : 's'}.{' '}
               <TotalsNote
@@ -135,79 +260,41 @@ export function Home() {
             <CashCalendar />
           </section>
 
-          <section aria-labelledby="all-title" className="stack-16">
-            <div className="section-head">
-              <h2 id="all-title">All obligations</h2>
-              <a className="text-btn press" href="#/all">
-                Open All
-              </a>
-            </div>
-            <ObligationList views={views} idPrefix="home" />
-          </section>
-
           <nav className="more-links" aria-label="More">
-            <a className="btn btn-quiet press" href="#/all">
-              Categories
+            <a className="btn btn-secondary press jelly" href="#/add">
+              <Glyph name="plus" size={18} /> Add due item
             </a>
-            <a className="btn btn-quiet press" href="#/calendar">
-              Calendar
+            <a className="btn btn-quiet press" href="#/all">
+              All items list
+            </a>
+            <a className="btn btn-quiet press" href="#/import">
+              Import
             </a>
             <a className="btn btn-quiet press" href="#/reminders">
               Reminders
             </a>
-            <a className="btn btn-quiet press" href="#/offers">
-              Due &amp; Offers
-            </a>
           </nav>
-        </div>
-      </div>
-
-      <aside className="home-rail" aria-label="Summary">
-        <section className="panel2">
-          <h2>{monthName(t.y, t.m)}</h2>
-          <p className="rail-total amt">{inr(month.totalPaise)}</p>
-          <p className="muted small">Planned this month, from what you entered.</p>
-        </section>
-        <section className="panel2">
-          <h2>Filter by</h2>
-          <div className="stack-8">
-            <a className="btn btn-quiet btn-block press" href="#/all/subscription">
-              Subscriptions
-            </a>
-            <a className="btn btn-quiet btn-block press" href="#/all/emi">
-              EMIs
-            </a>
-            <a className="btn btn-quiet btn-block press" href="#/all/bill">
-              Bills
-            </a>
-            <a className="btn btn-quiet btn-block press" href="#/all">
-              Everything
-            </a>
-          </div>
-        </section>
-      </aside>
+        </>
+      )}
 
       {why && (
         <Sheet title="How this summary works" onClose={() => setWhy(false)}>
           <dl className="why">
             <div>
-              <dt>Next 7 days</dt>
+              <dt>Planned this month</dt>
               <dd>
-                {s.next7.count} unpaid due date{s.next7.count === 1 ? '' : 's'} from today to 6 days
-                ahead, totalling {inr(s.next7.totalPaise)}.
-                {s.next7.unknownAmountCount
-                  ? ` ${s.next7.unknownAmountCount} ha${s.next7.unknownAmountCount === 1 ? 's' : 've'} no amount and ${s.next7.unknownAmountCount === 1 ? 'is' : 'are'} not counted as zero.`
-                  : ''}
-                {s.next7.estimatedCount
-                  ? ` ${s.next7.estimatedCount} amount(s) are estimates.`
+                Every unpaid due date in {monthName(t.y, t.m)} from what you entered or approved,
+                totalling {inr(month.totalPaise)}.
+                {month.unknownAmountCount
+                  ? ` ${month.unknownAmountCount} without an amount are not counted as zero.`
                   : ''}
               </dd>
             </div>
             <div>
-              <dt>The headline</dt>
+              <dt>Next due</dt>
               <dd>
-                “You’re covered” appears only when every item in the next 7 days is marked paid by
-                you. Otherwise Due shows the next commitment, without guessing.
+                The earliest unpaid date (overdue first). The badges say how sure the date is and
+                where it came from.
               </dd>
             </div>
             <div>

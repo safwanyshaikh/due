@@ -9,7 +9,9 @@ import {
   verifyWebhookSignature,
   type RazorpaySubscription,
 } from '../consumer/razorpay.js';
+import { applyRefund } from '../consumer/billing-reconcile.js';
 import { one, withTransaction } from '../db.js';
+import { metrics } from '../observability/metrics.js';
 import { AppError, parse } from '../http/errors.js';
 import { getSettings } from '../settings.js';
 import { normaliseKeys, sha256 } from '../util.js';
@@ -19,6 +21,14 @@ function checkoutAvailability(p: PlanRow, configured: boolean) {
     monthly: configured && p.price_inr_monthly !== null && Boolean(p.provider_plan_ids?.monthly),
     yearly: configured && p.price_inr_yearly !== null && Boolean(p.provider_plan_ids?.yearly),
   };
+}
+
+interface RazorpayPayment {
+  id?: string;
+  amount?: number;
+  amount_refunded?: number;
+  subscription_id?: string;
+  notes?: Record<string, unknown> | unknown[] | null;
 }
 
 export const CANCELLATION_PATH = 'Account > Plan > Cancel subscription in the Due app (takes effect at the end of the paid period).';
@@ -36,7 +46,8 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/public/plans', async (_req, reply) => {
     const plans = (await listPlans(pool)).filter((p) => p.active);
-    const terms = (await getSettings(pool)).billing_terms;
+    const settings = await getSettings(pool);
+    const terms = settings.billing_terms;
     reply.header('Cache-Control', 'public, max-age=60');
     return {
       currency: 'INR',
@@ -48,6 +59,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         legalReviewStatus: terms.legal_review_status,
       },
       cancellationPath: CANCELLATION_PATH,
+      tax: { note: settings['billing.tax_note'], pricesIncludeTax: settings['billing.prices_include_tax'] },
       purchaseChannel: config.razorpay ? 'razorpay' : null,
       paymentsAvailable: Boolean(config.razorpay) && plans.some((p) => Object.values(checkoutAvailability(p, true)).some(Boolean)),
     };
@@ -147,9 +159,19 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     const raw = req.rawBody ?? '';
     const sig = req.headers['x-razorpay-signature'];
     if (!verifyWebhookSignature(config.razorpay.webhookSecret, raw, typeof sig === 'string' ? sig : undefined)) {
+      metrics.inc('billing.webhook', { outcome: 'invalid_signature' });
       throw new AppError(400, 'invalid_signature', 'Webhook signature verification failed');
     }
-    const body = req.body as { event?: string; payload?: { subscription?: { entity?: RazorpaySubscription } } } | undefined;
+    const body = req.body as
+      | {
+          event?: string;
+          payload?: {
+            subscription?: { entity?: RazorpaySubscription };
+            payment?: { entity?: RazorpayPayment };
+            refund?: { entity?: { id?: string; payment_id?: string; amount?: number } };
+          };
+        }
+      | undefined;
     const event = typeof body?.event === 'string' ? body.event : 'unknown';
     const entity = body?.payload?.subscription?.entity;
     const headerId = req.headers['x-razorpay-event-id'];
@@ -163,10 +185,32 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         now,
       ]);
       if (!ins.rowCount) return { duplicate: true, applied: false };
+      // Refunds: a full refund of a subscription payment ends paid access; partial refunds are recorded only.
+      if (event === 'refund.processed' || event === 'payment.refunded') {
+        const payment = body?.payload?.payment?.entity;
+        const refund = body?.payload?.refund?.entity;
+        const paymentId = payment?.id ?? refund?.payment_id ?? null;
+        if (!paymentId) return { duplicate: false, applied: false };
+        const notes = payment?.notes && !Array.isArray(payment.notes) ? payment.notes : {};
+        const r = await applyRefund(
+          c,
+          {
+            paymentId,
+            subscriptionId: typeof payment?.subscription_id === 'string' ? payment.subscription_id : null,
+            accountId: typeof notes.account_id === 'string' ? notes.account_id : null,
+            amount: typeof payment?.amount_refunded === 'number' ? payment.amount_refunded : typeof refund?.amount === 'number' ? refund.amount : null,
+            paymentAmount: typeof payment?.amount === 'number' ? payment.amount : null,
+          },
+          now,
+        );
+        await c.query('UPDATE billing_events SET payment_id = $2, outcome = $3 WHERE event_id = $1', [eventId, paymentId, r.applied ? 'access_ended' : r.full ? 'no_match' : 'partial']);
+        return { duplicate: false, applied: r.applied };
+      }
       if (!event.startsWith('subscription.') || !entity?.id || typeof entity.status !== 'string') return { duplicate: false, applied: false };
       const r = await applySubscriptionState(c, entity, now, 'webhook');
       return { duplicate: false, applied: r.applied };
     });
+    metrics.inc('billing.webhook', { outcome: result.duplicate ? 'duplicate' : result.applied ? 'applied' : 'ignored' });
     return reply.code(200).send({ ok: true, ...result });
   });
 }

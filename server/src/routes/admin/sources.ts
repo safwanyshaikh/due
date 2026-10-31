@@ -22,6 +22,8 @@ const sourceFields = {
   priority: z.enum(['critical', 'regular', 'secondary']),
   frequencyMinutes: z.number().int().min(15).max(525600),
   enabled: z.boolean(),
+  /** Per-source request timeout for offer refreshes and monitoring (migration 008); null = server default. */
+  requestTimeoutMs: z.number().int().min(1000).max(60000).nullable(),
 };
 
 const sourceCreate = z

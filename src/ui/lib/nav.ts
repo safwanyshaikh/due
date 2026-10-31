@@ -25,8 +25,12 @@ const SIMPLE = [
 ] as const;
 type SimpleName = (typeof SIMPLE)[number];
 
+export const LEGAL_DOCS = ['privacy', 'terms', 'deletion', 'subprocessors', 'grievance'] as const;
+export type LegalDoc = (typeof LEGAL_DOCS)[number];
+
 export type Route =
   | { name: SimpleName }
+  | { name: 'legal'; doc?: LegalDoc }
   | { name: 'all'; type?: CommitmentType }
   | { name: 'category'; type: CommitmentType }
   | { name: 'add'; type?: CommitmentType }
@@ -40,6 +44,10 @@ export interface Nav {
 export function parseRoute(hash: string): Route {
   const [name, a] = hash.replace(/^#\/?/, '').split('/');
   switch (name) {
+    case 'legal':
+      return (LEGAL_DOCS as readonly string[]).includes(a)
+        ? { name: 'legal', doc: a as LegalDoc }
+        : { name: 'legal' };
     case 'all':
       return a ? { name: 'all', type: a as CommitmentType } : { name: 'all' };
     case 'category':
@@ -61,6 +69,8 @@ export function parseRoute(hash: string): Route {
 
 export function toHash(r: Route): string {
   switch (r.name) {
+    case 'legal':
+      return r.doc ? `#/legal/${r.doc}` : '#/legal';
     case 'all':
     case 'add':
       return r.type ? `#/${r.name}/${r.type}` : `#/${r.name}`;

@@ -6,8 +6,10 @@ import { CatalogProvider } from './offers/catalogStore';
 import { TopBar } from './components/TopBar';
 import { AccountReturn } from './account/AccountReturn';
 import { Home } from './screens/Home';
-import { Landing, StartPaths } from './screens/Landing';
+import { StartPaths } from './screens/Landing';
 import { AllPage } from './screens/AllPage';
+import { LegalScreen } from './screens/LegalScreen';
+import { GmailReturnBanner, IncidentBanner } from './components/ShellBanners';
 import { AddScreen } from './screens/AddScreen';
 import { ItemScreen } from './screens/ItemScreen';
 import { EditScreen } from './screens/EditScreen';
@@ -32,8 +34,6 @@ import { AddService } from './offers/AddService';
 import { ServiceCard } from './offers/ServiceCard';
 import { ScenarioCalculator } from './offers/ScenarioCalculator';
 import { RelayInbox } from './offers/RelayInbox';
-import { forecastObligations } from '../lib/obligations';
-import { pendingImports } from '../lib/imports';
 import type { AccountClient } from '../lib/account/client';
 import type { AppData } from '../lib/types';
 import { nav, parseRoute, toHash, type Route } from './lib/nav';
@@ -68,12 +68,11 @@ function UiPrefsProvider({ children }: { children: ReactNode }) {
 }
 
 function View({ route }: { route: Route }) {
-  const { data } = useApp();
   switch (route.name) {
-    case 'home': {
-      const empty = forecastObligations(data).length === 0 && pendingImports(data).length === 0;
-      return empty ? <Landing /> : <Home />;
-    }
+    case 'home':
+      return <Home />;
+    case 'legal':
+      return <LegalScreen doc={route.doc} />;
     case 'start':
       return <StartPaths />;
     case 'all':
@@ -220,13 +219,15 @@ function Shell() {
           before closing.
         </div>
       )}
+      <IncidentBanner />
       <CorruptDataBanner />
       <AccountReturn />
+      <GmailReturnBanner />
       <main id="main" key={key} ref={mainRef} className={legacy ? 'legacy' : undefined}>
         {legacy && (
           <div className="backrow2">
-            <a className="text-btn press" href={inOffers ? '#/offers' : '#/all'}>
-              ‹ {inOffers ? 'Back to Due & Offers' : 'Back to All'}
+            <a className="text-btn press" href={inOffers ? '#/offers' : '#/'}>
+              ‹ {inOffers ? 'Back to Due & Offers' : 'Back to Home'}
             </a>
           </div>
         )}
