@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Due Value Graph v2: loans, plug-ins, audit, Sameer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: founder who wants one line per idea, no paragraphs. Every row is a fact, a number or a verdict.
+   IDEA: one engine, many plug-ins; proven on one real-feeling commuter (Sameer) end to end.
+   PICTURE: Sameer's three-city commute map + his phone screens + a money ledger; loan switch calculator; plug-in card.
+   COLOUR and TYPE: Ice and ink. Space Grotesk + Inter. Hot pink only for money saved.
+   LAYOUT: one-line verdict, Sameer story first (what the user asked for last, shown first), then engine pieces, audit, sources. */
+:root{color-scheme:light dark;--bg:light-dark(#dff1f7,#06222e);--panel:light-dark(#ffffff,#0b3242);--ink:light-dark(#06222e,#e4f4f9);--mute:light-dark(#3d5a66,#9cc3d1);--line:light-dark(#b9dbe6,#1d4a5c);--hot:#ff2e7e;--hot2:light-dark(#c4004f,#ff6ea4);--ok:light-dark(#0f6a44,#7fe0b4)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;line-height:1.08;text-wrap:balance;margin:0 0 .45em}
+h1{font-size:clamp(30px,4.6vw,50px)}h2{font-size:clamp(23px,3vw,32px)}h3{font-size:18px;line-height:1.2}
+p{margin:.3em 0 .8em;max-width:72ch}a{color:var(--hot2)}
+.band{padding:clamp(26px,4vw,60px) max(5vw,16px)}.wrap{max-width:1240px;margin:0 auto}
+.ink{background:var(--ink);color:var(--bg)}.ink .card,.ink table{color:var(--ink)}
+.mute{color:var(--mute)}.ink .mute{color:light-dark(#9cc3d1,#3d5a66)}.small{font-size:14px}
+nav.scroll{display:flex;gap:18px;overflow-x:auto;padding:12px max(5vw,16px);border-bottom:1px solid var(--line);background:var(--bg)}
+nav.scroll a{flex:none;color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:6px 0}
+@media(min-width:900px){nav.scroll{position:sticky;top:0;z-index:5}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+ul.one{list-style:none;margin:0;padding:0}ul.one li{padding:7px 0;border-bottom:1px solid var(--line)}ul.one li:last-child{border:0}
+.hot{color:var(--hot2);font-weight:600}.okc{color:var(--ok);font-weight:600}
+.tag{display:inline-block;font-size:12.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.tag.il{border-color:var(--hot);color:var(--hot2)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}th{font-family:"Space Grotesk",sans-serif;font-weight:500}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.mapfig{color:var(--ink);position:relative;min-height:340px;background:var(--panel);border:1px solid var(--line);border-radius:14px}.mapfig>svg{position:absolute;inset:0;width:100%;height:100%}
+.phones{display:flex;gap:18px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x mandatory}
+.phone{color:var(--ink);flex:none;width:262px;scroll-snap-align:start;background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:16px 14px 18px;box-shadow:0 8px 24px light-dark(#06222e1a,#0006)}
+.phone .notch{width:70px;height:6px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.phone h3{font-size:16px}.phone .big{font:700 30px "Space Grotesk",sans-serif;color:var(--hot2);line-height:1;margin:4px 0 8px}
+.phone .row{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line)}.phone .row span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.phone .btn{display:block;text-align:center;margin-top:10px;padding:10px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:600;font-size:14px}
+.phone .step{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,3vw,30px);color:var(--ink)}
+@media(max-width:760px){.calc{grid-template-columns:minmax(0,1fr)}}
+label{display:block;font-weight:500;margin:10px 0 4px;font-size:15px}
+input,select{width:100%;font:16px Inter,sans-serif;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-height:44px}
+input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--hot);outline-offset:2px}
+.res .big{display:block;font:700 clamp(38px,6vw,58px) "Space Grotesk",sans-serif;color:var(--hot2);line-height:1;white-space:nowrap}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.rows span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.plug{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.plug .card{padding:14px}.plug b{display:block;font-family:"Space Grotesk",sans-serif;font-size:17px;margin-bottom:3px}
+.score{white-space:nowrap}.score i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:2px;background:var(--line)}.score i.on{background:var(--hot)}
+.ledger{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;align-items:center}
+@media(max-width:820px){.ledger{grid-template-columns:minmax(0,1fr)}}
+.barfig{position:relative;min-height:300px}.barfig>svg{position:absolute;inset:0;width:100%;height:100%}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:7.5em;text-align:start;white-space:normal}.stack td::before{content:attr(data-l);float:inline-start;width:7em;margin-inline-start:-7.5em;white-space:normal;font-weight:500}.stack td:empty{display:none}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
+<body>
+<nav class="scroll" aria-label="Sections"><a href="#top">Verdict</a><a href="#sameer">Sameer's example</a><a href="#loan">EMI switch</a><a href="#plug">New-thing template</a><a href="#audit">Competitor audit</a><a href="#self">Self audit</a><a href="#build">Build order</a><a href="#src">Sources</a></nav>
+
+<header class="band" id="top"><div class="wrap">
+<p class="mute small">Due · R&amp;D v2 · 23 Nov 2026 · research only, nothing built</p>
+<h1>One engine, every recurring rupee: rides, food, phone, OTT, EMIs, cards. It shows the move and proves the saving.</h1>
+<ul class="one" style="max-width:900px">
+<li><b>CRED:</b> pays your card bill and sells you loans → <span class="hot">Due:</span> audits everything you pay, and earns nothing from lenders.</li>
+<li><b>Loans:</b> since 1 Jan 2026, RBI bars prepayment charges on <b>floating-rate</b> loans to individuals → switching home-loan EMIs is free to exit. <span class="okc">Verified (RBI)</span></li>
+<li><b>Legal line:</b> show a "you could save ₹X by switching" check = information; route the user to lenders = Digital Lending Directions apply. <span class="hot">Phase 1 stays information-only.</span></li>
+<li><b>New product tomorrow:</b> fill one 8-field plug-in card → live in Due in 1–2 days, with no new code for most cases.</li>
+<li><b>The 2× promise</b> is measured per user from receipts, never claimed from offer pages.</li>
+</ul>
+</div></header>
+
+<section class="band ink" id="sameer"><div class="wrap">
+<h2>Sameer Patel, 27 · Kharghar (Navi Mumbai) → Thane office → BKC training</h2>
+<p class="mute"><span class="tag il" style="color:#ff6ea4;border-color:#ff6ea4">Illustrative</span> Sameer and every number about him are invented to show how Due works. Prices come from the source registry and must be confirmed live. The Due Plus price is assumed at ₹99/month; the real one is set in Admin.</p>
+<div class="grid2" style="align-items:start">
+<div class="mapfig" role="img" aria-label="Map sketch: Kharghar to Thane is the daily commute, 3 days a week by cab today; Kharghar to BKC on 2 training days a week."><svg id="map"></svg></div>
+<div class="card"><h3>What Sameer pays today (₹ a month)</h3><div class="scroll"><table class="stack"><thead><tr><th>Item</th><th>Today</th><th>How Due knows</th></tr></thead><tbody id="today"></tbody></table></div></div>
+</div>
+<h3 style="margin-top:28px">His first 30 days in Due: 6 screens</h3>
+<div class="phones" id="phones" tabindex="0" aria-label="Six app screens, scroll sideways"></div>
+<div class="ledger" style="margin-top:22px">
+<div class="card"><h3>Month 1 savings ledger (only counted after a receipt proves it)</h3><div class="scroll"><table class="stack"><thead><tr><th>Move</th><th>Saved / month</th><th>Proof</th></tr></thead><tbody id="moves"></tbody></table></div></div>
+<div class="barfig" role="img" aria-label="Bar chart: Sameer's verified monthly saving against the Due fee; the saving is many times the fee."><svg id="bars"></svg></div>
+</div>
+<p class="mute small" style="margin-top:14px">Why he subscribes: the free scan shows ₹3,318 a month on the table; Plus is needed to keep it (Gmail auto-scan, expiry alerts, loan watch). That is the whole sales pitch, on one screen.</p>
+</div></section>
+
+<section class="band" id="loan"><div class="wrap">
+<h2>EMI switch check: is moving your loan to another bank worth it?</h2>
+<ul class="one" style="max-width:900px;margin-bottom:18px">
+<li><b>How a balance transfer works:</b> new bank pays off the old loan → you pay the new EMI → old bank issues closure letter and returns papers.</li>
+<li><b>What decides approval:</b> credit score (lenders quote 700–750+), income, repayment history, property value for home loans.</li>
+<li><b>Hidden costs:</b> processing fee (about 0.5% to several %), legal and valuation fees, stamp duty, hard credit enquiries.</li>
+<li><b>Exit cost:</b> floating-rate individual loans have no prepayment charge (from 1 Jan 2026); fixed-rate personal loans and card EMIs often still charge 2–4%.</li>
+<li><b>Card debt:</b> card interest commonly 30–45% a year; card balance-transfer EMIs are advertised at about 11–16%.</li>
+<li><b>Data Due needs:</b> outstanding, rate, EMI, months left, rate type; from loan statement upload now, from credit bureau or Account Aggregator through a licensed partner later.</li>
+</ul>
+<div class="calc">
+<form id="lf" aria-label="Loan switch calculator">
+<label for="out">Outstanding amount (₹)</label><input id="out" type="number" min="0" value="2500000">
+<label for="r1">Your current rate (% a year)</label><input id="r1" type="number" step="0.05" min="0" value="9.6">
+<label for="r2">Rate at the new bank (% a year)</label><input id="r2" type="number" step="0.05" min="0" value="8.4">
+<label for="mo">Months left</label><input id="mo" type="number" min="1" value="180">
+<label for="fee">All switching costs (fee, legal, valuation, stamp) ₹</label><input id="fee" type="number" min="0" value="18000">
+<label for="pp">Exit charge at old bank (%)</label><input id="pp" type="number" step="0.5" min="0" value="0">
+</form>
+<div class="res" aria-live="polite"><span class="mute small">Net saving over the remaining term</span><b class="big" id="lnet">—</b>
+<div class="rows" id="lrows" style="margin-top:10px"></div><p id="lverdict" style="font-weight:600;margin-top:12px"></p>
+<p class="small mute">Same tenure assumed. Due shows this check and the lender's own page; it never applies, shares your data with lenders or takes a fee for a loan in phase 1.</p></div>
+</div>
+</div></section>
+
+<section class="band ink" id="plug"><div class="wrap">
+<h2>New-thing template: any new offer, plan or product in 8 fields</h2>
+<p class="mute">Tomorrow Jio launches X, or a bank launches a new card. Research fills this card; the engine does the rest. If a field can't be filled, the item stays "research" and is never shown to users.</p>
+<div class="plug" id="plugs"></div>
+<h3 style="margin-top:24px">Same template, three filled examples</h3>
+<div class="scroll"><table class="stack"><thead><tr><th>Field</th><th>Uber One</th><th>Home loan switch</th><th>Jio ₹3,599 yearly</th></tr></thead><tbody id="plugx"></tbody></table></div>
+</div></section>
+
+<section class="band" id="audit"><div class="wrap">
+<h2>Brutal competitor audit: 12 apps vs Due, scored on what Due must win</h2>
+<p class="mute small">Scores (0–5) are Due's own judgment from public information, not measurements. Columns: Covers = how much of a household's recurring spend it sees; Life = commute/food/telecom awareness; Proof = shows savings actually achieved; Neutral = no lender/merchant money steering advice; India = works for India today.</p>
+<div class="scroll"><table class="stack"><thead><tr><th>App</th><th>What it really is</th><th>Covers</th><th>Life</th><th>Proof</th><th>Neutral</th><th>India</th><th>Steal / avoid</th></tr></thead><tbody id="aud"></tbody></table></div>
+</div></section>
+
+<section class="band ink" id="self"><div class="wrap">
+<h2>Self audit: where this plan is weak (fix before building)</h2>
+<div class="grid2" id="weak"></div>
+</div></section>
+
+<section class="band" id="build"><div class="wrap">
+<h2>Build order (one line each)</h2>
+<div class="scroll"><table class="stack"><thead><tr><th>Step</th><th>What</th><th>Done when</th></tr></thead><tbody id="steps"></tbody></table></div>
+<h3 style="margin-top:26px">Questions still open from you</h3>
+<ul class="one" style="max-width:900px">
+<li>1 · "Jio जमीन" = Jio Gold? · 2 · "Gala" = which service?</li>
+<li>3 · 2× = target or written guarantee? · 4 · Partner/affiliate money: ever, yes or no?</li>
+<li>5 · Loans: information-only forever, or become a registered lending partner later (more revenue, more rules)?</li>
+<li>6 · Credit score inside Due: worth a bureau partner contract in phase 3?</li>
+</ul>
+</div></section>
+
+<footer class="band ink" id="src"><div class="wrap small">
+<h3>Sources</h3>
+<p>Loans: <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12878">RBI Pre-payment Charges Directions 2025</a>, <a href="https://www.businesstoday.in/personal-finance/banking/story/rbi-removes-prepayment-charges-floating-rate-loans-2026-483120-2025-07-04">Business Today</a>, <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12848">RBI Digital Lending Directions 2025</a>, <a href="https://www.mondaq.com/india/financial-services/1629916/rbi-digital-lending-directions-2025-an-overview">Mondaq overview</a>, <a href="https://bankbazaar.com/home-loan-balance-transfer.html">BankBazaar balance transfer</a>, <a href="https://www.nobroker.in/home-loan/sbi-bank/balance-transfer">SBI BT (NoBroker)</a>, <a href="https://www.nobroker.in/home-loan/canara-bank/balance-transfer">Canara BT (NoBroker)</a>, <a href="https://www.bajajfinserv.in/home-loan-balance-transfer">Bajaj Finserv</a>, <a href="https://www.business-standard.com/amp/finance/personal-finance/home-loan-balance-transfer-higher-residual-principal-tenure-drive-savings-125121800921_1.html">Business Standard</a>, <a href="https://www.hsbc.co.in/credit-cards/balance-transfer/">HSBC card BT</a>, <a href="https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page">SBI Card BT</a>, <a href="https://www.idfcfirst.bank.in/finfirst-blogs/personal-loan/credit-card-debt-consolidation-loan">IDFC FIRST</a>. Data rails: <a href="https://financialservices.gov.in/account-aggregator-framework">DFS Account Aggregator</a>, <a href="https://sahamati.org.in/account-types-activated-on-aas/">Sahamati FI types</a>. Competitors: <a href="https://inc42.com/features/cred-after-kunal-shah-can-the-walled-garden-business-model-pay-for-itself/">Inc42 on CRED</a>, <a href="https://cred.club/articles/cash-by-cred-personal-loan-app-that-helps-you-borrow">Cash by CRED</a>, <a href="https://apps.apple.com/IN/app/id1428580080">CRED App Store</a>, <a href="https://techcrunch.com/2026/03/11/india-neobank-fi-winds-down-banking-services-on-its-platform">Fi wind-down (TechCrunch)</a>, <a href="https://inc42.com/buzz/pb-fintech-q4-profit-jumps-54-to-%E2%82%B9261-cr/">PB Fintech (Inc42)</a>, <a href="https://www.angelone.in/news/stocks/pb-fintech-share-price-in-focus-after-q1-fy27-earnings-results-total-income-up-36-9-yoy">Paisabazaar Q1 FY27</a>, <a href="https://moneyview.in/loan-insights/best-money-management-apps-in-india">Moneyview</a>, <a href="https://robberger.com/subscription-manager-apps/">Subscription apps 2026</a>, <a href="https://www.thepennyhoarder.com/budgeting/rocket-money-review/">Rocket Money review</a>, <a href="https://rocketmoney.com/learn/personal-finance/monarch-money-vs-rocket-money">Monarch vs Rocket</a>, <a href="https://help.rocketmoney.com/en/articles/9744474-bill-negotiation-charge">Rocket negotiation fee</a>. Mobility, food and telecom sources: see <a href="value-graph.html">Value Graph v1</a> in the repo.</p>
+<p class="mute">Not verified here: OneScore and Jupiter current features, Credit Karma India status, exact Mumbai local pass fares. Marked as judgment or "to confirm" above.</p>
+</div></footer>
+
+<script>{
+const $=id=>document.getElementById(id), inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const rows=(id,arr)=>$(id).innerHTML=arr.map(r=>'<tr>'+r.map((c,i)=>`<td${typeof c==='number'?' class="n"':''}>${typeof c==='number'?inr(c):c}</td>`).join('')+'</tr>').join('');
+
+rows('today',[
+['Cabs Kharghar ⇄ Thane, 12 trips',5400,'Uber receipts in Gmail'],
+['Cabs to BKC training, 8 trips',4000,'Uber receipts'],
+['Uber One',149,'Uber One email'],
+['Zomato Gold (paid separately)',100,'Zomato invoice'],
+['Swiggy One Lite',33,'Swiggy email'],
+['Jio prepaid, monthly recharges',349,'Recharge email'],
+['Netflix + JioHotstar + Spotify',876,'Card statement'],
+['Credit card dues revolving ₹40,000',1400,'Card statement interest line'],
+['Two-wheeler loan EMI',3100,'Loan statement upload']]);
+
+const ph=[
+['Day 0 · free scan','Connect Gmail or forward 5 receipts','<div class="big">₹3,318</div><div class="row"><span>Found on the table / month</span><span>5 moves</span></div><div class="row"><span>Recurring items found</span><span>9</span></div><div class="row"><span>Double-paid</span><span>Zomato Gold</span></div>','See my moves'],
+['Day 0 · commute','Your commute, learned from 20 rides','<div class="row"><span>Kharghar ⇄ Thane by cab</span><span>₹450/trip</span></div><div class="row"><span>Trans-Harbour local + auto</span><span>≈ ₹60/trip*</span></div><div class="row"><span>If 8 of 12 trips switch</span><span class="hot">−₹2,000</span></div><p class="small mute">*Fares to confirm in the city pack.</p>','Open M-Indicator / UTS'],
+['Day 1 · Uber One','Keep only in training months','<div class="row"><span>Credits last month (20 rides)</span><span>₹940</span></div><div class="row"><span>After switch (12 rides)</span><span>≈ ₹560</span></div><div class="row"><span>Fee</span><span>₹149</span></div><p class="small">Still worth it: 3.7×. Re-check next month.</p>','Keep'],
+['Day 2 · double pay','You pay Zomato Gold twice','<div class="row"><span>Zomato Gold renewal</span><span>₹100/mo</span></div><div class="row"><span>Uber One gives Gold free</span><span>3 months</span></div><p class="small">Claim the voucher from the Uber One email, then turn off Gold auto-renew in Zomato.</p>','Find my voucher email'],
+['Day 3 · card debt','₹40,000 revolving at ~42%','<div class="row"><span>Interest now</span><span>₹1,400/mo</span></div><div class="row"><span>Card balance-transfer EMI ~14%</span><span>₹470/mo</span></div><div class="row"><span>Saving</span><span class="hot">−₹930</span></div><p class="small mute">Information only. Check your bank\'s own offer page.</p>','How it works'],
+['Day 30 · proof','Verified from your receipts','<div class="big">₹3,240</div><div class="row"><span>Due Plus fee</span><span>₹99</span></div><div class="row"><span>Return ratio</span><span class="hot">32×</span></div><div class="row"><span>Next: Jio yearly plan</span><span>−₹78/mo</span></div>','Share my savings']];
+$('phones').innerHTML=ph.map(([s,t,b,c])=>`<div class="phone"><div class="notch"></div><div class="step">${s}</div><h3>${t}</h3>${b}<span class="btn">${c}</span></div>`).join('');
+
+const mv=[['8 of 12 Thane trips → local + auto',2000,'Fewer Uber receipts, UTS ticket emails'],['Card dues → balance-transfer EMI',930,'Next card statement'],['Zomato Gold renewal stopped',100,'No Zomato Gold charge'],['Netflix plan downgraded (2 screens unused)',210,'Netflix invoice'],['Jio monthly → yearly ₹3,599 (from month 2)',0,'Pending: next recharge']];
+rows('moves',mv);
+
+function bars(){const s=$('bars'),W=s.clientWidth,H=s.clientHeight,ink=getComputedStyle(s).color;const saved=3240,fee=99,max=saved*1.1,b=Math.min(110,W/4),base=H-40;
+const h1=(saved/max)*(H-80),h2=Math.max(3,(fee/max)*(H-80)),x1=W*0.28-b/2,x2=W*0.68-b/2;
+s.innerHTML=`<line x1="10" x2="${W-10}" y1="${base}" y2="${base}" stroke="${ink}" stroke-opacity=".3"/>
+<rect x="${x1}" y="${base-h1}" width="${b}" height="${h1}" rx="4" fill="#ff2e7e"/><text x="${x1+b/2}" y="${base-h1-8}" text-anchor="middle" fill="${ink}" font-family="Space Grotesk" font-size="20" font-weight="700">₹3,240</text>
+<rect x="${x2}" y="${base-h2}" width="${b}" height="${h2}" rx="2" fill="${ink}" fill-opacity=".6"/><text x="${x2+b/2}" y="${base-h2-8}" text-anchor="middle" fill="${ink}" font-family="Space Grotesk" font-size="20" font-weight="700">₹99</text>
+<text x="${x1+b/2}" y="${base+22}" text-anchor="middle" fill="${ink}" font-size="14" font-family="Inter">Verified saving</text><text x="${x2+b/2}" y="${base+22}" text-anchor="middle" fill="${ink}" font-size="14" font-family="Inter">Due fee (assumed)</text>`}
+
+function map(){const s=$('map'),W=s.clientWidth,H=s.clientHeight,ink=getComputedStyle(s).color,fs=W<420?12:14;
+const P={k:[W*0.72,H*0.72],t:[W*0.5,H*0.18],b:[W*0.18,H*0.62]};
+const dot=(p,l,a)=>`<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="#ff2e7e"/><text x="${p[0]+(a||14)}" y="${p[1]+5}" fill="${ink}" font-size="${fs+1}" font-weight="600" font-family="Inter" text-anchor="${a<0?'end':'start'}">${l}</text>`;
+s.innerHTML=`<path d="M${P.k} Q${W*0.75},${H*0.4} ${P.t}" fill="none" stroke="#ff2e7e" stroke-width="5"/><path d="M${P.k} Q${W*0.45},${H*0.9} ${P.b}" fill="none" stroke="${ink}" stroke-opacity=".55" stroke-width="4" stroke-dasharray="8 7"/>
+<text x="${W*0.76}" y="${H*0.42}" fill="${ink}" font-size="${fs}" font-family="Inter">Office · 3 days/wk</text><text x="${W*0.36}" y="${H*0.88}" fill="${ink}" font-size="${fs}" font-family="Inter">Training · 2 days/wk</text>
+${dot(P.k,'Home · Kharghar',-14)}${dot(P.t,'Thane',14)}${dot(P.b,'BKC',14)}
+<text x="12" y="22" fill="${ink}" fill-opacity=".7" font-size="12" font-family="Inter">Sketch, not to scale</text>`}
+new ResizeObserver(()=>{bars();map()}).observe(document.body);
+
+function loan(){const g=id=>Math.max(0,parseFloat($(id).value)||0),P=g('out'),n=Math.max(1,g('mo'));
+const emi=r=>{const i=r/1200;return i?P*i/(1-Math.pow(1+i,-n)):P/n};
+const e1=emi(g('r1')),e2=emi(g('r2')),gross=(e1-e2)*n,cost=g('fee')+P*g('pp')/100,net=gross-cost,be=e1>e2?Math.ceil(cost/(e1-e2)):0;
+$('lnet').textContent=(net<0?'−':'+')+inr(Math.abs(net));
+$('lrows').innerHTML=[['EMI now',inr(e1)],['EMI after switch',inr(e2)],['Saved each month',inr(e1-e2)],['Total switching cost',inr(cost)],['Cost recovered in',be?be+' months':'never']].map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+$('lverdict').textContent=net>0&&be<=24?'Worth checking: savings clearly beat the costs.':net>0?'Marginal: ask your current bank to cut your rate first (often free or a small fee).':'Not worth it at these numbers.'}
+$('lf').addEventListener('input',loan);$('lf').addEventListener('submit',e=>e.preventDefault());loan();
+
+const pl=[['1 · Detect','Which emails, SMS shares, statements or screenshots reveal it'],['2 · Identify','Provider, product, plan, aliases, country, city'],['3 · Rules','Price, period, % / cap / expiry, exclusions, bundled perks'],['4 · Value','Formula: value to this user − cost, break-even'],['5 · Proof','Which later receipt proves the saving'],['6 · Nudge','When to tell the user: before renewal, before expiry, at usage drop'],['7 · Legal role','Information only / affiliate disclosed / regulated partner'],['8 · Sources','Official URL to monitor, check frequency, last verified']];
+$('plugs').innerHTML=pl.map(([t,d])=>`<div class="card"><b>${t}</b><span class="small">${d}</span></div>`).join('');
+rows('plugx',[
+['Detect','Uber One receipt / trip receipts','Loan statement, EMI debit line','Recharge email'],
+['Identify','Uber · Uber One · ₹149/mo · IN','Any bank · home loan · floating','Jio · prepaid · ₹3,599/365d'],
+['Rules','10% credit, ₹150/trip cap, 60-day expiry, Zomato Gold 3 mo','Rate, months left, exit charge, switch fees','2.5 GB/day, JioHotstar 3 mo, 50 GB cloud'],
+['Value','credits used + Gold value − fee','(EMI now − EMI new) × months − costs','12 × monthly plan − ₹3,599'],
+['Proof','Credits shown on next receipts','New EMI debit on statement','Next recharge = yearly'],
+['Nudge','Credits expiring; rides fell below break-even','Rate cut announced; score improved','2 days before monthly recharge'],
+['Legal role','Information only','Information only (phase 1)','Information only'],
+['Sources','uber.com/in legal terms, weekly','RBI directions + lender rate pages, weekly','jio.com plans, daily']]);
+
+const sc=n=>`<span class="score" aria-label="${n} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+const A=[
+['CRED','Card bill pay + rewards; members-only (750+ score); sells loans via 12+ lenders',2,1,1,1,5,'Steal: premium feel, multi-bureau score view. Avoid: lender money steering advice.'],
+['Cash by CRED','Standalone loan app (2026), score + affordability',1,0,0,0,5,'Avoid: it is a loan funnel.'],
+['Paisabazaar','Loan and card marketplace, free score; growing lending revenue',1,0,0,1,5,'Steal: balance-transfer education. Avoid: lead-sale model.'],
+['BankBazaar','Loan/card comparison and score',1,0,0,1,5,'Steal: clear comparison tables.'],
+['OneScore','Free credit score app (features not verified here)',1,0,0,2,4,'Steal: score-change alerts.'],
+['INDmoney','Investments + net worth + tracking',3,0,1,2,5,'Steal: family view.'],
+['Moneyview','Loans + money manager (₹99/mo premium reported)',2,0,0,1,4,'Avoid: tracker as loan bait.'],
+['Walnut','SMS-reading expense tracker',3,1,0,4,3,'Avoid: SMS reading (privacy, Play policy).'],
+['Fi (wound down 2026)','Neobank, banking services closed Mar 2026',2,0,1,3,1,'Lesson: no moat without a sharp, paid job.'],
+['Rocket Money (US)','Subscriptions + bill negotiation, fee only on success',4,1,3,3,0,'Steal: success-fee negotiation, cancel concierge idea (Due shows how, never acts).'],
+['Monarch (US)','Paid budgeting, no ads, no free tier',4,0,2,5,0,'Steal: paid-only = neutral trust story.'],
+['Due (target)','Every recurring rupee + life patterns + proof; earns only from users',5,5,5,5,5,'The bar we must hit before calling it 10/10.'],
+['Cleo / Emma','Chat-style money coach (US) / UK subscriptions',3,0,1,3,0,'Steal: friendly tone, weekly "you saved" card.']];
+$('aud').innerHTML=A.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${sc(r[2])}</td><td>${sc(r[3])}</td><td>${sc(r[4])}</td><td>${sc(r[5])}</td><td>${sc(r[6])}</td><td>${r[7]}</td></tr>`).join('');
+
+const W=[['Data is the real bottleneck','Without Gmail or receipts Due knows nothing; Gmail needs Google verification + CASA first. Fix: forwarding + upload must give a good scan alone.'],['Commute fares are messy','Local train, metro and bus fares are not one clean API. Fix: Mumbai city pack built by hand, re-checked monthly.'],['Loan data is locked','Bureau and AA loan data need licensed partners. Fix: phase 1 = statement upload only.'],['"₹3,318 found" can over-promise','Users may not switch commute. Fix: rank moves by effort; count only proven savings.'],['Personalised offers are invisible','Uber/Zomato show different offers per user. Fix: consented screenshot capture.'],['CRED can copy features','It cannot copy neutrality while it earns from loans. Fix: publish "Due earns only from users" as a promise.']];
+$('weak').innerHTML=W.map(([t,d])=>`<div class="card"><h3>${t}</h3><p>${d}</p></div>`).join('');
+
+rows('steps',[
+['1','Plug-in card schema + admin form (8 fields)','Uber One, Jio yearly, home loan entered without code'],
+['2','Mumbai city pack: operators, fare bands, passes','Kharghar–Thane and Kharghar–BKC fares confirmed'],
+['3','Receipt parsers: Uber, Rapido, Cityflo, Zomato, Swiggy, Jio, Airtel','90% of test receipts parsed right'],
+['4','Value engine + "moves" screen','Sameer-style scan in under 60 seconds'],
+['5','EMI switch check from statement upload','Matches a bank EMI calculator to the rupee'],
+['6','Proof ledger + return ratio','Every saving links to a receipt'],
+['7','Pilot 50 Mumbai households','Median return ratio measured; decide on the 2× guarantee']]);
+}</script>
+</body>
+</html>
