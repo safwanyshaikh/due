@@ -58,7 +58,7 @@ input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(-
 @media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:7.5em;text-align:start;white-space:normal}.stack td::before{content:attr(data-l);float:inline-start;width:7em;margin-inline-start:-7.5em;white-space:normal;font-weight:500}.stack td:empty{display:none}}
 </style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
 <body>
-<nav class="scroll" aria-label="Sections"><a href="#top">Verdict</a><a href="#sameer">Sameer's example</a><a href="#loan">EMI switch</a><a href="#plug">New-thing template</a><a href="#audit">Competitor audit</a><a href="#self">Self audit</a><a href="#build">Build order</a><a href="#src">Sources</a></nav>
+<nav class="scroll" aria-label="Sections"><a href="#top">Verdict</a><a href="#sameer">Sameer's example</a><a href="#loan">EMI switch</a><a href="#plug">New-thing template</a><a href="#audit">Competitor audit</a><a href="#ads">Ads</a><a href="#self">Self audit</a><a href="#build">Build order</a><a href="#src">Sources</a></nav>
 
 <header class="band" id="top"><div class="wrap">
 <p class="mute small">Due · R&amp;D v2 · 23 Nov 2026 · research only, nothing built</p>
@@ -127,6 +127,33 @@ input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(-
 <div class="scroll"><table class="stack"><thead><tr><th>App</th><th>What it really is</th><th>Covers</th><th>Life</th><th>Proof</th><th>Neutral</th><th>India</th><th>Steal / avoid</th></tr></thead><tbody id="aud"></tbody></table></div>
 </div></section>
 
+<section class="band" id="ads"><div class="wrap">
+<h2>Savings-only ads: an ad is shown only when it saves this user money</h2>
+<div class="grid2">
+<div class="card"><h3>Rules (each one non-negotiable)</h3><ul class="one">
+<li><b>Gate:</b> ad shown only if Due's engine says net saving for this user ≥ ₹100/month, from their own receipts.</li>
+<li><b>Rank:</b> score = user's net saving × confidence; advertiser money only breaks ties, never jumps the order.</li>
+<li><b>Label:</b> "Sponsored · saves you ₹X/month based on your last 30 days".</li>
+<li><b>Privacy:</b> matching happens inside Due; advertisers get only counts, never names, emails or trips.</li>
+<li><b>Consent:</b> separate opt-in "Show sponsored offers that save me money" (DPDP purpose consent); off for under-18s.</li>
+<li><b>Cap:</b> max 1 sponsored card per screen, 3 a week.</li>
+<li><b>Payment:</b> advertiser pays per click + bonus only when the next receipt proves the saving.</li>
+<li><b>Kill switch:</b> if proven savings fall below the ad's claim, the ad stops automatically.</li>
+<li><b>No loan ads</b> while Due is information-only (Digital Lending Directions).</li>
+</ul></div>
+<div class="card"><h3>Example: what Sameer sees <span class="tag il">Illustrative</span></h3>
+<div class="phone" style="margin:8px auto 0"><div class="notch"></div><div class="step">Sponsored · matched to your commute</div><h3>Cityflo Kharghar → Thane</h3><div class="row"><span>Your cabs on this route</span><span>₹5,400/mo</span></div><div class="row"><span>Monthly pass (price to confirm)</span><span>₹X</span></div><div class="row"><span>You save</span><span class="hot">₹5,400 − X</span></div><p class="small mute">Shown because you rode this route 12 times last month. Ravi in Andheri, who never goes to Thane, never sees it.</p><span class="btn">See pass on Cityflo</span></div>
+<p class="small mute" style="margin-top:10px">Same slot could hold Gala, Uber Shuttle, Jio or Airtel, but only the one that saves Sameer the most wins it.</p></div>
+</div>
+<h3 style="margin-top:24px">Telecom pack (Jio, Airtel, Vi): what Due watches</h3>
+<ul class="one" style="max-width:900px">
+<li><b>Yearly vs monthly:</b> Jio ₹3,599/yr, Airtel ₹3,599 and ₹3,999/yr, Vi ₹3,499/yr (reported; prices vary by circle).</li>
+<li><b>Bundles:</b> JioHotstar, Prime, Netflix, Gemini Pro and Apple Music tie-ins, each flagged if the user already pays for the same OTT.</li>
+<li><b>Signals:</b> recharge emails, bills, one shared SMS; never SMS inbox reading.</li>
+<li><b>Nudge:</b> 2 days before the next recharge, "switch to yearly, save ₹X" or "your plan includes Hotstar, stop paying it separately".</li>
+</ul>
+</div></section>
+
 <section class="band ink" id="self"><div class="wrap">
 <h2>Self audit: where this plan is weak (fix before building)</h2>
 <div class="grid2" id="weak"></div>
@@ -137,16 +164,16 @@ input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(-
 <div class="scroll"><table class="stack"><thead><tr><th>Step</th><th>What</th><th>Done when</th></tr></thead><tbody id="steps"></tbody></table></div>
 <h3 style="margin-top:26px">Questions still open from you</h3>
 <ul class="one" style="max-width:900px">
-<li>1 · "Jio जमीन" = Jio Gold? · 2 · "Gala" = which service?</li>
-<li>3 · 2× = target or written guarantee? · 4 · Partner/affiliate money: ever, yes or no?</li>
-<li>5 · Loans: information-only forever, or become a registered lending partner later (more revenue, more rules)?</li>
-<li>6 · Credit score inside Due: worth a bureau partner contract in phase 3?</li>
+<li><span class="okc">Answered:</span> Jio = telecom offers (Jio, Airtel, Vi) · Gala = Mumbai/Navi Mumbai/Thane shuttle like Cityflo · Ads = yes, savings-only, personal · Credit bureau = later.</li>
+<li>Open 1 · Gala's exact app name or a screenshot (not found online).</li>
+<li>Open 2 · 2× = target or written guarantee?</li>
+<li>Open 3 · Loans: information-only, or registered lending partner later?</li>
 </ul>
 </div></section>
 
 <footer class="band ink" id="src"><div class="wrap small">
 <h3>Sources</h3>
-<p>Loans: <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12878">RBI Pre-payment Charges Directions 2025</a>, <a href="https://www.businesstoday.in/personal-finance/banking/story/rbi-removes-prepayment-charges-floating-rate-loans-2026-483120-2025-07-04">Business Today</a>, <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12848">RBI Digital Lending Directions 2025</a>, <a href="https://www.mondaq.com/india/financial-services/1629916/rbi-digital-lending-directions-2025-an-overview">Mondaq overview</a>, <a href="https://bankbazaar.com/home-loan-balance-transfer.html">BankBazaar balance transfer</a>, <a href="https://www.nobroker.in/home-loan/sbi-bank/balance-transfer">SBI BT (NoBroker)</a>, <a href="https://www.nobroker.in/home-loan/canara-bank/balance-transfer">Canara BT (NoBroker)</a>, <a href="https://www.bajajfinserv.in/home-loan-balance-transfer">Bajaj Finserv</a>, <a href="https://www.business-standard.com/amp/finance/personal-finance/home-loan-balance-transfer-higher-residual-principal-tenure-drive-savings-125121800921_1.html">Business Standard</a>, <a href="https://www.hsbc.co.in/credit-cards/balance-transfer/">HSBC card BT</a>, <a href="https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page">SBI Card BT</a>, <a href="https://www.idfcfirst.bank.in/finfirst-blogs/personal-loan/credit-card-debt-consolidation-loan">IDFC FIRST</a>. Data rails: <a href="https://financialservices.gov.in/account-aggregator-framework">DFS Account Aggregator</a>, <a href="https://sahamati.org.in/account-types-activated-on-aas/">Sahamati FI types</a>. Competitors: <a href="https://inc42.com/features/cred-after-kunal-shah-can-the-walled-garden-business-model-pay-for-itself/">Inc42 on CRED</a>, <a href="https://cred.club/articles/cash-by-cred-personal-loan-app-that-helps-you-borrow">Cash by CRED</a>, <a href="https://apps.apple.com/IN/app/id1428580080">CRED App Store</a>, <a href="https://techcrunch.com/2026/03/11/india-neobank-fi-winds-down-banking-services-on-its-platform">Fi wind-down (TechCrunch)</a>, <a href="https://inc42.com/buzz/pb-fintech-q4-profit-jumps-54-to-%E2%82%B9261-cr/">PB Fintech (Inc42)</a>, <a href="https://www.angelone.in/news/stocks/pb-fintech-share-price-in-focus-after-q1-fy27-earnings-results-total-income-up-36-9-yoy">Paisabazaar Q1 FY27</a>, <a href="https://moneyview.in/loan-insights/best-money-management-apps-in-india">Moneyview</a>, <a href="https://robberger.com/subscription-manager-apps/">Subscription apps 2026</a>, <a href="https://www.thepennyhoarder.com/budgeting/rocket-money-review/">Rocket Money review</a>, <a href="https://rocketmoney.com/learn/personal-finance/monarch-money-vs-rocket-money">Monarch vs Rocket</a>, <a href="https://help.rocketmoney.com/en/articles/9744474-bill-negotiation-charge">Rocket negotiation fee</a>. Mobility, food and telecom sources: see <a href="value-graph.html">Value Graph v1</a> in the repo.</p>
+<p>Loans: <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12878">RBI Pre-payment Charges Directions 2025</a>, <a href="https://www.businesstoday.in/personal-finance/banking/story/rbi-removes-prepayment-charges-floating-rate-loans-2026-483120-2025-07-04">Business Today</a>, <a href="https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12848">RBI Digital Lending Directions 2025</a>, <a href="https://www.mondaq.com/india/financial-services/1629916/rbi-digital-lending-directions-2025-an-overview">Mondaq overview</a>, <a href="https://bankbazaar.com/home-loan-balance-transfer.html">BankBazaar balance transfer</a>, <a href="https://www.nobroker.in/home-loan/sbi-bank/balance-transfer">SBI BT (NoBroker)</a>, <a href="https://www.nobroker.in/home-loan/canara-bank/balance-transfer">Canara BT (NoBroker)</a>, <a href="https://www.bajajfinserv.in/home-loan-balance-transfer">Bajaj Finserv</a>, <a href="https://www.business-standard.com/amp/finance/personal-finance/home-loan-balance-transfer-higher-residual-principal-tenure-drive-savings-125121800921_1.html">Business Standard</a>, <a href="https://www.hsbc.co.in/credit-cards/balance-transfer/">HSBC card BT</a>, <a href="https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page">SBI Card BT</a>, <a href="https://www.idfcfirst.bank.in/finfirst-blogs/personal-loan/credit-card-debt-consolidation-loan">IDFC FIRST</a>. Data rails: <a href="https://financialservices.gov.in/account-aggregator-framework">DFS Account Aggregator</a>, <a href="https://sahamati.org.in/account-types-activated-on-aas/">Sahamati FI types</a>. Competitors: <a href="https://inc42.com/features/cred-after-kunal-shah-can-the-walled-garden-business-model-pay-for-itself/">Inc42 on CRED</a>, <a href="https://cred.club/articles/cash-by-cred-personal-loan-app-that-helps-you-borrow">Cash by CRED</a>, <a href="https://apps.apple.com/IN/app/id1428580080">CRED App Store</a>, <a href="https://techcrunch.com/2026/03/11/india-neobank-fi-winds-down-banking-services-on-its-platform">Fi wind-down (TechCrunch)</a>, <a href="https://inc42.com/buzz/pb-fintech-q4-profit-jumps-54-to-%E2%82%B9261-cr/">PB Fintech (Inc42)</a>, <a href="https://www.angelone.in/news/stocks/pb-fintech-share-price-in-focus-after-q1-fy27-earnings-results-total-income-up-36-9-yoy">Paisabazaar Q1 FY27</a>, <a href="https://moneyview.in/loan-insights/best-money-management-apps-in-india">Moneyview</a>, <a href="https://robberger.com/subscription-manager-apps/">Subscription apps 2026</a>, <a href="https://www.thepennyhoarder.com/budgeting/rocket-money-review/">Rocket Money review</a>, <a href="https://rocketmoney.com/learn/personal-finance/monarch-money-vs-rocket-money">Monarch vs Rocket</a>, <a href="https://help.rocketmoney.com/en/articles/9744474-bill-negotiation-charge">Rocket negotiation fee</a>. Ads and privacy: <a href="https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/nov/doc20251117695301.pdf">DPDP Rules 2025 (PIB)</a>, <a href="https://www.socialsamosa.com/experts-speak/dpdp-to-push-a-major-reset-for-ad-targeting-and-personalisation-10785467">Social Samosa on ad targeting</a>. Telecom: <a href="https://www.gizbot.com/telecom/features/best-annual-recharge-plans-2026-122000.html">Annual plans 2026 (Gizbot)</a>, <a href="https://www.digit.in/news/telecom/vi-rs-3749-vs-airtel-rs-3599-prepaid-plan-validity-data-benefits-and-more.html">Digit</a>. Shuttles: <a href="https://www.cityflo.com/corporate-pass/">Cityflo corporate pass</a>. Mobility, food and telecom sources: see <a href="value-graph.html">Value Graph v1</a> in the repo.</p>
 <p class="mute">Not verified here: OneScore and Jupiter current features, Credit Karma India status, exact Mumbai local pass fares. Marked as judgment or "to confirm" above.</p>
 </div></footer>
 
