@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Due Value Graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: architecture memo for founders and investors — finding first, honest caveats, no hype.
+   IDEA: the user's own metaphor — arteries: signals flow in, the Value Engine pumps, actions flow out.
+   PICTURE: a circulation diagram of the system, then a live Uber One break-even calculator from the real screenshot.
+   COLOUR and TYPE: Ice and ink — ice ground, ink text, one hot pink for the result. Space Grotesk + Inter.
+   LAYOUT: title band, diagram, calculator, then layers, sources, rollout, questions. */
+:root{color-scheme:light dark;--bg:light-dark(#dff1f7,#06222e);--panel:light-dark(#ffffff,#0b3242);--ink:light-dark(#06222e,#e4f4f9);--mute:light-dark(#3d5a66,#9cc3d1);--line:light-dark(#b9dbe6,#1d4a5c);--hot:#ff2e7e;--hot2:light-dark(#c4004f,#ff6ea4)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;line-height:1.05;text-wrap:balance;margin:0 0 .5em}
+h1{font-size:clamp(32px,5vw,52px)}h2{font-size:clamp(24px,3vw,32px);margin-top:.2em}h3{font-size:19px;line-height:1.2}
+p{max-width:70ch;margin:.4em 0 .9em}a{color:var(--hot2)}
+.band{padding:clamp(28px,4vw,64px) max(5vw,16px)}.wrap{max-width:1240px;margin:0 auto}
+.ink{background:var(--ink);color:var(--bg)}.ink .mute{color:light-dark(#9cc3d1,#3d5a66)}
+.mute{color:var(--mute)}.small{font-size:14px}
+nav.scroll{display:flex;gap:18px;overflow-x:auto;padding:12px max(5vw,16px);border-bottom:1px solid var(--line);background:var(--bg)}
+nav.scroll a{flex:none;color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:6px 0}
+@media(min-width:900px){nav.scroll{position:sticky;top:0;z-index:5}}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:clamp(20px,4vw,56px);align-items:center}
+@media(max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}}
+.fig{position:relative;min-height:380px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.verdict{font-size:19px;max-width:60ch}
+.kpi{display:flex;gap:28px;flex-wrap:wrap;margin-top:18px}.kpi b{display:block;font:700 clamp(28px,4vw,40px) "Space Grotesk",sans-serif;color:var(--hot2)}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,32px)}
+@media(max-width:760px){.calc{grid-template-columns:minmax(0,1fr)}}
+label{display:block;font-weight:500;margin:12px 0 4px}
+input[type=number],select{width:100%;font:16px Inter,sans-serif;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-height:44px}
+input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--hot);outline-offset:2px}
+.res b.big{display:block;font:700 clamp(40px,7vw,64px) "Space Grotesk",sans-serif;line-height:1;color:var(--hot2);white-space:nowrap}
+.meter{height:14px;border-radius:7px;background:var(--line);overflow:hidden;margin:10px 0 4px}.meter i{display:block;height:100%;background:var(--hot)}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.rows span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{font-family:"Space Grotesk",sans-serif;font-weight:500}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card ul{margin:.3em 0 0;padding-left:1.1em}.card li{margin:.25em 0}
+.tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.tag.ok{border-color:#1b8a5a;color:light-dark(#0f6a44,#7fe0b4)}.tag.un{border-color:var(--hot);color:var(--hot2)}
+ol.q li{margin:.6em 0;max-width:75ch}
+pre,.scroll{overflow-x:auto}
+@media(prefers-reduced-motion:no-preference){.flow{stroke-dasharray:6 8;animation:pulse 2.4s linear infinite}@keyframes pulse{to{stroke-dashoffset:-56}}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;font-weight:500}.stack td:empty{display:none}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
+<body>
+<nav class="scroll" aria-label="Sections"><a href="#top">Verdict</a><a href="#calc">Uber One maths</a><a href="#layers">Architecture</a><a href="#model">Data model</a><a href="#sources">Source registry</a><a href="#locale">Cities & countries</a><a href="#rules">Hard boundaries</a><a href="#rollout">Rollout</a><a href="#questions">Questions for you</a></nav>
+
+<header class="band" id="top"><div class="wrap hero">
+<div>
+<p class="mute small">Due · R&amp;D architecture · 23 Nov 2026 · not built yet</p>
+<h1>Due Value Graph: make every rupee of subscription pay back at least twice</h1>
+<p class="verdict">The moat is not a list of offers. It is a per-user graph that knows <b>what you pay</b>, <b>how you actually live</b> (rides, orders, recharges, metro trips), and <b>what each plan really returns</b>, with the source and expiry of every benefit. The engine then shows the one move that saves the most, and proves the saving afterwards from real receipts.</p>
+<p>Brutal truth: “we save you double” cannot be promised from offer pages alone. It becomes a real, defensible claim only when Due measures it per user from receipts. So the core KPI is the <b>Return Ratio</b> = verified savings ÷ Due fee, with a written guarantee once data proves it.</p>
+<div class="kpi"><div><b>≥ 2×</b><span class="small mute">target Return Ratio per paying user</span></div><div><b>8</b><span class="small mute">engine layers</span></div><div><b>1</b><span class="small mute">city pack to start: Mumbai MMR</span></div></div>
+</div>
+<div class="fig" role="img" aria-label="Circulation diagram: signals flow from receipts, bills, statements and offer sources into the Value Engine, which pumps out alerts, plan switches and savings proof."><svg id="art"></svg></div>
+</div></header>
+
+<section class="band ink" id="calc"><div class="wrap">
+<h2>Worked example from your screenshot: is Uber One worth ₹149 for you?</h2>
+<p class="mute">Screenshot facts: ₹149/month, first month free, “Get 10% off 1 year”, up to 10% Uber One credits on Cars/Auto/Bike, Zomato Gold 3 months complimentary*, Uber’s claim “members save ₹210 on average”. Rules from Uber India’s published terms (as reported): credits on the final fare excluding taxes and tolls, capped at ₹150 a trip, credits expire after 60 days, no credits on the part paid with credits. This is exactly the calculation Due runs for every membership.</p>
+<div class="calc" style="color:var(--ink)">
+<form id="f" aria-label="Uber One calculator">
+<label for="rides">Uber rides per month (Cars, Auto, Bike)</label><input id="rides" type="number" min="0" max="200" value="8">
+<label for="fare">Average final fare before taxes and tolls (₹)</label><input id="fare" type="number" min="0" max="5000" value="220">
+<label for="rate">Credit rate you actually see on receipts (%)</label><input id="rate" type="number" min="0" max="10" step="0.5" value="10">
+<label for="used">Share of credits you will use within 60 days (%)</label><input id="used" type="number" min="0" max="100" value="80">
+<label for="gold">Zomato Gold: what you would otherwise pay per month for it (₹, 0 if you never order)</label><input id="gold" type="number" min="0" max="500" value="0">
+<label for="fee">Uber One fee per month (₹)</label><input id="fee" type="number" min="0" max="1000" value="149">
+</form>
+<div class="res" aria-live="polite">
+<span class="mute small">Net value per month</span><b class="big" id="net">—</b>
+<div class="meter" aria-hidden="true"><i id="bar" style="width:0"></i></div>
+<p class="small mute" id="ratioTxt"></p>
+<div class="rows" id="rows"></div>
+<p id="verdict" style="font-weight:600;margin-top:14px"></p>
+<p class="small mute">Assumptions are yours; Due fills them from your real receipts once connected. Credits are not cash. Uber’s “₹210 average” is Uber’s own claim, not verified by Due.</p>
+</div></div>
+</div></section>
+
+<section class="band" id="layers"><div class="wrap">
+<h2>The eight layers of the engine</h2>
+<p>Layers 1–3 already exist in Due’s codebase in early form (intake, review queue, offer catalog, monitoring). Layers 4–8 are the new heart.</p>
+<div class="grid2" id="layerCards"></div>
+</div></section>
+
+<section class="band" id="model"><div class="wrap">
+<h2>Core data model</h2>
+<p>Public knowledge is shared once across all users; personal data never leaves the user’s private workspace. If two users forward the same Uber One email, the offer is researched once.</p>
+<div class="scroll"><table class="stack"><thead><tr><th>Entity</th><th>Scope</th><th>Holds</th></tr></thead><tbody id="entities"></tbody></table></div>
+</div></section>
+
+<section class="band" id="sources"><div class="wrap">
+<h2>Source registry, first cut (Mumbai MMR plus national)</h2>
+<p class="mute">Status shows what this research could confirm today. “Reported” means found in news or official pages via search, not yet fetched and parsed by Due’s monitor. Prices change: the monitor and user receipts are the source of truth.</p>
+<div class="scroll"><table class="stack"><thead><tr><th>Domain</th><th>Provider</th><th>What matters for savings</th><th>Status</th></tr></thead><tbody id="srcRows"></tbody></table></div>
+</div></section>
+
+<section class="band" id="locale"><div class="wrap grid2">
+<div class="card"><h3>City and country packs</h3><p>Every market is a config pack, not code: currency and tax, operator list per city (ride-hailing, bike taxi, auto, metro lines, suburban rail, city bus, premium shuttle), fare and pass tables, membership catalog, local laws, and the evidence sources. New city = new pack plus a research sprint.</p>
+<ul><li><b>Mumbai MMR first:</b> Uber, Ola, Rapido, Cityflo, BEST via Chalo, Metro 1, 2A/7, 3, Navi Mumbai Metro, NMMT, TMT, Mumbai One app.</li><li><b>Next India:</b> Bengaluru, Delhi NCR, Pune, Hyderabad (Namma Yatri, ONDC metro tickets).</li><li><b>Abroad later:</b> UAE (Careem Plus moved from Dh19 to Dh29 a month in July 2026), Southeast Asia (GrabUnlimited), US (Lyft Go replaced Lyft Pink from 5 Nov 2026; Uber One).</li></ul></div>
+<div class="card"><h3>How Due learns local habits without spying</h3><ul><li>Receipts the user forwards or connects (Uber, Rapido, Cityflo, Chalo, Swiggy, Zomato, recharge emails) give trips, fares and frequency.</li><li>Card statements and, later, Account Aggregator data via a licensed FIU partner give spend by merchant.</li><li>One shared SMS or a screenshot like yours becomes a reviewed observation, never a silent scrape.</li><li>Home and office area is asked once, as a choice of locality, to know which operators serve the user.</li></ul></div>
+</div></section>
+
+<section class="band ink" id="rules"><div class="wrap">
+<h2>Hard boundaries (these protect the moat)</h2>
+<div class="grid2" id="rulesCards" style="color:var(--ink)"></div>
+</div></section>
+
+<section class="band" id="rollout"><div class="wrap">
+<h2>Rollout: prove the 2× before promising it</h2>
+<div class="scroll"><table class="stack"><thead><tr><th>Phase</th><th>What ships</th><th>Exit test</th></tr></thead><tbody id="phases"></tbody></table></div>
+</div></section>
+
+<section class="band" id="questions"><div class="wrap">
+<h2>Questions only you can answer</h2>
+<ol class="q">
+<li><b>“Jio jameen” — what exactly did you mean?</b> Search found Jio’s 2026 bundles (JioHotstar, 50 GB JioAICloud, 18-month Gemini Pro, and “1% extra on Jio Gold” via Jio Finance). Is it Jio Gold, a land or property offer, or something else? Send a screenshot.</li>
+<li><b>The 2× promise:</b> a marketing target, or a written guarantee (for example, “if verified savings are below 2× your Due fee in a year, the next year is free”)? A guarantee is the stronger moat but needs legal wording and 3–6 months of real data first.</li>
+<li><b>Money from partners:</b> may Due ever earn referral or affiliate fees (for example from Uber One sign-ups)? If yes, recommendations must still rank by user value only, with the fee disclosed. If no, it is a cleaner trust story.</li>
+<li><b>Order of cities after Mumbai MMR</b>, and the first country abroad.</li>
+<li><b>Bank data:</b> are you willing to go through an Account Aggregator FIU partner (cost and contract) in phase 3, or stay receipts-only?</li>
+<li><b>Screenshots:</b> may Due ask users to share in-app screens like this Uber One one, to learn personalised offers that never appear on public pages?</li>
+</ol>
+</div></section>
+
+<footer class="band ink"><div class="wrap small">
+<h3>Sources used in this research</h3>
+<p>Uber One India: <a href="https://www.uber.com/in/en/legal/renewable-passes-terms/">Uber renewable passes terms</a>, <a href="https://www.newsbytesapp.com/news/business/uber-one-subscription-plan-launched-in-india-price-benefits-offers/story">NewsBytes</a>, <a href="https://www.outlookbusiness.com/ampstories/corporate/uber-launches-uber-one-membership-program-check-details-on-monthly-plans-here">Outlook Business</a>, <a href="https://www.gizbot.com/apps/news/uber-one-subscription-service-launched-in-india-earn-cashbacks-on-trips-free-zomato-gold-membershi-106265.html">Gizbot</a>. Rapido: <a href="https://www.zoutons.com/rapido-coupons">Zoutons</a>, <a href="https://yourstory.com/2019/07/bike-taxi-app-rapido-power-pass-subscription-programme">YourStory 2019</a>. Cityflo: <a href="https://www.cityflo.com/faqs">FAQ</a>, <a href="https://cityflo.com/subscription-policy">subscription policy</a>, <a href="https://www.freepressjournal.in/mumbai/mumbai-metro-3-ties-up-with-cityflo-for-seamless-metro-bus-connectivity">Metro 3 feeder</a>. BEST/Chalo: <a href="https://chalo.com/mumbai/super-saver">Chalo Super Saver</a>, <a href="https://www.freepressjournal.in/mumbai/mumbai-best-annonces-super-saver-plans-for-chalo-app-and-chalo-card-consumers">FPJ</a>. Metro: <a href="https://www.freepressjournal.in/mumbai/mumbai-metro-one-launches-digital-passes-on-whatsapp-for-commuters">Metro One WhatsApp passes</a>, <a href="https://www.lokmattimes.com/mumbai/mumbai-metro-line-3-indias-first-app-enabled-monthly-digital-pass-with-discounts-now-available-for-commuters-a525">Metro 3 pass</a>, <a href="https://www.freepressjournal.in/mumbai/good-news-for-mumbaikars-metro-tickets-now-on-uber-app-via-ondc-big-boost-for-commuters">Uber metro tickets via ONDC</a>, <a href="https://freepressjournal.in/mumbai/mumbai-over-104-crore-tickets-booked-across-metro-suburban-railway-and-municipal-bus-services-through-single-integrated-app-mumbai-one">Mumbai One app</a>, <a href="https://www.freepressjournal.in/mumbai/navi-mumbai-municipal-transport-joins-mumbai-one-app-for-seamless-integrated-public-transport">NMMT on Mumbai One</a>, <a href="https://www.freepressjournal.in/mumbai/thane-transport-services-majhi-tmt-app-sees-massive-surge-with-12-lakh-digital-tickets-in-10-months">Majhi TMT</a>, <a href="https://ondc.org/pages/public-transport.html">ONDC public transport</a>. Food and quick commerce: <a href="https://www.grabon.in/indulge/food/zomato-gold-membership-plan/">Zomato Gold (GrabOn)</a>, <a href="https://inc42.com/features/indias-convenience-economy-is-getting-expensive/">Inc42</a>, <a href="https://telanganatoday.com/swiggy-one-lite-membership-unveiled-at-rs-99-for-consumers">Swiggy One Lite</a>, <a href="https://inc42.com/features/zeptos-retention-play-fewer-discounts-premium-carts-a-paid-club/">Zepto Club</a>. Telecom: <a href="https://www.digit.in/news/general/reliance-jio-launches-happy-new-year-2026-offers-check-prices-benefits-ott-access-and-gemini-pro.html">Jio 2026 plans</a>, <a href="https://www.freepressjournal.in/tech/airtel-discontinues-free-perplexity-pro-offer-worth-rs-17000-replaces-it-with-this-offer">Airtel Perplexity ended</a>, <a href="https://gadgets.beebom.com/news/airtel-free-amazon-prime-offer">Airtel Black Prime</a>. Rails: <a href="https://www.npci.org.in/who-we-are/group-companies/npci-bharat-billpay-ltd/bharat-Connect-overview">Bharat Connect</a>, <a href="https://www.bharat-connect.com/pa/circulars/">BBPS circulars</a>, <a href="https://business.phonepe.com/articles/what-is-account-aggregator-a-complete-guide-to-india-s-aa-framework">Account Aggregator guide</a>, <a href="https://assets.kpmg.com/content/dam/kpmgsites/in/pdf/2026/06/reserve-bank-of-india-rbi-digital-payments-e-mandate-framework-2026.pdf.coredownload.inline.pdf">RBI e-mandate framework 2026 (KPMG)</a>. Global: <a href="https://www.thenationalnews.com/lifestyle/2026/06/05/careem-plus-price-to-rise-more-than-50-from-july-jumping-from-dh19-to-dh29-per-month/">Careem Plus</a>, <a href="https://upgradedpoints.com/news/lyft-go-membership-benefits-dashpass/">Lyft Go</a>, <a href="https://www.grab.com/inside-grab/stories/grabunlimited-benefits-upgrades-saving-rides-deliveries/">GrabUnlimited</a>, <a href="https://help.rocketmoney.com/en/articles/9744474-bill-negotiation-charge">Rocket Money negotiation fee</a>.</p>
+<p class="mute">Several prices above come from news or coupon sites and conflict with each other; Due’s monitor must confirm each from the provider before showing it to users.</p>
+</div></footer>
+
+<script>{
+const $=id=>document.getElementById(id);
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+
+const layers=[
+['1 · Intake arteries','Everything that tells Due what a household pays and uses: manual entry, forwarded receipts, Gmail (read-only), PDF and photo bills, one shared SMS, screenshots of in-app offers, CSV, card statements; later Account Aggregator data via a licensed partner and Bharat Connect bill fetch via a COU partner.'],
+['2 · Merchant and plan resolver','Turns “UBER INDIA SYSTEMS”, “Uber One”, “uber.com receipt” into one canonical provider, product and plan. Alias tables per country, confidence score, human review queue for new merchants.'],
+['3 · Offer and rule graph','Every membership and plan as machine-readable rules: price, billing period, credit rate, per-trip cap, expiry of credits, exclusions, bundled partner benefits (Uber One → Zomato Gold), eligibility, source, last verified. Append-only history; personalised offers marked provider-only.'],
+['4 · Life pattern model','From receipts: trips per month by mode and route, order frequency and basket size, recharge cycle, OTT viewing proxies. Seasonality (monsoon, festivals, IPL). Always explainable: “based on 23 Uber receipts in 90 days”.'],
+['5 · Value engine','For each membership the user has or could have: expected value = benefits the user will really use − fee. Break-even (“needs 7 rides at ₹215”), overlaps (Zomato Gold paid while Uber One already gives it), cheaper paths (metro + Cityflo pass vs daily cabs), timing (buy yearly at 10% off only if usage is stable).'],
+['6 · Proof ledger','After the user acts, Due reads the next receipts and books verified savings: credits actually earned, fees actually avoided, delivery fees actually waived. This ledger produces the Return Ratio and makes the 2× claim honest.'],
+['7 · Nudge and action layer','One clear suggestion at the right moment: “Uber credits worth ₹96 expire in 5 days”, “Claim your Zomato Gold code within the window”, “You took 3 rides this month: pause Uber One”. Hand-off links to the official app only. No payments, no cancellations by Due.'],
+['8 · Research brain','Shared, de-identified knowledge: provider pages monitored on a schedule, terms diffs reviewed by humans, user-shared evidence clustered so one forwarded campaign is learned once for everyone. Feeds layer 3.']];
+$('layerCards').innerHTML=layers.map(([t,d])=>`<div class="card"><h3>${t}</h3><p>${d}</p></div>`).join('');
+
+const ents=[
+['Provider, Product, Plan','Public','Canonical names, aliases per country, plan price and period, links'],
+['BenefitRule','Public','Typed rule: percent credit, cap per unit, expiry days, exclusions, bundled partner benefit, eligibility, source, last verified'],
+['Observation','Public','Append-only evidence of a rule: page, terms, user-shared screenshot (de-identified), confidence'],
+['CityPack, Operator, FareTable, PassProduct','Public','Mumbai operators, routes and fare bands, passes such as trip packs and monthly passes'],
+['Receipt, Transaction','Private','Merchant, amount, date, mode (cab, bike, auto, metro, bus), route area, credits earned'],
+['Membership','Private','What the user holds, since when, renewal date, how it is billed (direct, telecom bundle, card)'],
+['UsageProfile','Private','Monthly frequencies and averages per category, with the receipts they came from'],
+['Opportunity','Private','A computed suggestion: expected value, break-even, assumptions, confidence, expiry'],
+['SavingsEntry','Private','Verified saving after action, the receipt that proves it, counted in the Return Ratio'],
+['Consent','Private','Purpose, version, scope, granted and revoked times']];
+$('entities').innerHTML=ents.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+
+const src=[
+['Ride-hailing','Uber One','₹149/mo; up to 10% credits, ₹150/trip cap, 60-day expiry; Zomato Gold 3 months; metro tickets in Uber via ONDC (50% off, ₹10 cap, Mar 2026)','ok'],
+['Bike taxi / auto','Rapido Power Pass','Pass prices and tiers seen only on coupon sites in 2026; must confirm in app','un'],
+['Premium shuttle','Cityflo','Flexi Pass weekly/monthly “up to 40%” vs single rides; Metro 3 feeder from ₹29, ₹499 monthly pass (2025)','ok'],
+['City bus','BEST via Chalo','Super Saver trip packs, e.g. 60 trips/28 days ₹1,350; 20–34% off daily tickets','ok'],
+['City bus','NMMT, TMT','On Mumbai One app; digital tickets; monthly pass details not confirmed','un'],
+['Metro','Mumbai Metro 1, 2A/7, 3, Navi Mumbai Metro','Trip passes on WhatsApp (Metro 1), app monthly pass (Metro 3), smart card about 5% off (Navi Mumbai, third-party)','ok'],
+['Food','Zomato Gold, Swiggy One / Lite / BLCK','City-wise prices; overlaps with Uber One Zomato Gold voucher','ok'],
+['Quick commerce','Zepto Club, Blinkit','Zepto Club ₹99/mo invite-only (Jul 2026); Blinkit has no paid membership','ok'],
+['Telecom','Jio, Airtel, Vi','Jio 2026 bundles (JioHotstar, JioAICloud, Gemini Pro); Airtel Perplexity ended Jan 2026; Airtel Black Prime coupons','ok'],
+['Bills','Bharat Connect (BBPS)','25+ categories, 22,000+ billers; bill fetch through a certified COU partner','ok'],
+['Bank data','Account Aggregator','Consent-based; analysis happens at a licensed FIU, not the AA','ok'],
+['Mandates','RBI e-mandate framework (Apr 2026)','Pre-debit notices and recurring rules; Due reads, never creates mandates','ok']];
+$('srcRows').innerHTML=src.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td><span class="tag ${r[3]}">${r[3]==='ok'?'Reported':'Unconfirmed'}</span></td></tr>`).join('');
+
+const rules=[
+['Never act for the user','No payments, recharges, cancellations, mandates or OTPs. Due shows the move and opens the official app.'],
+['Value first, money second','Recommendations rank by the user’s net value only. Any partner fee is disclosed and never changes the order.'],
+['Every number has a receipt or a source','Estimates are labelled as estimates; provider claims like “₹210 average” are labelled as the provider’s claim.'],
+['No silent data grabs','No SMS inbox reading, no WhatsApp scraping, no logging in to provider accounts. Consent per purpose under DPDP.']];
+$('rulesCards').innerHTML=rules.map(([t,d])=>`<div class="card"><h3>${t}</h3><p>${d}</p></div>`).join('');
+
+const ph=[
+['1 · Mumbai mobility + food (8–10 weeks)','Rule graph for Uber One, Rapido, Cityflo, BEST, metros, Zomato Gold, Swiggy One; receipt parsers for these senders; value engine v1; proof ledger','50 households, median Return Ratio measured'],
+['2 · Telecom, OTT, AI bundles','Jio/Airtel/Vi plan rules, OTT overlap detection, trial-to-paid watch','Overlaps found in at least 30% of households'],
+['3 · Bills and bank data','Bharat Connect bill fetch via partner, AA via FIU partner, card statement parsing','Coverage of 80% of a household’s recurring spend'],
+['4 · Guarantee and new cities','Publish the 2× guarantee once 6 months of data support it; Bengaluru and Delhi packs; first country abroad','Guarantee payout under 10% of paying users']];
+$('phases').innerHTML=ph.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+
+const ids=['rides','fare','rate','used','gold','fee'];
+function calc(){
+  const v=Object.fromEntries(ids.map(i=>[i,Math.max(0,parseFloat($(i).value)||0)]));
+  const perTrip=Math.min(v.fare*v.rate/100,150);
+  const credits=perTrip*v.rides*v.used/100;
+  const value=credits+v.gold, net=value-v.fee, ratio=v.fee?value/v.fee:0;
+  const be=v.rate&&v.fare?Math.ceil(v.fee/(Math.min(v.fare*v.rate/100,150)*v.used/100||1)):0;
+  $('net').textContent=(net<0?'−':'+')+inr(Math.abs(net));
+  $('bar').style.width=Math.min(100,ratio/3*100)+'%';
+  $('ratioTxt').textContent=`Value returned: ${ratio.toFixed(1)}× the fee (Due’s target is 2× or more)`;
+  $('rows').innerHTML=[['Credits you will really use',inr(credits)],['Zomato Gold value to you',inr(v.gold)],['Fee',inr(v.fee)],['Break-even rides at this fare',be?be+' rides':'—']].map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+  $('verdict').textContent=ratio>=2?'Keep it: this membership pays back at least twice.':ratio>=1?'Worth it, but not 2×: Due would look for a better combination first.':'Not worth it at this usage: Due would suggest pausing it before renewal.';
+}
+$('f').addEventListener('input',calc);$('f').addEventListener('submit',e=>e.preventDefault());calc();
+
+const s=$('art');
+function draw(){
+  const W=s.clientWidth,H=s.clientHeight,cx=W*0.55,cy=H/2,r=Math.min(W,H)*0.17,narrow=W<480;
+  const ins=narrow?['Receipts','Bills & PDFs','Offer sources']:['Receipts & Gmail','Bills, PDFs, photos','Card & AA data','Offer sources'];
+  const outs=narrow?['Alerts','Proof']:['Expiry alerts','Switch or pause','Savings proof'];
+  const ink=getComputedStyle(document.body).color;
+  let h='';
+  ins.forEach((t,i)=>{const y=H*(i+1)/(ins.length+1);h+=`<path class="flow" d="M${W*0.2},${y} C${W*0.35},${y} ${cx-r*1.6},${cy} ${cx-r},${cy}" fill="none" stroke="#ff2e7e" stroke-width="3"/><text x="4" y="${y+5}" fill="${ink}" font-size="${narrow?12:14}" font-family="Inter">${t}</text>`});
+  outs.forEach((t,i)=>{const y=H*(i+1)/(outs.length+1);h+=`<path class="flow" d="M${cx+r},${cy} C${cx+r*1.6},${cy} ${W*0.75},${y} ${W*0.82},${y}" fill="none" stroke="${ink}" stroke-opacity=".55" stroke-width="3"/><text x="${W*0.83}" y="${y+5}" fill="${ink}" font-size="${narrow?12:14}" font-family="Inter">${t}</text>`});
+  h+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ff2e7e"/><circle cx="${cx}" cy="${cy}" r="${r*0.72}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/><text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#fff" font-size="${narrow?13:17}" font-weight="700" font-family="Space Grotesk">Value</text><text x="${cx}" y="${cy+16}" text-anchor="middle" fill="#fff" font-size="${narrow?13:17}" font-weight="700" font-family="Space Grotesk">Engine</text>`;
+  s.innerHTML=h;
+}
+const ro=new ResizeObserver(draw);ro.observe(s);
+}</script>
+</body>
+</html>
