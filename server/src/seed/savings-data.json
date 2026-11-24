@@ -829,13 +829,18 @@
             "periodDays": 30
           },
           {
+            "label": "Quarterly",
+            "priceInr": 599,
+            "periodDays": 90
+          },
+          {
             "label": "Yearly",
             "priceInr": 1499,
             "periodDays": 365
           },
           {
             "label": "Prime Lite yearly",
-            "priceInr": null,
+            "priceInr": 799,
             "periodDays": 365
           }
         ],
@@ -847,8 +852,8 @@
           }
         ],
         "conditions": [
-          "Prime prices from 2023 coverage; Prime Lite reported at ₹999 then ₹799, so left null.",
-          "Quarterly price conflicts (₹499 vs ₹599), not stored."
+          "Monthly ₹299, quarterly ₹599, yearly ₹1,499 and Lite ₹799 per 2026 listings (Cashify, GrabOn snippets); not seen on an Amazon page. Older coverage said Lite ₹999.",
+          "A ₹399/year Prime Shopping Edition is reported by an affiliate site only; not stored."
         ]
       },
       "proof": {
@@ -870,6 +875,18 @@
           "url": "https://www.businesstoday.in/technology/story/amazon-prime-vs-prime-lite-subscription-plans-price-validity-and-other-features-compared-385711-2023-06-15",
           "label": "Business Today: Prime vs Prime Lite",
           "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://cashify.in/amazon-prime-subscription-plans-mobile-lite-annual-more",
+          "label": "Cashify: Prime plans 2026",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.grabon.in/indulge/shopping-tips/amazon-prime-benefits/",
+          "label": "GrabOn: Prime benefits 2026",
+          "kind": "aggregator",
           "lastVerifiedAt": null
         }
       ],
@@ -975,9 +992,24 @@
             "periodDays": 30
           },
           {
+            "label": "Student monthly",
+            "priceInr": 89,
+            "periodDays": 30
+          },
+          {
+            "label": "Family monthly",
+            "priceInr": 299,
+            "periodDays": 30
+          },
+          {
             "label": "Individual 1 month (prepaid)",
             "priceInr": 159,
             "periodDays": 30
+          },
+          {
+            "label": "Individual 3 months (prepaid)",
+            "priceInr": 459,
+            "periodDays": 90
           },
           {
             "label": "Individual yearly (prepaid)",
@@ -993,7 +1025,8 @@
           }
         ],
         "conditions": [
-          "From Aug 2024 price-hike coverage; likely outdated."
+          "All prices from the Aug 2024 hike coverage (Business Today, India TV, Business Standard); no newer revision found in Nov 2026 search, but not seen on a YouTube page.",
+          "Student needs verification; family covers up to 5 members aged 13+."
         ]
       },
       "proof": {
@@ -1014,6 +1047,12 @@
         {
           "url": "https://www.business-standard.com/webstories/youtube-increases-prices-across-all-premium-plans-in-india-1240827163141ws",
           "label": "Business Standard: YouTube price hike",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.indiatvnews.com/technology/news/youtube-premium-price-hike-in-india-new-rates-for-individual-family-and-student-here-2024-08-27-948939",
+          "label": "India TV: YouTube Premium new rates",
           "kind": "press",
           "lastVerifiedAt": null
         }
@@ -1433,6 +1472,498 @@
       ],
       "actionUrl": null,
       "actionLabel": null
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jio-postpaid-in",
+      "detect": {
+        "merchantAliases": [
+          "jio_postpaid",
+          "jio"
+        ],
+        "senderDomains": [
+          "jio.com"
+        ],
+        "keywords": [
+          "jio postpaid",
+          "jioplus"
+        ]
+      },
+      "provider": "Jio",
+      "product": "Jio postpaid / JioPlus family",
+      "category": "telecom",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "₹349 plan (30 GB, single connection)",
+            "priceInr": 349,
+            "periodDays": 30
+          },
+          {
+            "label": "₹449 plan (75 GB shared, up to 3 add-ons)",
+            "priceInr": 449,
+            "periodDays": 30
+          },
+          {
+            "label": "₹749 plan (100 GB shared)",
+            "priceInr": 749,
+            "periodDays": 30
+          },
+          {
+            "label": "Add-on family member (per SIM, 5 GB)",
+            "priceInr": 150,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar Mobile (reported on ₹349, ₹449, ₹749)",
+            "months": null
+          },
+          {
+            "key": "netflix",
+            "label": "Netflix Basic (₹749 plan only, reported)",
+            "months": null
+          },
+          {
+            "key": "primevideo",
+            "label": "Amazon Prime Lite (₹749 plan only, reported)",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "₹449 and ₹150 add-on (plus taxes, up to 3 child SIMs) come from Jio's Sep 2025 postpaid PDF snippet; ₹349 and ₹749 and the OTT lists are from 91mobiles/India TV (2026) and not seen on jio.com.",
+          "₹749 reported as excluding GST. Sources disagree on add-on limit for ₹749 (2 vs 3).",
+          "OTT inclusions disagree across sources; confirm in MyJio."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://myjiostatic.cdn.jio.com/jio/plan/Postpaid-Plans-Sep-2025.pdf",
+          "label": "Jio: Postpaid plans PDF Sep 2025",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.jio.com/jcms/en-in/jio-plus-terms-conditions/",
+          "label": "Jio: JioPlus terms",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.91mobiles.com/hub/jio-postpaid-plans-2026-price-india-offers-benefits/",
+          "label": "91mobiles: Jio postpaid 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.indiatvnews.com/technology/news/jio-postpaid-plan-with-free-netflix-hotstar-and-prime-video-under-rs-750-2026-05-08-1040423",
+          "label": "India TV: Jio 749 plan OTT",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.jio.com/postpaid/plans",
+      "actionLabel": "Open Jio postpaid"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jiofiber-airfiber-in",
+      "detect": {
+        "merchantAliases": [
+          "jiofiber",
+          "jio_airfiber",
+          "airfiber"
+        ],
+        "senderDomains": [
+          "jio.com"
+        ],
+        "keywords": [
+          "jiofiber",
+          "airfiber"
+        ]
+      },
+      "provider": "Jio",
+      "product": "JioFiber / AirFiber",
+      "category": "telecom",
+      "valueKind": "overlap",
+      "rules": {
+        "prices": [
+          {
+            "label": "Entry plan ₹599 (₹399 + ₹200 per user brief; 30 Mbps)",
+            "priceInr": 599,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Entry AirFiber/JioFiber plan reported at ₹599 with 1000 GB FUP and 30 Mbps; the ₹399 + ₹200 split is not confirmed by any source seen.",
+          "Jio page says JioHotstar is free on JioFiber/AirFiber plans that bundle OTT apps; the other apps (SonyLIV, ZEE5, SunNXT, Hoichoi, Discovery+, etc.) vary by source (9 to 14 apps, 2023 to 2025) so only JioHotstar is listed."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The duplicate OTT subscription charge stops."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://www.jio.com/jcms/airfiber/ott/hotstar/",
+          "label": "Jio: AirFiber JioHotstar",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://telecomtalk.info/?p=986063",
+          "label": "TelecomTalk: AirFiber plans and OTT Jan 2025",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://business-standard.com/technology/tech-news/reliance-jio-launches-jio-airfiber-in-eight-cities-plans-start-at-rs-599-123091900567_1.html",
+          "label": "Business Standard: AirFiber from ₹599",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.jio.com/",
+      "actionLabel": "Open Jio"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "linkedin-premium-in",
+      "detect": {
+        "merchantAliases": [
+          "linkedin"
+        ],
+        "senderDomains": [
+          "linkedin.com"
+        ],
+        "keywords": [
+          "linkedin premium"
+        ]
+      },
+      "provider": "LinkedIn",
+      "product": "LinkedIn Premium",
+      "category": "other",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Premium Career monthly",
+            "priceInr": null,
+            "periodDays": 30
+          },
+          {
+            "label": "Premium Career yearly",
+            "priceInr": null,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "linkedin_premium",
+            "label": "LinkedIn Premium",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "No official India rupee price found. Third parties give ₹1,490 or ₹2,499 a month; not stored. Check the checkout page."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://premium.linkedin.com/careers/career",
+          "label": "LinkedIn Premium Career",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.linkedin.com/premium/",
+      "actionLabel": "Open LinkedIn Premium"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "chatgpt-plus-in",
+      "detect": {
+        "merchantAliases": [
+          "openai",
+          "chatgpt"
+        ],
+        "senderDomains": [
+          "openai.com"
+        ],
+        "keywords": [
+          "chatgpt plus",
+          "openai"
+        ]
+      },
+      "provider": "OpenAI",
+      "product": "ChatGPT Plus",
+      "category": "other",
+      "valueKind": "price_change",
+      "rules": {
+        "prices": [
+          {
+            "label": "Plus monthly (incl. GST)",
+            "priceInr": 1999,
+            "periodDays": 30
+          },
+          {
+            "label": "Go monthly",
+            "priceInr": 399,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "chatgpt",
+            "label": "ChatGPT",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "₹1,999 incl. GST from Aug 2025 coverage; a report says Plus/Pro prices were later raised in India (Republic World), not confirmed. ₹399 Go from Aug 2025 launch coverage."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The subscription charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://bestmediainfo.com/mediainfo/mediainfo-digital/chatgpt-introduces-india-exclusive-pricing-with-plus-plan-at-rs-1999-pro-plan-at-rs-19900-9662640",
+          "label": "BestMediaInfo: ChatGPT India pricing",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://inc42.com/buzz/openai-launches-cheapest-chatgpt-plan-at-inr-399-in-india/",
+          "label": "Inc42: ChatGPT Go ₹399",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.republicworld.com/tech/chatgpt-plus-pro-prices-increased-in-india-heres-how-much-more-you-have-to-pay-now",
+          "label": "Republic World: Plus/Pro price increase",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://chatgpt.com/#pricing",
+      "actionLabel": "Open ChatGPT pricing"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "icloud-plus-in",
+      "detect": {
+        "merchantAliases": [
+          "apple",
+          "icloud"
+        ],
+        "senderDomains": [
+          "apple.com"
+        ],
+        "keywords": [
+          "icloud",
+          "apple one"
+        ]
+      },
+      "provider": "Apple",
+      "product": "iCloud+ / Apple One",
+      "category": "cloud",
+      "valueKind": "overlap",
+      "rules": {
+        "prices": [
+          {
+            "label": "iCloud+ 50 GB monthly",
+            "priceInr": 75,
+            "periodDays": 30
+          },
+          {
+            "label": "iCloud+ 200 GB monthly",
+            "priceInr": 219,
+            "periodDays": 30
+          },
+          {
+            "label": "iCloud+ 2 TB monthly",
+            "priceInr": 749,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "apple_tv",
+            "label": "Apple TV (included from Sep 2026)",
+            "months": null
+          },
+          {
+            "key": "apple_arcade",
+            "label": "Apple Arcade (included from Sep 2026)",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Apple India newsroom (Sep 2026) says iCloud+ now includes Apple TV and Apple Arcade, starting at ₹75 for 50 GB. ₹219 and ₹749 from secondary sources only.",
+          "Apple One is no longer offered to new subscribers in India; existing subscribers keep it (last listed ₹195 individual, ₹365 family, 2020 launch).",
+          "Standalone Apple TV and Arcade were reported at ₹99 each before the change: check you are not paying both."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The duplicate subscription charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.apple.com/in/newsroom/2026/09/icloud-plus-expands-to-include-apple-tv-and-apple-arcade/",
+          "label": "Apple India newsroom: iCloud+ with Apple TV and Arcade",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://support.apple.com/en-us/108047",
+          "label": "Apple: iCloud+ plans and pricing",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.digit.in/news/general/icloud-gets-apple-tv-and-apple-arcade-for-free-in-india-plans-start-at-rs-75.html",
+          "label": "Digit: iCloud+ India from ₹75",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://gadgets.beebom.com/guides/icloud-storage-plans-pricing-benefits",
+          "label": "Beebom: iCloud plans India",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.apple.com/in/icloud/",
+      "actionLabel": "Open iCloud+"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "sbi-gold-loan-in",
+      "detect": {
+        "merchantAliases": [
+          "sbi_gold_loan"
+        ],
+        "senderDomains": [
+          "sbi.co.in",
+          "sbi.bank.in"
+        ],
+        "keywords": [
+          "gold loan"
+        ]
+      },
+      "provider": "State Bank of India",
+      "product": "SBI personal gold loan",
+      "category": "loan",
+      "valueKind": "loan_switch",
+      "rules": {
+        "ratePctLow": 8.7,
+        "ratePctHigh": 9.95,
+        "conditions": [
+          "8.70% to 9.95% p.a. is an aggregator range (BankBazaar, CreditMantri); varies by scheme and tenure and is tied to 1-year MCLR plus spread.",
+          "SBI personal gold loan page snippet shows 9.30% effective for a 12-month bullet variant (MCLR 8.85% + 0.45%) and mean rate 9.75%, but its dates look inconsistent. Information only."
+        ]
+      },
+      "proof": {
+        "signal": "amount_drop",
+        "description": "The interest charged falls after switching or repaying."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://sbi.bank.in/web/personal-banking/loans/gold-loan/personal-gold-loans",
+          "label": "SBI: Personal gold loans",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://cleartax.in/s/sbi-gold-loan-interest-rate",
+          "label": "ClearTax: SBI gold loan rate",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.creditmantri.com/sbi-gold-loan-interest-rates",
+          "label": "CreditMantri: SBI gold loan rates",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://sbi.bank.in/web/personal-banking/loans/gold-loan/personal-gold-loans",
+      "actionLabel": "Open SBI gold loan"
     }
   ],
   "cityPacks": [
