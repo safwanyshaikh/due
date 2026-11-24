@@ -48,10 +48,16 @@ function MoveRow({
             {done && <Badge tone="calm">Marked done</Badge>}
           </span>
         </span>
-        <span className="sv-move-amt amt">
-          {rupees(m.monthlySavingInr)}
-          <span className="muted small">/month</span>
-        </span>
+        {m.severity === 'urgent' ? (
+          <span className="sv-move-amt">
+            <Badge tone="warm">Urgent</Badge>
+          </span>
+        ) : (
+          <span className="sv-move-amt amt">
+            {rupees(m.monthlySavingInr)}
+            <span className="muted small">/month</span>
+          </span>
+        )}
       </button>
     </li>
   );

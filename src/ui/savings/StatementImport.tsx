@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
 import type {
+  BankStatementSummary,
   CardStatementSummary,
   LoanStatementSummary,
   RecurringCandidate,
@@ -20,8 +21,10 @@ import {
   addLoanEmi,
   findRecurring,
   parseStatement,
+  readBankSummary,
   readCardSummary,
   readLoanSummary,
+  saveBankStatement,
 } from './engine';
 import { CADENCE_TEXT, CONFIDENCE_LABEL, CONFIDENCE_TONE, RAIL_TEXT, rupees } from './format';
 
@@ -49,7 +52,7 @@ function guessType(c: RecurringCandidate): CommitmentType {
 }
 
 export function StatementImport() {
-  const { mutate, ctx, today } = useApp();
+  const { mutate, update, ctx, today } = useApp();
   const [text, setText] = useState('');
   const [source, setSource] = useState<StatementLine['source']>('bank');
   const [busy, setBusy] = useState(false);
@@ -61,12 +64,15 @@ export function StatementImport() {
   const [card, setCard] = useState<CardStatementSummary | null>(null);
   const [loan, setLoan] = useState<LoanStatementSummary | null>(null);
   const [added, setAdded] = useState<string | null>(null);
+  const [bank, setBank] = useState<BankStatementSummary | null>(null);
 
   const check = (t: string) => {
     setMsg(null);
     setAdded(null);
     const l = readLoanSummary(t);
     setLoan(l);
+    const b = !l && source === 'bank' ? readBankSummary(t) : null;
+    setBank(b && b.morningBalances.length ? b : null);
     setCard(l ? null : source === 'card' || /credit\s+card/i.test(t) ? readCardSummary(t) : null);
     if (l) {
       setFound(null);
@@ -124,6 +130,18 @@ export function StatementImport() {
     const r = mutate((d) => addLoanEmi(d, loan, ctx()), { message: "Added this loan's EMI" });
     if (r) setAdded('loan');
   };
+
+  const useBank = () => {
+    if (!bank) return;
+    update((d) => ({ ...d, savings: saveBankStatement(d.savings, bank) }));
+    setAdded('bank');
+  };
+  const failed = bank
+    ? bank.failedAutoDebits.reduce(
+        (a, f) => ({ count: a.count + f.count, charges: a.charges + f.chargesInr }),
+        { count: 0, charges: 0 },
+      )
+    : null;
 
   const money = (n: number | null) => (n === null ? 'Not shown' : rupees(n));
   const cardFees = card
@@ -273,6 +291,52 @@ export function StatementImport() {
                 onClick={addCard}
               >
                 Add this card&apos;s bill
+              </button>
+            )}
+          </section>
+        )}
+        {bank && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-bank-h"
+            data-testid="sv-bank-summary"
+          >
+            <h2 id="sv-bank-h">{bank.bank ?? 'Bank'} statement</h2>
+            <dl className="sv-summary">
+              {bank.periodFrom && bank.periodTo && (
+                <div>
+                  <dt>Period</dt>
+                  <dd>
+                    {formatDate(bank.periodFrom)} to {formatDate(bank.periodTo)}
+                  </dd>
+                </div>
+              )}
+              {failed && failed.count > 0 && (
+                <div>
+                  <dt>Failed auto-debits</dt>
+                  <dd>
+                    {failed.count} ({rupees(failed.charges)} in bank charges)
+                  </dd>
+                </div>
+              )}
+              {bank.priceSteps.map((p) => (
+                <div key={p.key}>
+                  <dt>{p.label}</dt>
+                  <dd>
+                    {rupees(p.fromInr)} → {rupees(p.toInr)} a month
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {added === 'bank' ? (
+              <Notice>Saved. Savings now uses these balances and charges.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-secondary press jelly align-start"
+                onClick={useBank}
+              >
+                Use this statement for Savings
               </button>
             )}
           </section>

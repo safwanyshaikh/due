@@ -63,3 +63,14 @@ export { addCardBill, addLoanEmi, saveCardStatement, saveLoanStatement, nextOnDa
 export { lineKindOf, statementPeriodOf } from './statement';
 export { statementAlias, STATEMENT_ALIASES, type StatementAlias } from './recurring';
 export { bouncesIn12Months, BOUNCE_TRANSFER_NOTE } from './engine';
+export {
+  parseBankStatementSummary,
+  incomeTiming,
+  balanceAt,
+  priceSteps,
+  bankMonths,
+  type IncomeTimingMonth,
+} from './bankSummary';
+export { saveBankStatement } from './state';
+export { timingSentence } from './engine';
+export { isMultiLineBankText, isTwoDateBankText, holderName } from './statement';

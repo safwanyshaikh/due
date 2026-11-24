@@ -188,6 +188,8 @@ export interface Move {
   unverifiedPrice: boolean;
   legalNote: string | null;
   sponsored: false; // ads are off at launch
+  /** Additive: 'urgent' moves (e.g. an overdue loan in SMA) rank first regardless of saving. */
+  severity?: 'urgent';
 }
 
 export interface LedgerEntry {
@@ -226,6 +228,32 @@ export interface SavingsState {
   statements?: CardStatementSummary[];
   /** Additive: loan statement / welcome-letter summaries the user saved (no account numbers). */
   loans?: LoanStatementSummary[];
+  /** Additive: bank-account statement summaries (failed auto-debits, morning balances, price steps). */
+  banks?: BankStatementSummary[];
+}
+
+/** Additive: a merchant whose monthly charge stepped up and stayed there. */
+export interface PriceStep {
+  key: string;
+  label: string;
+  fromInr: number;
+  toInr: number;
+  /** YYYY-MM of the first month at the new price. */
+  since: string;
+}
+
+/** Additive: what Due keeps from a bank statement (no account numbers, no payee names). */
+export interface BankStatementSummary {
+  bank: string | null;
+  periodFrom: string | null;
+  periodTo: string | null;
+  /** Auto-debits (mandates) returned for insufficient balance, and the bank's charges, per month. */
+  failedAutoDebits: { month: string; count: number; chargesInr: number }[];
+  /** Balance at 09:00 on each day of the statement. */
+  morningBalances: { date: string; balanceInr: number }[];
+  priceSteps: PriceStep[];
+  /** Additive: automatic recoveries to an overdue loan/overdraft account in SMA ("SMA REC"). */
+  smaSweeps?: { date: string; amountInr: number }[];
 }
 
 /** Additive: a loan "Statement of Account" or welcome letter, read on the device. Rupees. */
@@ -319,9 +347,24 @@ export interface StatementLine {
   /** Tax printed with a fee line ("(EXCL TAX 2384.03)"): the GST on that fee, charged separately. */
   taxInr?: number;
   /** What the line is. Only 'purchase' lines can become subscriptions. */
-  lineKind?: 'purchase' | 'fee' | 'interest' | 'tax' | 'payment' | 'reversal';
+  lineKind?:
+    | 'purchase'
+    | 'fee'
+    | 'interest'
+    | 'tax'
+    | 'payment'
+    | 'reversal'
+    | 'credit'
+    | 'wallet_topup'
+    | 'loan_repayment';
+  /** Additive: a transfer between the statement holder's own accounts (not spending or income). */
+  selfTransfer?: boolean;
   /** YYYY-MM of the statement's closing date, when the text printed its period. */
   statementPeriod?: string;
+  /** Running balance printed on the row (bank statements). */
+  balanceInr?: number;
+  /** Time of the transaction, HH:MM:SS, when printed. */
+  time?: string;
 }
 
 export interface RecurringCandidate {
@@ -339,6 +382,10 @@ export interface RecurringCandidate {
   kind?: 'subscription' | 'usage_topup' | 'unknown';
   /** Additive: the foreign currency when the charges were billed in one. */
   foreignCurrency?: string;
+  /** Additive: postpaid-style merchants, distinct amounts paid a month ≈ connections. */
+  connections?: number;
+  /** Additive: the same merchant was paid from both bank and card lines passed together. */
+  severalPaymentMethods?: boolean;
 }
 
 export const COMMUNITY_THRESHOLD = 20;

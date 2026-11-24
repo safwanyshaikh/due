@@ -138,7 +138,7 @@ describe('recurring detection on SBI Card statements', () => {
     expect(statementMerchant('UPI-Jio Prepaid Recharg').key).toBe('jio');
     expect(statementMerchant('UPI-AIRTEL PAYMENTS BANMITED').key).toBe('airtel');
     expect(statementMerchant('UPI-URBAN COMPANY LIMIT').key).toBe('urban_company');
-    expect(statementMerchant('UPI-Euronet Services InPvt Ltd').key).toBe('euronet services');
+    expect(statementMerchant('UPI-Euronet Services InPvt Ltd').key).toBe('mobile_recharge');
   });
 
   it('7. foreign/known subscriptions recur across statement months with a wide tolerance; top-ups are classed', () => {

@@ -15,7 +15,7 @@ export function railFor(
   if (/UPI[\s-_/]*AUTO\s*PAY|UPI[\s-_/]*MANDATE|\bAUTO\s*PAY\b|\bAUTOPAY\b/.test(n))
     return 'upi_autopay';
   if (
-    /\bNACH\b|\bACH[\s-]*D(R)?\b|\bACH\s+DEBIT\b|\bECS\b|\bSI[-/\s]|\bSTANDING\s+INSTRUCTION\b/.test(
+    /\bMAND\s+DR\b|\bNACH\b|\bACH[\s-]*D(R)?\b|\bACH\s+DEBIT\b|\bECS\b|\bSI[-/\s]|\bSTANDING\s+INSTRUCTION\b/.test(
       n,
     )
   )
@@ -83,6 +83,31 @@ const RAIL_NOISE = new Set([
   'gurgaon',
   'in',
   'ind',
+  // bank codes printed inside UPI remarks
+  'sbin',
+  'hdfc',
+  'utib',
+  'icic',
+  'yesb',
+  'ubin',
+  'barb',
+  'ratn',
+  'punb',
+  'ibkl',
+  'indb',
+  'airp',
+  'nspb',
+  'ipos',
+  'ppiw',
+  'kkbk',
+  'cnrb',
+  'idib',
+  'cbin',
+  'ioba',
+  'mahb',
+  'fdrl',
+  'kvbl',
+  'yes',
 ]);
 
 /**
@@ -99,9 +124,81 @@ export interface StatementAlias {
   usage?: boolean;
   /** Billed like a subscription (counts as recurring from two statement months). */
   subscription: boolean;
+  /** Paying another bill (card bill, loan EMI): never a subscription. */
+  billPayment?: 'card' | 'loan';
+  category?:
+    'mobility' | 'food' | 'telecom' | 'ott' | 'music' | 'cloud' | 'shopping' | 'utility' | 'other';
+  /** Several numbers/accounts paid separately each month (postpaid connections). */
+  multiConnection?: boolean;
 }
 
 export const STATEMENT_ALIASES: StatementAlias[] = [
+  // Bill payments first, so "SBI Card" or "L&T Finance" never reads as a merchant subscription.
+  {
+    key: 'sbi_card_bill',
+    label: 'SBI Card bill payment',
+    squash: ['sbicardp', 'sbicardpayment', 'sbicard'],
+    subscription: false,
+    billPayment: 'card',
+  },
+  {
+    key: 'lnt_finance_emi',
+    label: 'L&T Finance EMI',
+    squash: ['landtfinance', 'lntfi', 'landtfi', 'ltfinance', 'financelimited'],
+    tokens: [
+      ['l', 'and', 't'],
+      ['l', 'n', 't'],
+    ],
+    subscription: false,
+    billPayment: 'loan',
+  },
+  {
+    key: 'gpay_bills',
+    label: 'Google Pay bill/FASTag',
+    squash: ['gpayutility', 'gpaybptoll', 'gpaytoll', 'gpaybputil'],
+    usage: true,
+    subscription: true,
+    category: 'utility',
+  },
+  {
+    key: 'mobile_recharge',
+    label: 'Mobile/DTH recharge',
+    squash: ['gpayrecharge', 'euronet'],
+    usage: true,
+    subscription: false,
+    category: 'telecom',
+  },
+  {
+    key: 'jio_postpaid',
+    label: 'JIO Postpaid',
+    squash: ['jiopost'],
+    subscription: true,
+    category: 'telecom',
+    multiConnection: true,
+  },
+  {
+    key: 'apple',
+    label: 'Apple services',
+    squash: ['appleme', 'appleservic', 'applecombill', 'itunes'],
+    subscription: true,
+    category: 'cloud',
+  },
+  {
+    key: 'indian_railways',
+    label: 'Indian Railways season pass',
+    squash: ['iruts', 'indianrail', 'irctcuts'],
+    subscription: true,
+    category: 'mobility',
+  },
+  { key: 'mygate', label: 'MyGate', squash: ['mygate'], subscription: true, category: 'utility' },
+  {
+    key: 'lic',
+    label: 'LIC',
+    squash: ['lifeinsurancecorpo', 'licofindia'],
+    subscription: false,
+    category: 'other',
+  },
+  { key: 'blinkit', label: 'Blinkit', squash: ['blinkit'], subscription: false, category: 'food' },
   {
     key: 'anthropic',
     label: 'Anthropic (Claude)',
@@ -119,7 +216,7 @@ export const STATEMENT_ALIASES: StatementAlias[] = [
   {
     key: 'google_workspace',
     label: 'Google Workspace',
-    squash: ['googleworkspace', 'gsuite'],
+    squash: ['googleworkspa', 'gsuite'],
     subscription: true,
   },
   {
@@ -185,12 +282,20 @@ export function statementMerchant(narration: string): { key: string; label: stri
   const alias = statementAlias(narration);
   if (alias) return { key: alias.key, label: alias.label };
   const cleaned = narration
+    // SBI rows: "WDL TFR UPI/DR/0000000/PAYEE/…  0000000 AT 00343 TESTBR".
+    .replace(/^\s*(?:WDL|DEP)\s+TFR\s+/i, ' ')
+    .replace(/^\s*UPI\/(?:DR|CR)\/\d+\//i, ' ')
+    .replace(/\s+\d+\s+AT\s+\d{5}(?:\s+\S+)?\s*$/i, ' ')
+    // Bank UPI rows: "UPIAR/000000 /DR/Google W/utib/…" → the payee after /DR/ or /CR/.
+    .replace(/^\s*(?:UPIA[RB]|UPI)\/\d+\s*\/(?:DR|CR)\//i, ' ')
+    .replace(/^\s*(?:NEFTO?-?:?|RTGS:|IMPSA[RB]\/?|MOBFT\/?|eTXN\/By:)/i, ' ')
+    .replace(/\/[A-Z]{4}\//g, ' ') // bank codes between slashes
     .replace(/^\s*UPI[\s-/]+/i, ' ')
     .replace(/[a-z0-9._]+@[a-z0-9.]+/gi, ' ') // UPI handles / emails
     .replace(/\.(com|dev|io|in|ai|net|org|co|app)\b/gi, ' ') // domains: keep the name
     .replace(/\b[A-Z]{4}0[A-Z0-9]{6}\b/gi, ' ') // IFSC codes
     .replace(/\b[A-Z]{2,6}\d{5,}\w*\b/gi, ' ') // mandate / reference ids like HDFC0000123456
-    .replace(/\d+/g, ' ');
+    .replace(/\b\d+\b|\d{5,}/g, ' ');
   const canon = canonicalMerchant(cleaned);
   if (canon) return { key: canon.key, label: canon.displayName };
   let tokens = normaliseMerchant(cleaned)
@@ -298,7 +403,10 @@ function monthlyMerchant(
   );
   const usage = alias?.usage === true || hasRepeatsInMonth(sorted, 3);
   const med = median(totals);
-  const stable = totals.every((t) => Math.abs(t - med) <= med * WIDE_TOLERANCE);
+  // A prorated first month or one overage month does not make it irregular: most months must sit
+  // within ±40% of the median month.
+  const within = totals.filter((t) => Math.abs(t - med) <= med * WIDE_TOLERANCE).length;
+  const stable = within >= 2 && within > totals.length / 2;
   const kind: RecurringCandidate['kind'] = usage
     ? 'usage_topup'
     : stable
@@ -312,7 +420,7 @@ function monthlyMerchant(
     label,
     rail: rails.find((r) => r === 'upi_autopay' || r === 'bank_mandate') ?? rails[rails.length - 1],
     cadence: 'monthly',
-    averageInr: round2(totals.reduce((s, t) => s + t, 0) / totals.length),
+    averageInr: round2(med),
     lastDate,
     nextExpected: addMonthsClamped(lastDate, 1),
     occurrences: sorted.length,
@@ -321,6 +429,18 @@ function monthlyMerchant(
     kind,
   };
   if (fx) out.foreignCurrency = fx;
+  if (alias?.multiConnection) {
+    // Distinct amounts paid in a month ≈ number of connections (numbers) paid separately.
+    const counts = months.map(
+      (m) =>
+        new Set(
+          sorted
+            .filter((it) => monthOfLine(it.line) === m)
+            .map((it) => Math.round(it.line.amountInr)),
+        ).size,
+    );
+    out.connections = Math.round(median(counts));
+  }
   return out;
 }
 
@@ -339,6 +459,7 @@ export function detectRecurring(lines: StatementLine[]): RecurringCandidate[] {
     if (!(line.amountInr > 0)) return;
     const kind = line.lineKind ?? lineKindOf(line.narration);
     if (kind !== 'purchase') return;
+    if (line.selfTransfer || statementAlias(line.narration)?.billPayment) return;
     const { key, label } = statementMerchant(line.narration);
     if (key === 'unknown') return;
     const g = groups.get(key) ?? {
@@ -352,11 +473,16 @@ export function detectRecurring(lines: StatementLine[]): RecurringCandidate[] {
     groups.set(key, g);
   });
   const out: RecurringCandidate[] = [];
+  const mark = (c: RecurringCandidate, items: Item[]): RecurringCandidate => {
+    const sources = new Set(items.map((it) => it.line.source));
+    if (sources.size > 1) c.severalPaymentMethods = true;
+    return c;
+  };
   for (const [key, g] of groups) {
     if (g.fx || g.alias?.subscription) {
       const c = monthlyMerchant(key, g.label, g.items, g.alias);
       if (c) {
-        out.push(c);
+        out.push(mark(c, g.items));
         continue;
       }
     }
@@ -386,6 +512,7 @@ export function detectRecurring(lines: StatementLine[]): RecurringCandidate[] {
         lineIndexes: items.map((it) => it.index),
         kind: 'subscription',
       });
+      mark(out[out.length - 1], items);
     }
   }
   return out.sort((a, b) => b.averageInr - a.averageInr || a.key.localeCompare(b.key));

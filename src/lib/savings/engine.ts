@@ -13,7 +13,9 @@ import { matchesKey, matchModule, type ModuleMatch } from './match';
 import { researchNeeds } from './research';
 import { cardKey } from './cardSummary';
 import { loanKey } from './loanSummary';
+import { bankMonths, incomeTiming } from './bankSummary';
 import type {
+  BankStatementSummary,
   CardStatementSummary,
   LoanStatementSummary,
   Assumption,
@@ -794,10 +796,115 @@ export function bouncesIn12Months(loan: LoanStatementSummary, today: string): nu
   return loan.bounceRows.filter((m) => m >= from && m <= today.slice(0, 7)).length;
 }
 
-function loanSummaryMoves(ctx: Ctx, loans: LoanStatementSummary[]): Move[] {
+const ORD = (n: number) =>
+  `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+
+function latestBank(banks: BankStatementSummary[]): BankStatementSummary | null {
+  return (
+    [...banks].sort((a, b) => (a.periodTo ?? '').localeCompare(b.periodTo ?? '')).pop() ?? null
+  );
+}
+
+function failedDebits(bank: BankStatementSummary | null): { count: number; charges: number } {
+  if (!bank) return { count: 0, charges: 0 };
+  return bank.failedAutoDebits.reduce(
+    (a, f) => ({ count: a.count + f.count, charges: a.charges + f.chargesInr }),
+    { count: 0, charges: 0 },
+  );
+}
+
+/** "On the 3rd your balance was ₹X against ₹Y of EMIs in N of M months", or ''. */
+export function timingSentence(
+  bank: BankStatementSummary | null,
+  dueDay: number | null,
+  emiTotal: number,
+): string {
+  if (!bank || !dueDay || !(emiTotal > 0)) return '';
+  const months = incomeTiming(bank, dueDay, emiTotal);
+  const short = months.filter((m) => (m.shortfallInr ?? 0) > 0);
+  if (!months.length || !short.length) return '';
+  const avg = short.reduce((s, m) => s + m.balanceInr, 0) / short.length;
+  return `On the ${ORD(dueDay)} your balance was ${rupees(avg)} against ${rupees(emiTotal)} of EMIs in ${short.length} of ${months.length} months.`;
+}
+
+function bankMoves(banks: BankStatementSummary[], hasLoans: boolean): Move[] {
+  const out: Move[] = [];
+  const bank = latestBank(banks);
+  if (!bank) return out;
+  const key = `bank-${(bank.bank ?? 'account').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const f = failedDebits(bank);
+  // With a loan summary the failed debits join the EMI bounce move (same cause: EMI date vs income).
+  if (!hasLoans && f.count > 0 && f.charges >= 1)
+    out.push(
+      feeMove('failed_debit', key, null, null, {
+        title: `Your bank charged ${rupees(f.charges)} for ${f.count} failed auto-debits`,
+        why: 'Each auto-debit that finds too little money in the account costs a charge. Keep the amount in the account a day before, or move the debit date nearer your income date.',
+        saving: f.charges / bankMonths(bank),
+        confidence: 'high',
+        effort: 'habit',
+        legalNote: null,
+      }),
+    );
+  const sweeps = bank.smaSweeps ?? [];
+  if (sweeps.length) {
+    const lastMonth = sweeps
+      .map((x) => x.date.slice(0, 7))
+      .sort()
+      .pop() as string;
+    const inMonth = sweeps.filter((x) => x.date.startsWith(lastMonth));
+    const total = inMonth.reduce((s, x) => s + x.amountInr, 0);
+    const label = formatDate(`${lastMonth}-01`).replace(/^1 /, '');
+    out.push({
+      ...feeMove('sma', key, null, null, {
+        title: 'A loan or overdraft is overdue (SMA)',
+        why: `Your bank swept ${rupees(total)} to an overdue account in ${label}. SMA status is reported to credit bureaus and blocks cheaper loans.`,
+        saving: 0,
+        confidence: 'high',
+        effort: 'paperwork',
+        legalNote: 'Information only. Ask your bank which account is overdue and what clears it.',
+        action: { url: null, label: 'Ask your bank' },
+      }),
+      severity: 'urgent',
+    });
+  }
+  for (const p of bank.priceSteps) {
+    const up = p.toInr - p.fromInr;
+    if (up < 1) continue;
+    out.push({
+      id: `price_change:statement:${p.key}`,
+      kind: 'price_change',
+      moduleId: null,
+      obligationIds: [],
+      title: `${p.label} went from ${rupees(p.fromInr)} to ${rupees(p.toInr)} a month`,
+      why: `Your statement shows the higher charge from ${formatDate(`${p.since}-01`).replace(/^1 /, '')}. Check whether a cheaper plan still fits.`,
+      monthlySavingInr: r0(up),
+      rangeInr: [r0(up), r0(up)],
+      confidence: 'medium',
+      assumptions: [],
+      sources: [],
+      effort: 'tap',
+      action: { url: null, label: 'Review your plan' },
+      unverifiedPrice: false,
+      legalNote: null,
+      sponsored: false,
+    });
+  }
+  return out;
+}
+
+function loanSummaryMoves(
+  ctx: Ctx,
+  loans: LoanStatementSummary[],
+  banks: BankStatementSummary[] = [],
+): Move[] {
   const out: Move[] = [];
   const yearAgo = addDays(ctx.today, -365);
-  for (const loan of latestBy(loans, loanKey, (l) => l.statementDate)) {
+  const bank = latestBank(banks);
+  const f = failedDebits(bank);
+  const latestLoans = latestBy(loans, loanKey, (l) => l.statementDate);
+  // Failed auto-debits join the move of the loan that bounced most (same cause: EMI vs income date).
+  const bankTarget = [...latestLoans].sort((a, b) => b.bounceCount - a.bounceCount)[0];
+  for (const loan of latestLoans) {
     const key = loanKey(loan);
     const name =
       [loan.lender, loan.product?.toLowerCase()].filter(Boolean).join(' ') || 'your loan';
@@ -806,17 +913,34 @@ function loanSummaryMoves(ctx: Ctx, loans: LoanStatementSummary[]): Move[] {
       .filter((c) => c.date >= yearAgo && c.date <= ctx.today)
       .reduce((s, c) => s + c.amountInr, 0);
     const late = loan.latePaymentChargesInr ?? 0;
-    if (bounces >= 1 && charges + late >= 1)
+    const bankPart: { count: number; charges: number } | null =
+      loan === bankTarget && f.count > 0 ? f : null;
+    if ((bounces >= 1 && charges + late >= 1) || bankPart) {
+      const emiTotal = latestLoans
+        .filter((l) => l.emiDueDay === loan.emiDueDay)
+        .reduce((s, l) => s + (l.emiInr ?? 0), 0);
+      const parts = [
+        bounces >= 1
+          ? `EMI bounced ${bounces} time${bounces === 1 ? '' : 's'} in 12 months: ${rupees(charges)} in bounce charges + ${rupees(late)} late interest.`
+          : '',
+        bankPart
+          ? `Your bank charged ${rupees(bankPart.charges)} for ${bankPart.count} failed auto-debits.`
+          : '',
+        timingSentence(bank, loan.emiDueDay, emiTotal),
+        'Or ask the lender to move the EMI date nearer your income date.',
+      ].filter(Boolean);
       out.push(
         feeMove('bounce', key, loan.obligationId, null, {
           title: 'Keep the EMI amount in the account 1 day before the due date',
-          why: `EMI bounced ${bounces} time${bounces === 1 ? '' : 's'} in 12 months: ${rupees(charges)} in bounce charges + ${rupees(late)} late interest. Or ask the lender to move the EMI date nearer your income date.`,
-          saving: (charges + late) / 12,
+          why: parts.join(' '),
+          saving:
+            (charges + late) / 12 + (bankPart && bank ? bankPart.charges / bankMonths(bank) : 0),
           confidence: 'high',
           effort: 'habit',
           legalNote: null,
         }),
       );
+    }
     const rate = loan.annualRatePct;
     const p = loan.futurePrincipalInr;
     const n = loan.balanceTenureMonths;
@@ -863,6 +987,9 @@ function loanSummaryMoves(ctx: Ctx, loans: LoanStatementSummary[]): Move[] {
 
 export function rankMoves(moves: Move[]): Move[] {
   return [...moves].sort((a, b) => {
+    // Urgent alerts (an overdue loan in SMA) come first, whatever they would save.
+    const u = (b.severity === 'urgent' ? 1 : 0) - (a.severity === 'urgent' ? 1 : 0);
+    if (u) return u;
     const s =
       b.monthlySavingInr * CONFIDENCE_WEIGHT[b.confidence] -
       a.monthlySavingInr * CONFIDENCE_WEIGHT[a.confidence];
@@ -912,7 +1039,8 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
   // Statement summaries first: their loan moves are more exact than the obligation's own terms
   // and win the de-duplication below.
   const moves: Move[] = [
-    ...loanSummaryMoves(ctx, data.savings?.loans ?? []),
+    ...loanSummaryMoves(ctx, data.savings?.loans ?? [], data.savings?.banks ?? []),
+    ...bankMoves(data.savings?.banks ?? [], (data.savings?.loans ?? []).length > 0),
     ...cardFeeMoves(ctx, data.savings?.statements ?? []),
     ...overlapMoves(ctx),
     ...commuteMoves(ctx),
@@ -948,7 +1076,8 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
   }
   const seen = new Set<string>();
   const unique = moves.filter(
-    (mv) => mv.monthlySavingInr > 0 && !seen.has(mv.id) && seen.add(mv.id),
+    (mv) =>
+      (mv.monthlySavingInr > 0 || mv.severity === 'urgent') && !seen.has(mv.id) && seen.add(mv.id),
   );
   const research = researchNeeds(obs.filter((ob) => !match.get(ob.id)));
   return { moves: rankMoves(unique), research };

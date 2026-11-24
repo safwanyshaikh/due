@@ -193,6 +193,8 @@ const EXCL_TAX = /\(?\s*EXCL\.?\s+TAX\s*(\d[\d,]*(?:\.\d{1,2})?)?\s*\)?/i;
 /** What a statement line is, from its narration. Only 'purchase' lines can be subscriptions. */
 export function lineKindOf(narration: string): NonNullable<StatementLine['lineKind']> {
   const n = narration.toUpperCase();
+  if (/\bUPI\s*LITE\b|\/UPILITE\b|^UPILITE\b/.test(n)) return 'wallet_topup';
+  if (/\bSMA\s+REC\b|\bLOAN\s+REP(AYMENT)?\b/.test(n)) return 'loan_repayment';
   if (/PAYMENT\s+RECEIVED|THANK\s*YOU|BBPS\s+PAYMENT|AUTO\s*DEBIT\s+PAYMENT|CARD\s+PAYMENT/.test(n))
     return 'payment';
   if (/REVERSA|REVERSAL|WAIVER|WAIVED|REFUND|CASHBACK|CASH\s+BACK/.test(n)) return 'reversal';
@@ -348,6 +350,196 @@ function parseTextLines(text: string, source: StatementLine['source']): Statemen
   return period ? out.map((l) => ({ ...l, statementPeriod: period })) : out;
 }
 
+/* ---------- multi-line bank rows (Union Bank of India and similar, pdf.js order) ---------- */
+
+// DD-MM-YYYY / HH:MM:SS / <TranId> <remarks…> / [Instr. ID] <amount> <balance>
+const ROW_DATE = /^(\d{2})-(\d{2})-(\d{4})$/;
+const ROW_TIME = /^(\d{2}:\d{2}:\d{2})$/;
+const ROW_END = /^(?:(\S+)\s+)?(\d{1,3}(?:,\d{2,3})*\.\d{2})\s+(-?\d{1,3}(?:,\d{2,3})*\.\d{2})$/;
+const PAGE_FURNITURE =
+  /^Page\s*No\s*\d*|system\s+generated\s+output|TO\s+AVAIL\s+OUR\s+LOAN|^Date\s+Tran\s+Id|For\s+any\s+queries|^Records\s+from\s+\d+|^Statement\s+(Period|Date|of\s+Account)|^(Customer\s+Id|Account\s+(No|Type|Currency)|IFSC\s+Code|City|State|Country|Zip|Branch)\b/i;
+// Anonymised / masked fragments ("x", "x x", "x/XXXX/xxxxxxxx") carry no merchant.
+const MASKED = /^[xX\s/]+$/;
+
+/** True when the text is a multi-line bank statement (date line, time line, …, amount + balance). */
+export function isMultiLineBankText(text: string): boolean {
+  const lines = text.split(/\r?\n/).map((l) => l.trim());
+  let hits = 0;
+  for (let i = 0; i + 1 < lines.length && hits < 3; i++)
+    if (ROW_DATE.test(lines[i]) && ROW_TIME.test(lines[i + 1])) hits++;
+  return hits >= 3;
+}
+
+/** Direction from the remarks alone (used for the first row, before a balance chain exists). */
+function directionFromRemarks(n: string): 1 | -1 | 0 {
+  const u = n.toUpperCase();
+  if (/\/DR\/|UPIAR|MAND\s+DR|NEFTO-|\bDR\b|ATM|POS\b/.test(u)) return 1;
+  if (/\/CR\/|UPIAB|NEFT:|\bCR\b|SALARY|INTEREST\s+CREDIT|REFUND/.test(u)) return -1;
+  return 0;
+}
+
+function parseMultiLineBank(text: string, source: StatementLine['source']): StatementLine[] {
+  const out: StatementLine[] = [];
+  const lines = text.split(/\r?\n/).map((l) => l.replace(/\u00a0/g, ' ').trim());
+  let cur: { date: string; time?: string; parts: string[] } | null = null;
+  let prevBalance: number | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (!l || PAGE_FURNITURE.test(l)) continue;
+    const d = ROW_DATE.exec(l);
+    if (d && ROW_TIME.test(lines[i + 1] ?? '')) {
+      const iso = mkDate(+d[3], +d[2], +d[1]);
+      cur = iso ? { date: iso, time: lines[i + 1], parts: [] } : null;
+      i++;
+      continue;
+    }
+    if (!cur) continue;
+    const end = ROW_END.exec(l);
+    if (end && (end[1] === undefined || end[1] === '-' || /^\d+$/.test(end[1]))) {
+      const amount = parseAmountCell(end[2]);
+      const balance = Number(end[3].replace(/,/g, ''));
+      // Tran Id first ("TX0000000 UPIAR/…", or an id split over lines like "SMB8D170" / "0").
+      const parts = [...cur.parts];
+      if (parts.length) parts[0] = parts[0].replace(/^\S+\s+/, (m) => (/\d/.test(m) ? '' : m));
+      while (
+        parts.length > 1 &&
+        /^[A-Z0-9]{1,10}$/.test(parts[0]) &&
+        /\d/.test(parts[0]) &&
+        !/[a-z]/.test(parts[0])
+      )
+        parts.shift();
+      const narration = tidy(parts.filter((p) => !MASKED.test(p)).join(' '));
+      if (amount !== null && amount > 0 && narration && Number.isFinite(balance)) {
+        let sign: 1 | -1;
+        if (prevBalance !== null) {
+          const asDebit = Math.abs(prevBalance - amount - balance);
+          const asCredit = Math.abs(prevBalance + amount - balance);
+          sign = asCredit < asDebit ? -1 : 1;
+        } else sign = directionFromRemarks(narration) === -1 ? -1 : 1;
+        const line: StatementLine = {
+          date: cur.date,
+          narration,
+          amountInr: sign * amount,
+          source,
+          balanceInr: Math.round(balance * 100) / 100,
+          lineKind: lineKindOf(narration),
+        };
+        if (cur.time) line.time = cur.time;
+        if (sign === -1 && line.lineKind === 'purchase') line.lineKind = 'credit';
+        out.push(line);
+        prevBalance = balance;
+      }
+      cur = null;
+      continue;
+    }
+    cur.parts.push(l);
+  }
+  return out;
+}
+
+/* ---------- two-date bank rows (State Bank of India and similar) ---------- */
+
+// "DD/MM/YYYY   DD/MM/YYYY   WDL TFR" … narration … "[ref]  -  <debit|->  <credit|->  <balance>"
+const TWO_DATE = /^(\d{2})\/(\d{2})\/(\d{4})\s+\d{2}\/\d{2}\/\d{4}\s*(.*)$/;
+const COLS_END =
+  /^(?:(.*?)\s+)?-\s+(-|\d[\d,]*\.\d{2})\s+(-|\d[\d,]*\.\d{2})\s+(-?\d[\d,]*\.\d{2})$/;
+const SBI_FURNITURE =
+  /^\d+\s+Page\s+no\.?$|^Balance$|^STATEMENT\s+OF\s+ACCOUNT$|^State\s+Bank\s+of\s+India$|^Branch\s+Name\s*:|^Statement\s+(From|Summary)|^Please\s+do\s+not\s+share|computer\s+generated\s+statement/i;
+
+export function isTwoDateBankText(text: string): boolean {
+  let hits = 0;
+  for (const l of text.split(/\r?\n/)) if (TWO_DATE.test(l.trim()) && ++hits >= 3) return true;
+  return false;
+}
+
+/** The account holder's name printed in the statement header, upper-case, or null. */
+export function holderName(text: string): string | null {
+  const lines = text
+    .split(/\r?\n/)
+    .slice(0, 20)
+    .map((l) => l.trim());
+  const bankIdx = lines.findIndex((l) => /^State\s+Bank\s+of\s+India$/i.test(l));
+  const cand = (bankIdx >= 0 ? lines[bankIdx + 1] : null) ?? null;
+  const union = lines
+    .map((l) => /^([A-Z][A-Z .]{2,40}?)\s{2,}Union\s+Bank\s+of\s+India/.exec(l))
+    .find(Boolean);
+  const name = (union ? union[1] : cand)?.trim() ?? null;
+  if (!name || !/^[A-Za-z][A-Za-z .]{2,40}$/.test(name) || /account|statement|bank/i.test(name))
+    return null;
+  return name.toUpperCase().replace(/\s+/g, ' ');
+}
+
+/** A transfer to or from the holder's own account (name in the narration), not a loan recovery. */
+function isSelf(
+  narration: string,
+  holder: string | null,
+  kind: StatementLine['lineKind'],
+): boolean {
+  if (!holder || kind === 'loan_repayment') return false;
+  return narration.toUpperCase().replace(/\s+/g, ' ').includes(holder);
+}
+
+function parseTwoDateBank(text: string, source: StatementLine['source']): StatementLine[] {
+  const out: StatementLine[] = [];
+  let cur: { date: string; parts: string[] } | null = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const l = raw.replace(/\u00a0/g, ' ').trim();
+    if (!l || SBI_FURNITURE.test(l)) continue;
+    const d = TWO_DATE.exec(l);
+    if (d) {
+      const iso = mkDate(+d[3], +d[2], +d[1]);
+      cur = iso ? { date: iso, parts: [] } : null;
+      if (cur && d[4]) {
+        const end = COLS_END.exec(d[4]);
+        if (end) {
+          cur.parts.push(end[1] ?? '');
+          push(cur, end);
+          cur = null;
+        } else cur.parts.push(d[4]);
+      }
+      continue;
+    }
+    if (!cur) continue;
+    const end = COLS_END.exec(l);
+    if (end) {
+      // A non-numeric fragment before the columns is narration ("TESTBR"); a bare ref is not.
+      if (end[1] && !/^\d+$/.test(end[1])) cur.parts.push(end[1]);
+      push(cur, end);
+      cur = null;
+      continue;
+    }
+    cur.parts.push(l);
+  }
+  function push(row: { date: string; parts: string[] }, end: RegExpExecArray) {
+    const dr = end[2] === '-' ? null : parseAmountCell(end[2]);
+    const cr = end[3] === '-' ? null : parseAmountCell(end[3]);
+    const balance = Number(end[4].replace(/,/g, ''));
+    const amount = dr ?? cr;
+    const narration = tidy(row.parts.filter((p) => p && !MASKED.test(p)).join(' '));
+    if (amount === null || !narration || !Number.isFinite(balance)) return;
+    const sign = dr !== null ? 1 : -1;
+    const line: StatementLine = {
+      date: row.date,
+      narration,
+      amountInr: sign * amount,
+      source,
+      balanceInr: Math.round(balance * 100) / 100,
+      lineKind: lineKindOf(narration),
+    };
+    if (sign === -1 && line.lineKind === 'purchase') line.lineKind = 'credit';
+    out.push(line);
+  }
+  return out;
+}
+
+/** Marks transfers between the holder's own accounts. */
+function markSelf(lines: StatementLine[], holder: string | null): StatementLine[] {
+  if (!holder) return lines;
+  return lines.map((l) =>
+    isSelf(l.narration, holder, l.lineKind) ? { ...l, selfTransfer: true } : l,
+  );
+}
+
 /**
  * Statement lines from pasted text or CSV. Debits are positive, credits negative.
  * Handles `05/11/2026`, `05-Nov-26`, `05 Nov 2026`, `2026-11-05`, `₹1,299.00`, `Dr`/`Cr` markers,
@@ -359,6 +551,15 @@ export function parseStatementText(
 ): StatementLine[] {
   if (!text || !text.trim()) return [];
   const src = text.replace(/^\uFEFF/, '');
+  const holder = holderName(src);
+  if (isTwoDateBankText(src)) {
+    const rows = parseTwoDateBank(src, source);
+    if (rows.length) return markSelf(rows, holder);
+  }
+  if (isMultiLineBankText(src)) {
+    const rows = parseMultiLineBank(src, source);
+    if (rows.length) return markSelf(rows, holder);
+  }
   const firstLines = src.split(/\r?\n/).slice(0, 30).join('\n');
   if (/[,\t]/.test(firstLines)) {
     const csv = parseCsvRows(src, source);

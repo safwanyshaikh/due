@@ -95,7 +95,26 @@ export function normaliseSavingsState(raw: unknown): SavingsState {
         bounceCharges: Array.isArray(l.bounceCharges) ? l.bounceCharges : [],
       }),
     );
+  if (Array.isArray(raw.banks))
+    out.banks = (raw.banks.filter(isObj) as unknown as NonNullable<SavingsState['banks']>).map(
+      (b) => ({
+        ...b,
+        failedAutoDebits: Array.isArray(b.failedAutoDebits) ? b.failedAutoDebits : [],
+        morningBalances: Array.isArray(b.morningBalances) ? b.morningBalances : [],
+        priceSteps: Array.isArray(b.priceSteps) ? b.priceSteps : [],
+      }),
+    );
   return out;
+}
+
+/** Saves a bank statement summary (the same bank and period replaces the older copy). */
+export function saveBankStatement(
+  state: SavingsState,
+  s: NonNullable<SavingsState['banks']>[number],
+): SavingsState {
+  const same = (x: typeof s) =>
+    x.bank === s.bank && x.periodFrom === s.periodFrom && x.periodTo === s.periodTo;
+  return { ...state, banks: [...(state.banks ?? []).filter((x) => !same(x)), s] };
 }
 
 function withProfile(state: SavingsState, patch: Partial<SavingsProfile>): SavingsState {

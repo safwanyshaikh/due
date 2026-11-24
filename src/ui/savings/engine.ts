@@ -3,6 +3,9 @@
  * engine signature changes, and makes every network call failure-tolerant.
  */
 import {
+  parseBankStatementSummary,
+  saveBankStatement,
+  type BankStatementSummary,
   addCardBill,
   addLoanEmi,
   parseCardStatementSummary,
@@ -184,3 +187,14 @@ export function readLoanSummary(text: string): LoanStatementSummary | null {
 }
 
 export { addCardBill, addLoanEmi };
+
+/** Bank statement summary (failed auto-debits, morning balances, price steps), or null. */
+export function readBankSummary(text: string): BankStatementSummary | null {
+  try {
+    return parseBankStatementSummary(text);
+  } catch {
+    return null;
+  }
+}
+
+export { saveBankStatement };

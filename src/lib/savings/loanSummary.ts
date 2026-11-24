@@ -115,6 +115,10 @@ export function parseLoanStatement(text: string): LoanStatementSummary | null {
     }
   }
 
+  const annualRatePct = num(text, 'Annualised\\s+Interest\\s+Rate\\s*%?');
+  // A bank statement can say "Statement of Account" and advertise loans; a loan document has terms.
+  if (emiInr === null && annualRatePct === null && loanAmountInr === null) return null;
+
   const rateType = /Interest\s+(?:Rate\s+)?Type[^\n]{0,5}?Floating/i.test(text)
     ? 'floating'
     : /Interest\s+(?:Rate\s+)?Type[^\n]{0,5}?Fixed/i.test(text)
@@ -128,7 +132,7 @@ export function parseLoanStatement(text: string): LoanStatementSummary | null {
     lender: LENDERS.find(([re]) => re.test(text))?.[1] ?? null,
     product,
     rateType,
-    annualRatePct: num(text, 'Annualised\\s+Interest\\s+Rate\\s*%?'),
+    annualRatePct,
     emiInr,
     emiDueDay: dueDay(text),
     loanAmountInr,

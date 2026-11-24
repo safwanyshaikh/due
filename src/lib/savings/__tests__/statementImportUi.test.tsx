@@ -60,4 +60,16 @@ describe('statement import: summary step', () => {
     expect(stored().commitments[0]).toMatchObject({ type: 'emi', rail: 'bank_mandate' });
     expect(stored().savings.loans?.[0].obligationId).toBe(stored().commitments[0].id);
   });
+
+  it('saves a bank statement summary for Savings', async () => {
+    renderApp({ data: emptyData(), hash: '#/savings-import' });
+    fireEvent.change(screen.getByLabelText('Or paste statement text'), {
+      target: { value: fx('union-bank-savings.txt') },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Find repeat payments' }));
+    const bank = await screen.findByTestId('sv-bank-summary');
+    expect(bank.textContent).toContain('15 (₹8,000 in bank charges)');
+    fireEvent.click(within(bank).getByRole('button', { name: 'Use this statement for Savings' }));
+    await waitFor(() => expect(stored().savings.banks?.[0].bank).toBe('Union Bank of India'));
+  });
 });

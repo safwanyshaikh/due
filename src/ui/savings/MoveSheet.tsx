@@ -172,10 +172,16 @@ export function MoveSheet({
       <div className="stack-16" data-testid="move-sheet">
         <p>{move.why}</p>
         <div className="sv-sheet-amount">
-          <p className="sv-big amt">{perMonth(move.monthlySavingInr)}</p>
-          <p className="muted small">
-            Likely range {rangeText(move.rangeInr)} a month · {EFFORT_LABEL[move.effort]}
-          </p>
+          {move.severity === 'urgent' ? (
+            <p className="sv-big">Fix this first</p>
+          ) : (
+            <>
+              <p className="sv-big amt">{perMonth(move.monthlySavingInr)}</p>
+              <p className="muted small">
+                Likely range {rangeText(move.rangeInr)} a month · {EFFORT_LABEL[move.effort]}
+              </p>
+            </>
+          )}
           <div className="chips">
             <Badge tone={CONFIDENCE_TONE[move.confidence]}>
               {CONFIDENCE_LABEL[move.confidence]}
