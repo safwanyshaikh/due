@@ -71,6 +71,9 @@ export {
   bankMonths,
   type IncomeTimingMonth,
 } from './bankSummary';
-export { saveBankStatement } from './state';
-export { timingSentence } from './engine';
+export { saveBankStatement, saveTelecomBill, saveUpiStatement } from './state';
+export { timingSentence, recurringMoves } from './engine';
 export { isMultiLineBankText, isTwoDateBankText, holderName } from './statement';
+export { parseJioPostpaidBill, parseJioFiberBill, parseTelecomBill } from './telecom';
+export { parseUpiStatementSummary } from './upiSummary';
+export { looksP2p, mentionsHolder, isUpiAppStatement } from './statement';

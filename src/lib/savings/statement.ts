@@ -476,7 +476,28 @@ function isSelf(
   kind: StatementLine['lineKind'],
 ): boolean {
   if (!holder || kind === 'loan_repayment') return false;
-  return narration.toUpperCase().replace(/\s+/g, ' ').includes(holder);
+  return mentionsHolder(narration, holder);
+}
+
+/**
+ * The holder's name in a narration: in full, truncated by the column ("TEST USE", "RAVI KUM"),
+ * or as their own UPI handle ("testuser@…").
+ */
+export function mentionsHolder(narration: string, holder: string): boolean {
+  const n = narration.toUpperCase().replace(/[^A-Z0-9@]+/g, ' ');
+  const h = holder
+    .toUpperCase()
+    .replace(/[^A-Z ]+/g, ' ')
+    .trim()
+    .split(/\s+/);
+  if (!h.length || h[0].length < 3) return false;
+  if (` ${n} `.includes(` ${h.join(' ')} `)) return true;
+  const toks = n.split(/\s+/);
+  for (let i = 0; i + 1 < toks.length; i++)
+    if (toks[i] === h[0] && h[1] && toks[i + 1].length >= 1 && h[1].startsWith(toks[i + 1]))
+      return true;
+  const squashed = h.join('').toLowerCase();
+  return squashed.length >= 6 && new RegExp(`${squashed}[0-9._-]*@`, 'i').test(narration);
 }
 
 function parseTwoDateBank(text: string, source: StatementLine['source']): StatementLine[] {
@@ -532,12 +553,124 @@ function parseTwoDateBank(text: string, source: StatementLine['source']): Statem
   return out;
 }
 
-/** Marks transfers between the holder's own accounts. */
+/* ---------- UPI app statements (Google Pay "Transaction statement") ---------- */
+
+const GPAY_DATE = /^(\d{1,2})\s+([A-Za-z]{3}),?\s+(\d{4})$/;
+const GPAY_TIME = /^\d{1,2}:\d{2}\s*[AP]M$/i;
+const GPAY_KIND = /^(Paid to|Received from|Self transfer to|Top-up to)\s+(.+)$/i;
+const GPAY_AMOUNT = /^₹\s*(\d[\d,]*(?:\.\d{1,2})?)$/;
+
+export function isUpiAppStatement(text: string): boolean {
+  return /Transaction\s+statement/i.test(text) && /UPI\s+Transaction\s+ID/i.test(text);
+}
+
+/**
+ * Google Pay rows: date, time, "<Paid to|Received from|Self transfer to|Top-up to> <payee>",
+ * "UPI Transaction ID", "Paid by <bank> <digits> | RuPay credit card" (or "UPI Lite | …"), amount.
+ * Rows cut off at the end of the text (no amount yet) are skipped.
+ */
+function parseUpiApp(text: string): StatementLine[] {
+  const out: StatementLine[] = [];
+  let cur: { date: string; time?: string; kind?: string; payee?: string; paidBy?: string } | null =
+    null;
+  for (const raw of text.split(/\r?\n/)) {
+    const l = raw.replace(/\u00a0/g, ' ').trim();
+    if (!l) continue;
+    const d = GPAY_DATE.exec(l);
+    if (d) {
+      const m = MONTHS[d[2].slice(0, 3).toLowerCase()];
+      const iso = m ? mkDate(+d[3], m, +d[1]) : null;
+      cur = iso ? { date: iso } : null;
+      continue;
+    }
+    if (!cur) continue;
+    if (GPAY_TIME.test(l) && !cur.time) {
+      cur.time = l;
+      continue;
+    }
+    const k = GPAY_KIND.exec(l);
+    if (k && !cur.kind) {
+      cur.kind = k[1].toLowerCase();
+      cur.payee = k[2].trim();
+      continue;
+    }
+    if (/^Paid\s+by\s+/i.test(l) || /^UPI\s+Lite\s*\|/i.test(l)) {
+      cur.paidBy = l.replace(/^Paid\s+by\s+/i, '').trim();
+      continue;
+    }
+    const a = GPAY_AMOUNT.exec(l);
+    if (a && cur.kind && cur.payee) {
+      const amount = parseAmountCell(a[1]);
+      if (amount !== null && amount > 0) {
+        const credit = cur.kind === 'received from';
+        const card = /credit\s+card/i.test(cur.paidBy ?? '');
+        const line: StatementLine = {
+          date: cur.date,
+          narration: `${cur.kind === 'paid to' ? 'Paid to' : cur.kind === 'received from' ? 'Received from' : cur.kind === 'self transfer to' ? 'Self transfer to' : 'Top-up to'} ${cur.payee}`,
+          amountInr: credit ? -amount : amount,
+          source: card ? 'card' : 'bank',
+          lineKind: credit ? 'credit' : lineKindOf(cur.payee),
+        };
+        if (cur.kind === 'top-up to') line.lineKind = 'wallet_topup';
+        if (cur.kind === 'self transfer to') line.selfTransfer = true;
+        if (cur.paidBy) line.paidBy = cur.paidBy;
+        if (cur.time) {
+          const t = /^(\d{1,2}):(\d{2})\s*([AP]M)$/i.exec(cur.time);
+          if (t) {
+            const h = (+t[1] % 12) + (/p/i.test(t[3]) ? 12 : 0);
+            line.time = `${String(h).padStart(2, '0')}:${t[2]}:00`;
+          }
+        }
+        out.push(line);
+      }
+      cur = null;
+    }
+  }
+  return out;
+}
+
+// Signs that a UPI payee is a business, an app mandate or a merchant QR, not a person.
+const MERCHANT_MARK =
+  /\/MAND\b|\bMANDATE\b|\bEXEC\b|\/PAY\b|\bPAYM\b|\bMERCHANT\b|\bSHOP\b|PAYTMQR|RAZORPAY|\.RZ\b|\bRZP|BHARATPE|\bPOS\b|\bPVT\b|\bLTD\b|LIMITED|PRIVATE|\bSTORES?\b|ENTERPRISE|SERVICES?\b|TRADERS|\bHOTEL\b|\bMART\b|MEDICAL|CHEMIST|PHARMA|ASSOCIATION|SOCIETY|\bCAFE\b|RESTAURANT|FOODS?\b|\bBAKERY\b|\bAGENCY\b|\bCENTRE\b|\bCENTER\b|\bCLINIC\b|HOSPITAL|\bINDIA\b|\.COM\b|\bLLP\b|\bINC\b|\bBANK\b|\bFINANCE\b|\bINSURANCE\b|\bRECHARGE|POSTPAID|PREPAID|\bBILL|\bCARD\b|@YBL\s*MERCHANT/i;
+
+/** The payee name of a UPI narration ("UPI/DR/123/RAHUL K/YESB/…", "Paid to RAHUL K"). */
+function upiPayee(narration: string): { name: string; handle: string | null } | null {
+  const handle = /([a-z0-9._-]+)@[a-z]+/i.exec(narration)?.[1] ?? null;
+  const app = /^Paid to\s+(.+)$/i.exec(narration);
+  if (app) return { name: app[1].trim(), handle };
+  const m = /\/(?:DR|CR)\/(?:\d+\/)?\s*([^/]+)/i.exec(narration);
+  if (!m || !/UPI/i.test(narration)) return null;
+  return { name: m[1].trim(), handle };
+}
+
+/**
+ * A person-to-person UPI payment: a personal handle (a phone number, or the payee's own name) or
+ * a payee written like a person ("RAHUL K", "PERSON 003"), with no business or mandate markers.
+ * Known merchants are re-checked by the recurring detector (an alias always wins).
+ */
+export function looksP2p(narration: string): boolean {
+  if (MERCHANT_MARK.test(narration)) return false;
+  const p = upiPayee(narration);
+  if (!p || !p.name) return false;
+  const name = p.name.replace(/\s+/g, ' ').trim();
+  if (/^PERSON\s+\d+$/i.test(name) || /^PAYEE\d+$/i.test(name)) return true;
+  if (p.handle && /^\d{10}$/.test(p.handle)) return true;
+  const words = name.split(' ').filter(Boolean);
+  if (!words.length || words.length > 4 || !words.every((w) => /^[A-Za-z.]+$/.test(w)))
+    return false;
+  const first = words[0].toLowerCase();
+  if (p.handle && first.length >= 3 && p.handle.toLowerCase().startsWith(first)) return true;
+  return words.length >= 2 && words[words.length - 1].replace('.', '').length <= 2;
+}
+
+/** Marks transfers between the holder's own accounts and person-to-person payments. */
 function markSelf(lines: StatementLine[], holder: string | null): StatementLine[] {
-  if (!holder) return lines;
-  return lines.map((l) =>
-    isSelf(l.narration, holder, l.lineKind) ? { ...l, selfTransfer: true } : l,
-  );
+  return lines.map((l) => {
+    if (holder && isSelf(l.narration, holder, l.lineKind)) return { ...l, selfTransfer: true };
+    if (l.amountInr > 0 && l.lineKind === 'purchase' && looksP2p(l.narration))
+      return { ...l, lineKind: 'p2p' };
+    return l;
+  });
 }
 
 /**
@@ -552,6 +685,10 @@ export function parseStatementText(
   if (!text || !text.trim()) return [];
   const src = text.replace(/^\uFEFF/, '');
   const holder = holderName(src);
+  if (isUpiAppStatement(src)) {
+    const rows = parseUpiApp(src);
+    if (rows.length) return markSelf(rows, holder);
+  }
   if (isTwoDateBankText(src)) {
     const rows = parseTwoDateBank(src, source);
     if (rows.length) return markSelf(rows, holder);

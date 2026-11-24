@@ -104,7 +104,40 @@ export function normaliseSavingsState(raw: unknown): SavingsState {
         priceSteps: Array.isArray(b.priceSteps) ? b.priceSteps : [],
       }),
     );
+  if (Array.isArray(raw.telecom))
+    out.telecom = (
+      raw.telecom.filter(isObj) as unknown as NonNullable<SavingsState['telecom']>
+    ).map((t) => ({
+      ...t,
+      addOns: Array.isArray(t.addOns) ? t.addOns : [],
+      includes: Array.isArray(t.includes) ? t.includes : [],
+    }));
+  if (Array.isArray(raw.upi))
+    out.upi = (raw.upi.filter(isObj) as unknown as NonNullable<SavingsState['upi']>).map((u) => ({
+      ...u,
+      creditCardSpend: Array.isArray(u.creditCardSpend) ? u.creditCardSpend : [],
+    }));
   return out;
+}
+
+/** Saves a telecom bill (same provider, service and period replaces the older copy). */
+export function saveTelecomBill(
+  state: SavingsState,
+  b: NonNullable<SavingsState['telecom']>[number],
+): SavingsState {
+  const same = (x: typeof b) =>
+    x.provider === b.provider && x.service === b.service && x.periodFrom === b.periodFrom;
+  return { ...state, telecom: [...(state.telecom ?? []).filter((x) => !same(x)), b] };
+}
+
+/** Saves a UPI app statement summary (same app and period replaces the older copy). */
+export function saveUpiStatement(
+  state: SavingsState,
+  u: NonNullable<SavingsState['upi']>[number],
+): SavingsState {
+  const same = (x: typeof u) =>
+    x.app === u.app && x.periodFrom === u.periodFrom && x.periodTo === u.periodTo;
+  return { ...state, upi: [...(state.upi ?? []).filter((x) => !same(x)), u] };
 }
 
 /** Saves a bank statement summary (the same bank and period replaces the older copy). */

@@ -3,7 +3,7 @@
  * timing) and merchants whose price stepped up. Built from parsed lines, on the device.
  */
 import { addDays, daysBetween, parseISO, toISO, daysInMonth } from '../dates';
-import { statementAlias, statementMerchant } from './recurring';
+import { detectRecurring, statementAlias, statementMerchant } from './recurring';
 import { leadingDate, parseStatementText } from './statement';
 import type { BankStatementSummary, PriceStep, StatementLine } from './types';
 
@@ -169,6 +169,7 @@ export function parseBankStatementSummary(text: string): BankStatementSummary | 
     failedAutoDebits: [...failed.entries()].sort().map(([m, f]) => ({ month: m, ...f })),
     morningBalances,
     priceSteps: priceSteps(lines),
+    recurring: detectRecurring(lines),
     smaSweeps: lines
       .filter((l) => l.amountInr > 0 && /\bSMA\s+REC\b/i.test(l.narration))
       .map((l) => ({ date: l.date, amountInr: l.amountInr })),

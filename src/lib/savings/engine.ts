@@ -8,6 +8,7 @@ import { formatINR } from '../money';
 import { effectiveNext, forecastObligations, liveHistory } from '../obligations';
 import { cadenceMonths } from '../recurrence';
 import { parseIndianAmount } from '../intake';
+import { canonicalMerchant } from '../merchants';
 import type { AppData, Commitment, Frequency } from '../types';
 import { matchesKey, matchModule, type ModuleMatch } from './match';
 import { researchNeeds } from './research';
@@ -15,6 +16,9 @@ import { cardKey } from './cardSummary';
 import { loanKey } from './loanSummary';
 import { bankMonths, incomeTiming } from './bankSummary';
 import type {
+  RecurringCandidate,
+  TelecomBillSummary,
+  UpiStatementSummary,
   BankStatementSummary,
   CardStatementSummary,
   LoanStatementSummary,
@@ -983,12 +987,326 @@ function loanSummaryMoves(
   return out;
 }
 
+/* ---------- statement-only moves: recurring overlaps, telecom bills, UPI on credit, gold loan ---------- */
+
+const OTT_KEYS: Record<string, string> = {
+  netflix: 'Netflix',
+  amazon_prime: 'Amazon Prime',
+  jiohotstar: 'JioHotstar',
+  youtube_premium: 'YouTube Premium',
+  sonyliv: 'Sony LIV',
+  zee5: 'ZEE5',
+};
+const CADENCE_MONTHS: Record<RecurringCandidate['cadence'], number> = {
+  monthly: 1,
+  quarterly: 3,
+  yearly: 12,
+};
+const monthlyOf = (c: RecurringCandidate) => c.averageInr / CADENCE_MONTHS[c.cadence];
+
+function infoMove(
+  id: string,
+  kind: Move['kind'],
+  p: Pick<Move, 'title' | 'why'> & Partial<Pick<Move, 'effort' | 'action' | 'obligationIds'>>,
+): Move {
+  return {
+    id,
+    kind,
+    moduleId: null,
+    obligationIds: p.obligationIds ?? [],
+    title: p.title,
+    why: p.why,
+    monthlySavingInr: 0,
+    rangeInr: [0, 0],
+    confidence: 'low',
+    assumptions: [],
+    sources: [],
+    effort: p.effort ?? 'tap',
+    action: p.action ?? { url: null, label: 'Check your plan' },
+    unverifiedPrice: true,
+    legalNote: null,
+    sponsored: false,
+    severity: 'info',
+  };
+}
+
+function lowOverlap(id: string, title: string, why: string, saving: number): Move {
+  const v = r0(saving);
+  return {
+    id,
+    kind: 'overlap',
+    moduleId: null,
+    obligationIds: [],
+    title,
+    why,
+    monthlySavingInr: v,
+    rangeInr: [0, v],
+    confidence: 'low',
+    assumptions: [],
+    sources: [],
+    effort: 'tap',
+    action: { url: null, label: 'Check your plan' },
+    unverifiedPrice: true,
+    legalNote: null,
+    sponsored: false,
+  };
+}
+
+/**
+ * Moves from recurring candidates alone (no obligation needed): a postpaid plan next to OTT apps
+ * paid separately, and one merchant billed as two plans at the same cadence.
+ */
+export function recurringMoves(cands: RecurringCandidate[]): Move[] {
+  const out: Move[] = [];
+  const subs = cands.filter((c) => c.kind === 'subscription' || c.kind === undefined);
+  const has = (k: string) => cands.some((c) => c.key === k);
+  const otts = subs.filter((c) => OTT_KEYS[c.key]);
+  for (const [carrier, name] of [
+    ['jio_postpaid', 'Jio Postpaid'],
+    ['airtel_postpaid', 'Airtel postpaid'],
+  ] as const) {
+    if (!has(carrier) || !otts.length) continue;
+    const parts = otts.map((c) => `${OTT_KEYS[c.key]} ${rupees(monthlyOf(c))}`);
+    out.push(
+      lowOverlap(
+        `overlap:statement:${carrier}`,
+        carrier === 'jio_postpaid'
+          ? 'Check if your Jio Postpaid plan already includes Netflix, Prime or JioHotstar'
+          : 'Check if your Airtel plan already includes Netflix, Prime or JioHotstar',
+        `You pay ${parts.join(', ')} a month separately. Some ${name} plans bundle these; the plan page lists what yours includes.`,
+        otts.reduce((s2, c) => s2 + monthlyOf(c), 0),
+      ),
+    );
+  }
+  const byKey = new Map<string, RecurringCandidate[]>();
+  for (const c of subs) byKey.set(c.key, [...(byKey.get(c.key) ?? []), c]);
+  for (const [key, list] of byKey) {
+    if (list.length < 2) continue;
+    for (const cadence of ['monthly', 'quarterly', 'yearly'] as const) {
+      const same = list
+        .filter((c) => c.cadence === cadence)
+        .sort((a, b) => b.averageInr - a.averageInr);
+      if (same.length < 2) continue;
+      const [a, b] = same;
+      if (a.averageInr <= b.averageInr * 1.1) continue;
+      const per =
+        cadence === 'monthly' ? 'a month' : cadence === 'quarterly' ? 'a quarter' : 'a year';
+      out.push(
+        lowOverlap(
+          `overlap:statement:${key}:twice`,
+          `${a.label} is billed twice: ${rupees(a.averageInr)} and ${rupees(b.averageInr)} ${per} — two plans or two ${key === 'apple' ? 'Apple IDs' : 'accounts'}?`,
+          `The same merchant charges two different amounts on the same schedule${a.severalPaymentMethods || b.severalPaymentMethods ? ', from different payment methods' : ''}. If one is a duplicate, cancelling it saves the smaller amount.`,
+          monthlyOf(b),
+        ),
+      );
+      break;
+    }
+  }
+  return out;
+}
+
+function separateOtts(
+  ctx: Ctx,
+  banks: BankStatementSummary[],
+  keys: string[],
+): { key: string; label: string; monthly: number }[] {
+  const out = new Map<string, { key: string; label: string; monthly: number }>();
+  for (const ob of ctx.obs) {
+    const k =
+      ob.canonicalProvider ?? canonicalMerchant(`${ob.provider} ${ob.nickname}`)?.key ?? null;
+    const m = obligationMonthlyInr(ob);
+    if (k && keys.includes(k) && m) out.set(k, { key: k, label: OTT_KEYS[k] ?? k, monthly: m });
+  }
+  for (const c of banks.flatMap((b) => b.recurring ?? []))
+    if (keys.includes(c.key) && !out.has(c.key))
+      out.set(c.key, { key: c.key, label: OTT_KEYS[c.key] ?? c.label, monthly: monthlyOf(c) });
+  return [...out.values()];
+}
+
+function telecomMoves(
+  ctx: Ctx,
+  bills: TelecomBillSummary[],
+  banks: BankStatementSummary[],
+): Move[] {
+  const out: Move[] = [];
+  const latest = latestBy(
+    bills,
+    (b) => `${b.provider}-${b.service}`,
+    (b) => b.periodFrom,
+  );
+  for (const b of latest) {
+    const svc = b.service === 'fiber' ? 'JioFiber' : `${b.provider} Postpaid`;
+    const key = `${b.provider}-${b.service}`.toLowerCase();
+    if (
+      b.dataUsedGb !== null &&
+      b.planDataGb !== null &&
+      b.planDataGb > 0 &&
+      b.dataUsedGb <= b.planDataGb * 0.3
+    ) {
+      const m = genericModule(ctx, 'bill', b.provider, `${b.provider} postpaid`);
+      const smaller = (m?.rules.prices ?? [])
+        .filter(
+          (p) =>
+            p.priceInr !== null &&
+            b.baseRentalInr !== null &&
+            (p.priceInr as number) < (b.baseRentalInr as number) &&
+            p.periodDays >= 28 &&
+            p.periodDays <= 31,
+        )
+        .sort((x, y) => (y.priceInr as number) - (x.priceInr as number))[0];
+      const title = `You use about ${r0(b.dataUsedGb)} GB of ${r0(b.planDataGb)} GB: a smaller plan may do`;
+      const why = `Your ${svc} bill shows ${b.dataUsedGb} GB used of ${b.planDataGb} GB${b.addOns.length ? ' (shared with add-on members)' : ''}.`;
+      if (smaller && b.baseRentalInr !== null)
+        out.push({
+          ...lowOverlap(
+            `period_switch:telecom:${key}`,
+            title,
+            `${why} ${m?.product ?? 'A smaller plan'} lists ${smaller.label} at ${rupees(smaller.priceInr as number)}.`,
+            b.baseRentalInr - (smaller.priceInr as number),
+          ),
+          kind: 'period_switch',
+          moduleId: m?.id ?? null,
+          sources: m?.sources ?? [],
+          unverifiedPrice: m?.status !== 'verified',
+        });
+      else
+        out.push(
+          infoMove(`period_switch:telecom:${key}`, 'period_switch', {
+            title,
+            why: `${why} Due has no confirmed price for a smaller plan yet.`,
+          }),
+        );
+    }
+    for (const a of b.addOns)
+      out.push(
+        infoMove(
+          `fee_leak:addon:${key}:${a.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          'fee_leak',
+          {
+            title: `${a.label}: ${rupees(a.amountInr)} a month on your ${svc} bill`,
+            why: 'Shown as its own line item. Check it is still used before the next bill.',
+          },
+        ),
+      );
+    if (b.service === 'fiber' && b.includes.length) {
+      for (const o of separateOtts(ctx, banks, ['jiohotstar', 'sonyliv', 'zee5']))
+        out.push(
+          lowOverlap(
+            `overlap:telecom:${key}:${o.key}`,
+            `Your JioFiber plan includes OTT apps; check whether ${o.label} is one of them before renewing it`,
+            `Plan ${b.planName ?? ''} includes ${b.includes.join('; ')}. You also pay about ${rupees(o.monthly)} a month for ${o.label}.`.replace(
+              'Plan  ',
+              'Your plan ',
+            ),
+            o.monthly,
+          ),
+        );
+    }
+  }
+  return out;
+}
+
+function upiCreditMoves(statements: CardStatementSummary[], upi: UpiStatementSummary[]): Move[] {
+  const out: Move[] = [];
+  const cards = latestBy(statements, cardKey, (s) => s.statementDate).filter(
+    (c) => (c.financeChargeInr ?? 0) > 0 && c.monthlyRatePct,
+  );
+  if (!cards.length) return out;
+  for (const spend of upi.flatMap((u) => u.creditCardSpend)) {
+    const card =
+      cards.find(
+        (c) =>
+          c.last4 &&
+          spend.last4 &&
+          (spend.last4.endsWith(c.last4) || c.last4.endsWith(spend.last4)),
+      ) ?? (cards.length === 1 ? cards[0] : null);
+    if (!card || !card.monthlyRatePct) continue;
+    const monthly = spend.totalInr / Math.max(1, spend.months);
+    const digits = spend.last4 ?? card.last4 ?? '';
+    out.push({
+      ...feeMove('upi_credit', `${cardKey(card)}-${digits}`, card.obligationId, null, {
+        title: `Paying daily UPI with card ending ${digits} while it carries a balance: these start costing ~${card.monthlyRatePct}%/month at once`,
+        why: `About ${rupees(monthly)} a month of UPI payments went on this card. While a balance is carried there is no interest-free period, so each payment is charged interest from the day it is made.`,
+        saving: (monthly * card.monthlyRatePct) / 100,
+        confidence: 'low',
+        effort: 'habit',
+        legalNote: DEBT_LEGAL_NOTE,
+      }),
+    });
+  }
+  return out;
+}
+
+function goldLoanMoves(
+  ctx: Ctx,
+  loans: LoanStatementSummary[],
+  statements: CardStatementSummary[],
+): Move[] {
+  const out: Move[] = [];
+  const golds = latestBy(
+    loans.filter((l) => l.productKind === 'gold_loan_od'),
+    loanKey,
+    (l) => l.statementDate,
+  );
+  const threeMonths = addMonthsClamped(ctx.today, -3);
+  for (const g of golds) {
+    const key = loanKey(g);
+    const recent = (g.irregularities ?? []).filter(
+      (i) => i.date >= threeMonths && i.date <= ctx.today,
+    );
+    if (recent.length)
+      out.push({
+        ...feeMove('gold_irregular', key, g.obligationId, null, {
+          title: 'Your gold loan OD went irregular recently',
+          why: `${g.lender ?? 'Your bank'} recovered ${rupees(recent.reduce((s2, i) => s2 + i.amountInr, 0))} as ${[...new Set(recent.map((i) => i.label))].join(' / ')} on ${recent.map((i) => formatDate(i.date)).join(', ')}. Irregular or SMA status is reported to credit bureaus and blocks cheaper loans.`,
+          saving: 0,
+          confidence: 'high',
+          effort: 'paperwork',
+          legalNote: 'Information only. Ask your bank what keeps the account regular.',
+          action: { url: null, label: 'Ask your bank' },
+        }),
+        severity: 'urgent',
+      });
+    const goldRate = g.annualRatePct;
+    if (goldRate == null) continue;
+    for (const c of latestBy(statements, cardKey, (s) => s.statementDate)) {
+      if (!c.monthlyRatePct || !(c.financeChargeInr && c.financeChargeInr > 0)) continue;
+      const cardRate = c.monthlyRatePct * 12;
+      const balance = c.totalDue ?? c.previousBalance;
+      if (!balance || cardRate < goldRate + 10) continue;
+      const cardInterest = c.financeChargeInr ?? (balance * c.monthlyRatePct) / 100;
+      const saving = cardInterest - (balance * goldRate) / 1200;
+      if (saving < 1) continue;
+      out.push({
+        id: `debt_rate:gold-loan:${key}:${cardKey(c)}`,
+        kind: 'debt_rate',
+        moduleId: null,
+        obligationIds: [c.obligationId, g.obligationId].filter((x): x is string => !!x),
+        title: `Card debt costs ~${r0(cardRate)}%/yr, your gold loan ~${goldRate}%: ask your bank whether a gold revaluation can raise the drawing power to clear the card`,
+        why: `${c.issuer ?? 'Your card'} charged ${rupees(cardInterest)} interest on about ${rupees(balance)}. The same amount at ${goldRate}% would cost about ${rupees((balance * goldRate) / 1200)} a month.`,
+        monthlySavingInr: r0(saving),
+        rangeInr: [0, r0(saving)],
+        confidence: 'low',
+        assumptions: [],
+        sources: [],
+        effort: 'paperwork',
+        action: { url: null, label: 'Ask your bank' },
+        unverifiedPrice: false,
+        legalNote: DEBT_LEGAL_NOTE,
+        sponsored: false,
+      });
+    }
+  }
+  return out;
+}
+
 /* ---------- ranking ---------- */
 
 export function rankMoves(moves: Move[]): Move[] {
   return [...moves].sort((a, b) => {
-    // Urgent alerts (an overdue loan in SMA) come first, whatever they would save.
-    const u = (b.severity === 'urgent' ? 1 : 0) - (a.severity === 'urgent' ? 1 : 0);
+    // Urgent alerts (an overdue loan in SMA) come first, whatever they would save; info last.
+    const w = (m: Move) => (m.severity === 'urgent' ? 1 : m.severity === 'info' ? -1 : 0);
+    const u = w(b) - w(a);
     if (u) return u;
     const s =
       b.monthlySavingInr * CONFIDENCE_WEIGHT[b.confidence] -
@@ -1042,6 +1360,10 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
     ...loanSummaryMoves(ctx, data.savings?.loans ?? [], data.savings?.banks ?? []),
     ...bankMoves(data.savings?.banks ?? [], (data.savings?.loans ?? []).length > 0),
     ...cardFeeMoves(ctx, data.savings?.statements ?? []),
+    ...goldLoanMoves(ctx, data.savings?.loans ?? [], data.savings?.statements ?? []),
+    ...upiCreditMoves(data.savings?.statements ?? [], data.savings?.upi ?? []),
+    ...telecomMoves(ctx, data.savings?.telecom ?? [], data.savings?.banks ?? []),
+    ...recurringMoves((data.savings?.banks ?? []).flatMap((b) => b.recurring ?? [])),
     ...overlapMoves(ctx),
     ...commuteMoves(ctx),
   ];
@@ -1077,7 +1399,9 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
   const seen = new Set<string>();
   const unique = moves.filter(
     (mv) =>
-      (mv.monthlySavingInr > 0 || mv.severity === 'urgent') && !seen.has(mv.id) && seen.add(mv.id),
+      (mv.monthlySavingInr > 0 || mv.severity === 'urgent' || mv.severity === 'info') &&
+      !seen.has(mv.id) &&
+      seen.add(mv.id),
   );
   const research = researchNeeds(obs.filter((ob) => !match.get(ob.id)));
   return { moves: rankMoves(unique), research };

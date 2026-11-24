@@ -73,8 +73,101 @@ function underHeader(lines: string[], header: RegExp, column: number): number | 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** A loan statement or welcome-letter summary, or null when the text is neither. */
+/**
+ * SBI Gold Loan OD statement: limit, outstanding (DR), rate, monthly "TO INTEREST" debits,
+ * "OD Penal Charge", and "Irregularity Recovery" / "SMA REC" credits.
+ */
+function parseGoldLoanOd(text: string): LoanStatementSummary {
+  const lines = text.split(/\r?\n/).map((l) => l.replace(/\u00a0/g, ' ').trim());
+  const rowStart = /^(\d{2}\/\d{2}\/\d{4})\s+\d{2}\/\d{2}\/\d{4}\s*(.*)$/;
+  const cols = /-\s+(-|\d[\d,]*\.\d{2})\s+(-|\d[\d,]*\.\d{2})\s+(\d[\d,]*\.\d{2})\s*(?:DR|CR)?$/i;
+  const rows: { date: string; text: string; debit: number | null; credit: number | null }[] = [];
+  let cur: { date: string; parts: string[] } | null = null;
+  for (const l of lines) {
+    const st = rowStart.exec(l);
+    if (st) {
+      const d = leadingDate(st[1]);
+      cur = d ? { date: d.iso, parts: [] } : null;
+      if (!cur) continue;
+      const end = cols.exec(st[2]);
+      if (end) {
+        rows.push({
+          date: cur.date,
+          text: st[2].slice(0, end.index),
+          debit: end[1] === '-' ? null : parseAmountCell(end[1]),
+          credit: end[2] === '-' ? null : parseAmountCell(end[2]),
+        });
+        cur = null;
+      } else cur.parts.push(st[2]);
+      continue;
+    }
+    if (!cur) continue;
+    const end = cols.exec(l);
+    if (end) {
+      cur.parts.push(l.slice(0, end.index));
+      rows.push({
+        date: cur.date,
+        text: cur.parts.join(' '),
+        debit: end[1] === '-' ? null : parseAmountCell(end[1]),
+        credit: end[2] === '-' ? null : parseAmountCell(end[2]),
+      });
+      cur = null;
+    } else cur.parts.push(l);
+  }
+  const interest = rows
+    .filter((r) => /\bTO\s+INTEREST\b/i.test(r.text) && r.debit !== null)
+    .map((r) => ({ month: r.date.slice(0, 7), amountInr: r.debit as number }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+  const penal = rows.filter((r) => /OD\s+Penal\s+Charge/i.test(r.text) && r.debit !== null);
+  const irregular = rows
+    .filter((r) => r.credit !== null && /Irregularity\s+Recovery|\bSMA\s+REC\b/i.test(r.text))
+    .map((r) => ({
+      date: r.date,
+      amountInr: r.credit as number,
+      label: /SMA/i.test(r.text) ? 'SMA REC' : 'Irregularity Recovery',
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const outstanding = /^-\s*(\d[\d,]*\.\d{2})$/m.exec(text);
+  const limit = /^(\d{1,3}(?:,\d{2,3})+\.\d{2})$/m.exec(text);
+  const rate = /^(\d+(?:\.\d+)?)%$/m.exec(text);
+  const stmt = /Date\s+of\s+Statement\s*:?\s*(\d{2}-\d{2}-\d{4})/i.exec(text);
+  const open = /^(\d{2}-\d{2}-\d{4})$/m.exec(text);
+  return {
+    source: 'statement',
+    lender: LENDERS.find(([re]) => re.test(text))?.[1] ?? null,
+    product: 'Gold Loan OD',
+    productKind: 'gold_loan_od',
+    rateType: null,
+    annualRatePct: rate ? Number(rate[1]) : null,
+    emiInr: null,
+    emiDueDay: null,
+    loanAmountInr: limit ? parseAmountCell(limit[1]) : null,
+    loanTenureMonths: null,
+    balanceTenureMonths: null,
+    futurePrincipalInr: null,
+    overdueInstalmentInr: null,
+    latePaymentChargesInr: null,
+    bounceCount: 0,
+    bounceRows: [],
+    bounceMonths: [],
+    bounceChargesInr: 0,
+    bounceCharges: [],
+    processingFeeInr: null,
+    disbursementDate: open ? (leadingDate(open[1])?.iso ?? null) : null,
+    instalmentEndDate: null,
+    statementDate: stmt ? (leadingDate(stmt[1])?.iso ?? null) : null,
+    limitInr: limit ? parseAmountCell(limit[1]) : null,
+    outstandingInr: outstanding ? parseAmountCell(outstanding[1]) : null,
+    monthlyInterest: interest,
+    penalChargesInr: penal.length ? r2(penal.reduce((s, r) => s + (r.debit as number), 0)) : null,
+    irregularities: irregular,
+    irregularityCount: irregular.length,
+  };
+}
+
 export function parseLoanStatement(text: string): LoanStatementSummary | null {
   if (!text || !/loan/i.test(text)) return null;
+  if (/Gold\s+Loan\s+OD/i.test(text)) return parseGoldLoanOd(text);
   const lines = text.split(/\r?\n/).map((l) => l.replace(/\u00a0/g, ' ').trim());
   const welcome = /welcome\s+letter/i.test(text);
   const isSoa =

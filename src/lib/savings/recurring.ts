@@ -12,7 +12,12 @@ export function railFor(
   line: Pick<StatementLine, 'narration' | 'source'>,
 ): RecurringCandidate['rail'] {
   const n = line.narration.toUpperCase();
-  if (/UPI[\s-_/]*AUTO\s*PAY|UPI[\s-_/]*MANDATE|\bAUTO\s*PAY\b|\bAUTOPAY\b/.test(n))
+  if (/\bMAND\s+DR\b/.test(n)) return 'bank_mandate';
+  if (
+    /UPI[\s-_/]*AUTO\s*PAY|UPI[\s-_/]*MANDATE|\bAUTO\s*PAY\b|\bAUTOPAY\b|\bMANDATE\b|\/MAND\b|\/EXEC\b|\/MONT\b|\/YOUT\b|\/AMAZ\b/.test(
+      n,
+    )
+  )
     return 'upi_autopay';
   if (
     /\bMAND\s+DR\b|\bNACH\b|\bACH[\s-]*D(R)?\b|\bACH\s+DEBIT\b|\bECS\b|\bSI[-/\s]|\bSTANDING\s+INSTRUCTION\b/.test(
@@ -130,6 +135,8 @@ export interface StatementAlias {
     'mobility' | 'food' | 'telecom' | 'ott' | 'music' | 'cloud' | 'shopping' | 'utility' | 'other';
   /** Several numbers/accounts paid separately each month (postpaid connections). */
   multiConnection?: boolean;
+  /** A bill to plan for (society maintenance), not a subscription to cancel. */
+  bill?: boolean;
 }
 
 export const STATEMENT_ALIASES: StatementAlias[] = [
@@ -169,6 +176,58 @@ export const STATEMENT_ALIASES: StatementAlias[] = [
     category: 'telecom',
   },
   {
+    key: 'openai',
+    label: 'OpenAI (ChatGPT)',
+    squash: ['openai', 'chatgpt'],
+    subscription: true,
+    category: 'cloud',
+  },
+  {
+    key: 'linkedin',
+    label: 'LinkedIn',
+    squash: ['linkedin'],
+    subscription: true,
+    category: 'other',
+  },
+  {
+    key: 'jiohotstar',
+    label: 'JioHotstar',
+    squash: ['jiohotstar', 'hotstaronl', 'hotstar'],
+    subscription: true,
+    category: 'ott',
+  },
+  { key: 'netflix', label: 'Netflix', squash: ['netflix'], subscription: true, category: 'ott' },
+  {
+    key: 'youtube_premium',
+    label: 'YouTube Premium',
+    squash: ['youtube'],
+    tokens: [['yout']],
+    subscription: true,
+    category: 'ott',
+  },
+  {
+    key: 'google_play',
+    label: 'Google Play',
+    squash: ['playstore', 'googleplay'],
+    subscription: true,
+    category: 'other',
+  },
+  {
+    key: 'jiofiber',
+    label: 'JioFiber',
+    squash: ['jiofiber', 'jioairfiber'],
+    subscription: true,
+    category: 'telecom',
+  },
+  {
+    key: 'airtel_postpaid',
+    label: 'Airtel postpaid',
+    squash: ['airtelpostpaid', 'airtelblack'],
+    subscription: true,
+    category: 'telecom',
+    multiConnection: true,
+  },
+  {
     key: 'jio_postpaid',
     label: 'JIO Postpaid',
     squash: ['jiopost'],
@@ -179,7 +238,7 @@ export const STATEMENT_ALIASES: StatementAlias[] = [
   {
     key: 'apple',
     label: 'Apple services',
-    squash: ['appleme', 'appleservic', 'applecombill', 'itunes'],
+    squash: ['appleme', 'appleservi', 'applecombill', 'itunes'],
     subscription: true,
     category: 'cloud',
   },
@@ -190,7 +249,14 @@ export const STATEMENT_ALIASES: StatementAlias[] = [
     subscription: true,
     category: 'mobility',
   },
-  { key: 'mygate', label: 'MyGate', squash: ['mygate'], subscription: true, category: 'utility' },
+  {
+    key: 'mygate',
+    label: 'MyGate (society maintenance)',
+    squash: ['mygate'],
+    subscription: true,
+    category: 'utility',
+    bill: true,
+  },
   {
     key: 'lic',
     label: 'LIC',
@@ -278,9 +344,19 @@ export function statementAlias(narration: string): StatementAlias | null {
 }
 
 /** Merchant key and label for a statement narration. */
-export function statementMerchant(narration: string): { key: string; label: string } {
+export function statementMerchant(
+  narration: string,
+  amountInr?: number,
+): { key: string; label: string } {
   const alias = statementAlias(narration);
   if (alias) return { key: alias.key, label: alias.label };
+  // Amazon over UPI: Prime is ₹299 a month or ₹1,499 a year; other amounts are shopping.
+  if (/amazon|amzn/i.test(narration) && !/prime/i.test(narration)) {
+    const a = amountInr !== undefined ? Math.round(Math.abs(amountInr)) : null;
+    if (a !== null && [299, 1499].some((p) => Math.abs(a - p) <= 1))
+      return { key: 'amazon_prime', label: 'Amazon (possibly Prime)' };
+    return { key: 'amazon', label: 'Amazon' };
+  }
   const cleaned = narration
     // SBI rows: "WDL TFR UPI/DR/0000000/PAYEE/…  0000000 AT 00343 TESTBR".
     .replace(/^\s*(?:WDL|DEP)\s+TFR\s+/i, ' ')
@@ -308,6 +384,14 @@ export function statementMerchant(narration: string): { key: string; label: stri
   )
     tokens = tokens.slice(0, -1);
   tokens = tokens.filter((t, i) => i === 0 || !/pvt$/.test(t));
+  // Handle fragments: a word that repeats an earlier one ("ikea ikeaindiapv"), or a short
+  // vowel-less tag ("cfp", "tlt").
+  tokens = tokens.filter(
+    (t, i) =>
+      i === 0 ||
+      (!tokens.slice(0, i).some((p) => t.startsWith(p) || p.startsWith(t)) &&
+        !(t.length <= 4 && !/[aeiouy]/.test(t))),
+  );
   const words = tokens.slice(0, 3);
   if (!words.length) return { key: 'unknown', label: 'Unknown' };
   return {
@@ -340,15 +424,15 @@ interface Item {
   index: number;
 }
 
-/** Splits a merchant's charges into amount clusters within ±15% of the cluster median. */
-function amountClusters(items: Item[]): Item[][] {
+/** Splits a merchant's charges into amount clusters within ±15% (or `tol`) of the cluster median. */
+function amountClusters(items: Item[], tol = TOLERANCE): Item[][] {
   const sorted = [...items].sort((a, b) => a.line.amountInr - b.line.amountInr);
   const clusters: Item[][] = [];
   for (const it of sorted) {
     const c = clusters[clusters.length - 1];
     if (c) {
       const med = median([...c, it].map((x) => x.line.amountInr));
-      if ([...c, it].every((x) => Math.abs(x.line.amountInr - med) <= med * TOLERANCE)) {
+      if ([...c, it].every((x) => Math.abs(x.line.amountInr - med) <= med * tol)) {
         c.push(it);
         continue;
       }
@@ -356,6 +440,19 @@ function amountClusters(items: Item[]): Item[][] {
     clusters.push([it]);
   }
   return clusters;
+}
+
+/**
+ * One merchant billed as two plans (₹1,999 on one account and ₹195 on another): when charges
+ * form two or more amount groups (±10%) that each recur in two or more months, each group is
+ * its own candidate. Usage merchants are never split.
+ */
+function splitByPlan(items: Item[], alias: StatementAlias | null): Item[][] {
+  if (alias?.usage || alias?.multiConnection) return [items];
+  const clusters = amountClusters(items, 0.1).filter(
+    (c) => new Set(c.map((it) => monthOfLine(it.line))).size >= 2,
+  );
+  return clusters.length >= 2 ? clusters : [items];
 }
 
 function round2(n: number): number {
@@ -409,9 +506,11 @@ function monthlyMerchant(
   const stable = within >= 2 && within > totals.length / 2;
   const kind: RecurringCandidate['kind'] = usage
     ? 'usage_topup'
-    : stable
-      ? 'subscription'
-      : 'unknown';
+    : !stable
+      ? 'unknown'
+      : alias?.bill
+        ? 'bill'
+        : 'subscription';
   const lastDate = sorted[sorted.length - 1].line.date;
   const rails = sorted.map((it) => railFor(it.line));
   const fx = sorted.find((it) => it.line.foreignCurrency)?.line.foreignCurrency;
@@ -455,12 +554,23 @@ export function detectRecurring(lines: StatementLine[]): RecurringCandidate[] {
     string,
     { label: string; items: Item[]; alias: StatementAlias | null; fx: boolean }
   >();
+  const p2p = new Map<string, { label: string; items: Item[] }>();
   lines.forEach((line, index) => {
     if (!(line.amountInr > 0)) return;
-    const kind = line.lineKind ?? lineKindOf(line.narration);
+    const alias0 = statementAlias(line.narration);
+    let kind = line.lineKind ?? lineKindOf(line.narration);
+    // A known merchant alias always wins over the person-to-person guess.
+    if (kind === 'p2p' && alias0) kind = 'purchase';
+    if (kind === 'p2p' && !line.selfTransfer) {
+      const { key, label } = statementMerchant(line.narration, line.amountInr);
+      const g = p2p.get(key) ?? { label, items: [] };
+      g.items.push({ line, index });
+      p2p.set(key, g);
+      return;
+    }
     if (kind !== 'purchase') return;
-    if (line.selfTransfer || statementAlias(line.narration)?.billPayment) return;
-    const { key, label } = statementMerchant(line.narration);
+    if (line.selfTransfer || alias0?.billPayment) return;
+    const { key, label } = statementMerchant(line.narration, line.amountInr);
     if (key === 'unknown') return;
     const g = groups.get(key) ?? {
       label,
@@ -478,16 +588,48 @@ export function detectRecurring(lines: StatementLine[]): RecurringCandidate[] {
     if (sources.size > 1) c.severalPaymentMethods = true;
     return c;
   };
+  // Regular transfers to a person: only reported with three or more months, never a subscription.
+  for (const [key, g] of p2p) {
+    const months = new Set(g.items.map((it) => monthOfLine(it.line)));
+    if (months.size < 3) continue;
+    const sorted = [...g.items].sort((a, b) => a.line.date.localeCompare(b.line.date));
+    const last = sorted[sorted.length - 1].line.date;
+    const totals = [...months].map((m) =>
+      sorted
+        .filter((it) => monthOfLine(it.line) === m)
+        .reduce((s2, it) => s2 + it.line.amountInr, 0),
+    );
+    out.push({
+      key,
+      label: g.label,
+      rail: 'unknown',
+      cadence: 'monthly',
+      averageInr: round2(median(totals)),
+      lastDate: last,
+      nextExpected: addMonthsClamped(last, 1),
+      occurrences: sorted.length,
+      confidence: 'low',
+      lineIndexes: sorted.map((it) => it.index),
+      kind: 'regular_transfer',
+    });
+  }
   for (const [key, g] of groups) {
     if (g.fx || g.alias?.subscription) {
-      const c = monthlyMerchant(key, g.label, g.items, g.alias);
-      if (c) {
-        out.push(mark(c, g.items));
-        continue;
+      for (const part of splitByPlan(g.items, g.alias)) {
+        const c = monthlyMerchant(key, g.label, part, g.alias);
+        if (c) out.push(mark(c, part));
       }
+      if (out.some((c) => c.key === key)) continue;
     }
-    for (const cluster of amountClusters(g.items)) {
+    // Unknown merchants need more evidence: 3+ charges in 3+ months, amount within ±10%.
+    const known = !!g.alias || !!canonicalMerchant(g.items[0].line.narration);
+    for (const cluster of amountClusters(g.items, known ? TOLERANCE : 0.1)) {
       if (cluster.length < 2) continue;
+      if (
+        !known &&
+        (cluster.length < 3 || new Set(cluster.map((it) => monthOfLine(it.line))).size < 3)
+      )
+        continue;
       const items = [...cluster].sort(
         (a, b) => a.line.date.localeCompare(b.line.date) || a.index - b.index,
       );

@@ -1,0 +1,83 @@
+Hi Mr. TEST USER,
+Here is your Invoice Summary.
+or pay via
+Jio.com   MyJio App
+Credit Limit
+Security Deposit
+Statement Date
+Bill Period
+Due Date
+:   Rs 2394.00
+Rs 1575.00 :
+:   12-Oct-26
+11-Sep-26 :
+20-Oct-26 :
+10-Oct-26
+to
+Jio Mobile Number   000000000
+Statement Number   000000000
+Current Plan
+:
+:
+Scan & Pay
+:
+449 - Prime Rs 0
+ii.   Payment Received
+Amount (Rs.)
+1,892.09
+iii.   Current Months Charges   1,242.73
+1,892.09 i.   Previous Balance Due
+Connectivity Services
+Monthly Plan Charges
+Other Charges
+Adjustments / Discounts
+Platform Services
+Monthly Plan Charges
+Other Charges
+Adjustments / Discounts
+Other Credits
+Taxes
+iv.   Previous Balance with RRL
+v.   Current Balance (i - ii + iii + iv)
+vi.   Total Payable   1,242.73
+0.00
+1,242.73
+1,053.16
+507.37
+0.00
+545.79
+0.00
+0.00
+0.00
+0.00
+0.00
+189.57
+You can download your detailed tax invoices on MyJio app / jio.com in the invoice history section.
+Reach Us:   Call 199 from your Jio number | 1800-889-9999 from other networks |   user@example.com
+Manage your world of Jio with   MyJio   app or visit   www.jio.com .
+Invoice Plan Details   Period
+Connectivity Services:
+449 - Prime Rs 0   11-SEP-2026 to 10-OCT-2026
+SEP-26
+Due Amount : 1174.42
+Payment : 2305.40
+AUG-26
+Due Amount : 1805.40
+Payment : 1469.10
+
+Important Information:
+Payments
+Complaints & Service Requests
+Other
+l   No charge will be levied for any service without your explicit consent.
+l   No migration fee is chargeable for changing tariff plan.
+l   In case you are on an unlimited data plan, post consumption of your allocated data limit,
+you will experience a downgrade in speed as per Fair Usage Policy.
+l   You can call 199 (toll-free) from your Jio number or 1800-889-9999 from other networks to
+register your service request / complaint.
+l   You can also visit   www.jio.com , login with your Jio ID and password; click on "Service
+Request" option under Profile menu to raise a complaint. To track the status of your existing
+complaint, use your unique Service Request Number.
+l   In the event of non-payment, part payment or late payment of the outstanding amount by the due date,
+Reliance Jio Infocomm Limited (RJIL) and Jio Platforms Limited (JPL) reserves the right to disconnect
+services.

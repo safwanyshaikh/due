@@ -189,7 +189,8 @@ export interface Move {
   legalNote: string | null;
   sponsored: false; // ads are off at launch
   /** Additive: 'urgent' moves (e.g. an overdue loan in SMA) rank first regardless of saving. */
-  severity?: 'urgent';
+  /** 'info' moves carry no money claim and rank last. */
+  severity?: 'urgent' | 'info';
 }
 
 export interface LedgerEntry {
@@ -230,6 +231,10 @@ export interface SavingsState {
   loans?: LoanStatementSummary[];
   /** Additive: bank-account statement summaries (failed auto-debits, morning balances, price steps). */
   banks?: BankStatementSummary[];
+  /** Additive: telecom bills. */
+  telecom?: TelecomBillSummary[];
+  /** Additive: UPI app statements. */
+  upi?: UpiStatementSummary[];
 }
 
 /** Additive: a merchant whose monthly charge stepped up and stayed there. */
@@ -254,6 +259,37 @@ export interface BankStatementSummary {
   priceSteps: PriceStep[];
   /** Additive: automatic recoveries to an overdue loan/overdraft account in SMA ("SMA REC"). */
   smaSweeps?: { date: string; amountInr: number }[];
+  /** Additive: recurring candidates found in this statement (for statement-only overlap moves). */
+  recurring?: RecurringCandidate[];
+}
+
+/** Additive: a telecom bill (Jio Postpaid / JioFiber / AirFiber), read on the device. Rupees. */
+export interface TelecomBillSummary {
+  provider: string;
+  service: 'postpaid' | 'fiber';
+  planName: string | null;
+  baseRentalInr: number | null;
+  addOns: { label: string; amountInr: number }[];
+  usageChargesInr: number | null;
+  taxesInr: number | null;
+  totalPayableInr: number | null;
+  dueDate: string | null;
+  periodFrom: string | null;
+  periodTo: string | null;
+  dataUsedGb: number | null;
+  planDataGb: number | null;
+  /** What the plan says it includes, as printed (e.g. "13 paid OTT apps (list not printed)"). */
+  includes: string[];
+  ottAppCount: number | null;
+}
+
+/** Additive: UPI-app (Google Pay) statement totals that matter to Savings. */
+export interface UpiStatementSummary {
+  app: string;
+  periodFrom: string | null;
+  periodTo: string | null;
+  /** UPI payments charged to credit cards, per card. */
+  creditCardSpend: { paidBy: string; last4: string | null; totalInr: number; months: number }[];
 }
 
 /** Additive: a loan "Statement of Account" or welcome letter, read on the device. Rupees. */
@@ -289,6 +325,15 @@ export interface LoanStatementSummary {
   statementDate: string | null;
   /** Set when the user added this loan's EMI as an obligation. */
   obligationId?: string | null;
+  /* Additive: overdraft-style loans (SBI Gold Loan OD). */
+  productKind?: 'gold_loan_od';
+  limitInr?: number | null;
+  outstandingInr?: number | null;
+  monthlyInterest?: { month: string; amountInr: number }[];
+  penalChargesInr?: number | null;
+  /** "Irregularity Recovery" / "SMA REC" credits. */
+  irregularities?: { date: string; amountInr: number; label: string }[];
+  irregularityCount?: number;
 }
 
 /**
@@ -356,7 +401,10 @@ export interface StatementLine {
     | 'reversal'
     | 'credit'
     | 'wallet_topup'
-    | 'loan_repayment';
+    | 'loan_repayment'
+    | 'p2p';
+  /** Additive: the account or card that paid (UPI apps print it), e.g. "State Bank of India 0000 | RuPay credit card". */
+  paidBy?: string;
   /** Additive: a transfer between the statement holder's own accounts (not spending or income). */
   selfTransfer?: boolean;
   /** YYYY-MM of the statement's closing date, when the text printed its period. */
@@ -379,7 +427,7 @@ export interface RecurringCandidate {
   confidence: MoveConfidence;
   lineIndexes: number[];
   /** Additive: subscription, or repeated usage top-ups (e.g. cloud credits), or unclear. */
-  kind?: 'subscription' | 'usage_topup' | 'unknown';
+  kind?: 'subscription' | 'usage_topup' | 'unknown' | 'regular_transfer' | 'bill';
   /** Additive: the foreign currency when the charges were billed in one. */
   foreignCurrency?: string;
   /** Additive: postpaid-style merchants, distinct amounts paid a month ≈ connections. */
