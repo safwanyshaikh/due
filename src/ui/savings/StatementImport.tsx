@@ -1,5 +1,10 @@
 import { useState, type ChangeEvent } from 'react';
-import type { RecurringCandidate, StatementLine } from '../../lib/savings/types';
+import type {
+  CardStatementSummary,
+  LoanStatementSummary,
+  RecurringCandidate,
+  StatementLine,
+} from '../../lib/savings/types';
 import type { CommitmentType, Rail } from '../../lib/types';
 import { createObligation, type MutationResult } from '../../lib/mutations';
 import { rules, type RecurrenceRule } from '../../lib/recurrence';
@@ -10,7 +15,14 @@ import { useApp } from '../store';
 import { Badge, Field, Notice } from '../components/ui';
 import { readDocumentText } from '../lib/documentText';
 import { nav } from '../lib/nav';
-import { findRecurring, parseStatement } from './engine';
+import {
+  addCardBill,
+  addLoanEmi,
+  findRecurring,
+  parseStatement,
+  readCardSummary,
+  readLoanSummary,
+} from './engine';
 import { CADENCE_TEXT, CONFIDENCE_LABEL, CONFIDENCE_TONE, RAIL_TEXT, rupees } from './format';
 
 const MAX_BYTES = 15 * 1024 * 1024;
@@ -46,13 +58,25 @@ export function StatementImport() {
   const [lineCount, setLineCount] = useState(0);
   const [picked, setPicked] = useState<Record<string, boolean>>({});
   const [types, setTypes] = useState<Record<string, CommitmentType>>({});
+  const [card, setCard] = useState<CardStatementSummary | null>(null);
+  const [loan, setLoan] = useState<LoanStatementSummary | null>(null);
+  const [added, setAdded] = useState<string | null>(null);
 
   const check = (t: string) => {
     setMsg(null);
+    setAdded(null);
+    const l = readLoanSummary(t);
+    setLoan(l);
+    setCard(l ? null : source === 'card' || /credit\s+card/i.test(t) ? readCardSummary(t) : null);
+    if (l) {
+      setFound(null);
+      return;
+    }
     const lines = parseStatement(t, source);
     setLineCount(lines.length);
     if (!lines.length) {
       setFound([]);
+      if (readCardSummary(t)) return;
       setMsg('No payment lines were found. Paste rows with a date, a description and an amount.');
       return;
     }
@@ -88,6 +112,26 @@ export function StatementImport() {
   };
 
   const chosen = (found ?? []).filter((c) => picked[c.key]);
+
+  const addCard = () => {
+    if (!card) return;
+    const r = mutate((d) => addCardBill(d, card, ctx()), { message: "Added this card's bill" });
+    if (r) setAdded('card');
+  };
+
+  const addLoan = () => {
+    if (!loan) return;
+    const r = mutate((d) => addLoanEmi(d, loan, ctx()), { message: "Added this loan's EMI" });
+    if (r) setAdded('loan');
+  };
+
+  const money = (n: number | null) => (n === null ? 'Not shown' : rupees(n));
+  const cardFees = card
+    ? (card.feesTaxesInterest ??
+      [card.financeChargeInr, card.lateFeeInr, card.forexMarkupInr, card.annualFeeInr]
+        .filter((n): n is number => n !== null)
+        .reduce<number | null>((s, n) => (s ?? 0) + n, null))
+    : null;
 
   const add = () => {
     const bad = chosen.map((c) => looksSensitive(c.label)).find(Boolean);
@@ -194,7 +238,100 @@ export function StatementImport() {
 
       <div aria-live="polite" className="stack-16">
         {msg && <Notice tone="warn">{msg}</Notice>}
-        {found && found.length === 0 && !msg && (
+        {card && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-card-h"
+            data-testid="sv-card-summary"
+          >
+            <h2 id="sv-card-h">{card.issuer ?? 'Card'} statement</h2>
+            <dl className="sv-summary">
+              <div>
+                <dt>Due date</dt>
+                <dd>{card.dueDate ? formatDate(card.dueDate) : 'Not shown'}</dd>
+              </div>
+              <div>
+                <dt>Total due</dt>
+                <dd>{money(card.totalDue)}</dd>
+              </div>
+              <div>
+                <dt>Minimum due</dt>
+                <dd>{money(card.minimumDue)}</dd>
+              </div>
+              <div>
+                <dt>Interest and fees this month</dt>
+                <dd>{money(cardFees)}</dd>
+              </div>
+            </dl>
+            {added === 'card' ? (
+              <Notice>Added. It will show on Home with its due date.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary press jelly align-start"
+                disabled={!card.dueDate}
+                onClick={addCard}
+              >
+                Add this card&apos;s bill
+              </button>
+            )}
+          </section>
+        )}
+        {loan && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-loan-h"
+            data-testid="sv-loan-summary"
+          >
+            <h2 id="sv-loan-h">
+              {[loan.lender, loan.product?.toLowerCase()].filter(Boolean).join(' ') || 'Loan'}
+            </h2>
+            <dl className="sv-summary">
+              <div>
+                <dt>EMI</dt>
+                <dd>{money(loan.emiInr)}</dd>
+              </div>
+              <div>
+                <dt>EMI date</dt>
+                <dd>{loan.emiDueDay ? `Day ${loan.emiDueDay} of each month` : 'Not shown'}</dd>
+              </div>
+              <div>
+                <dt>Interest rate</dt>
+                <dd>
+                  {loan.annualRatePct !== null ? `${loan.annualRatePct}% a year` : 'Not shown'}
+                  {loan.rateType ? ` (${loan.rateType})` : ''}
+                </dd>
+              </div>
+              {loan.balanceTenureMonths !== null && (
+                <div>
+                  <dt>Months left</dt>
+                  <dd>{loan.balanceTenureMonths}</dd>
+                </div>
+              )}
+              {loan.bounceCount > 0 && (
+                <div>
+                  <dt>Bounced EMIs</dt>
+                  <dd>
+                    {loan.bounceCount} ({rupees(loan.bounceChargesInr)} in bounce charges)
+                  </dd>
+                </div>
+              )}
+            </dl>
+            {added === 'loan' ? (
+              <Notice>Added. It will show on Home with its EMI date.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary press jelly align-start"
+                disabled={loan.emiInr === null}
+                onClick={addLoan}
+              >
+                Add this loan&apos;s EMI
+              </button>
+            )}
+          </section>
+        )}
+        {found && found.length === 0 && !msg && !card && (
           <Notice>
             Read {lineCount} payment line{lineCount === 1 ? '' : 's'} but found nothing that
             repeats. A longer statement (two or three months) helps.

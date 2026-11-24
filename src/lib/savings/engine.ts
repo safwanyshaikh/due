@@ -3,7 +3,7 @@
  * Pure and on-device. Money is whole rupees here (obligations keep paise).
  * No invented numbers: a null price produces no move. Assumptions are labelled and editable.
  */
-import { daysBetween, formatDate, todayInTz } from '../dates';
+import { addDays, addMonthsClamped, daysBetween, formatDate, todayInTz } from '../dates';
 import { formatINR } from '../money';
 import { effectiveNext, forecastObligations, liveHistory } from '../obligations';
 import { cadenceMonths } from '../recurrence';
@@ -11,7 +11,11 @@ import { parseIndianAmount } from '../intake';
 import type { AppData, Commitment, Frequency } from '../types';
 import { matchesKey, matchModule, type ModuleMatch } from './match';
 import { researchNeeds } from './research';
+import { cardKey } from './cardSummary';
+import { loanKey } from './loanSummary';
 import type {
+  CardStatementSummary,
+  LoanStatementSummary,
   Assumption,
   AssumptionSource,
   CityPack,
@@ -42,6 +46,8 @@ const EFFORT_RANK: Record<Move['effort'], number> = { tap: 0, habit: 1, paperwor
 export const DEBT_LEGAL_NOTE = "Information only. Check your bank's own offer.";
 export const LOAN_LEGAL_NOTE =
   "Information only. Due does not arrange loans. RBI rules say lenders may not charge foreclosure or prepayment fees on floating-rate loans taken by individuals for non-business purposes. Check your lender's own terms.";
+export const BOUNCE_TRANSFER_NOTE =
+  'Lenders usually want 6–12 months without bounces before a transfer; ask your current lender to lower the rate first.';
 export const RBI_SOURCE: SourceRef = {
   url: 'https://www.rbi.org.in/',
   label: 'Reserve Bank of India: prepayment charges on floating-rate loans',
@@ -172,6 +178,7 @@ interface Ctx {
   obs: Commitment[];
   match: Map<string, ModuleMatch | null>;
   cityPack: CityPack | null;
+  modules: SavingsModule[];
 }
 
 function moduleOf(ctx: Ctx, ob: Commitment): SavingsModule | null {
@@ -656,6 +663,202 @@ function trialEndMove(ctx: Ctx, ob: Commitment): Move | null {
   });
 }
 
+/* ---------- statements: fee leaks and loan summaries ---------- */
+
+function latestBy<T>(items: T[], key: (t: T) => string, date: (t: T) => string | null): T[] {
+  const best = new Map<string, T>();
+  for (const it of items) {
+    const k = key(it);
+    const prev = best.get(k);
+    if (!prev || (date(it) ?? '') >= (date(prev) ?? '')) best.set(k, it);
+  }
+  return [...best.values()];
+}
+
+function genericModule(
+  ctx: Ctx,
+  type: Commitment['type'],
+  provider: string,
+  product: string,
+): SavingsModule | null {
+  const synthetic = {
+    id: '__statement__',
+    type,
+    provider,
+    nickname: product,
+    canonicalProvider: null,
+    loan: { loanType: product },
+  } as unknown as Commitment;
+  return matchModule(synthetic, ctx.modules)?.module ?? null;
+}
+
+function feeMove(
+  sub: string,
+  key: string,
+  obligationId: string | null | undefined,
+  module: SavingsModule | null,
+  p: Pick<Move, 'title' | 'why' | 'confidence' | 'effort' | 'legalNote'> & {
+    saving: number;
+    action?: Move['action'];
+  },
+): Move {
+  const s = r0(p.saving);
+  return {
+    id: `fee_leak:${sub}:${key}`,
+    kind: 'fee_leak',
+    moduleId: module?.id ?? null,
+    obligationIds: obligationId ? [obligationId] : [],
+    title: p.title,
+    why: p.why,
+    monthlySavingInr: s,
+    rangeInr: [s, s],
+    confidence: p.confidence,
+    assumptions: [],
+    sources: module?.sources ?? [],
+    effort: p.effort,
+    action: p.action ?? { url: null, label: 'See how' },
+    unverifiedPrice: false,
+    legalNote: p.legalNote,
+    sponsored: false,
+  };
+}
+
+function cardFeeMoves(ctx: Ctx, statements: CardStatementSummary[]): Move[] {
+  const out: Move[] = [];
+  for (const st of latestBy(statements, cardKey, (s) => s.statementDate)) {
+    const key = cardKey(st);
+    const card = st.issuer ?? 'Your card';
+    if (st.financeChargeInr && st.financeChargeInr >= 1) {
+      const m = genericModule(ctx, 'credit_card', st.issuer ?? '', 'credit card');
+      const low = m?.rules.ratePctLow;
+      const high = m?.rules.ratePctHigh;
+      const alt =
+        low != null && high != null
+          ? ` A balance-transfer EMI or personal loan at about ${low}–${high}% a year may cost less while you clear it.`
+          : ' A balance-transfer EMI or personal loan may cost less while you clear it.';
+      out.push(
+        feeMove('interest', key, st.obligationId, m, {
+          title: `You paid ${rupees(st.financeChargeInr)} interest this month`,
+          why: `${card} charged ${rupees(st.financeChargeInr)} in finance charges and GST${st.monthlyRatePct ? ` (its printed rate is ${st.monthlyRatePct}% a month)` : ''}. Paying the total due by the due date stops new interest.${alt}`,
+          saving: st.financeChargeInr,
+          confidence: 'high',
+          effort: 'paperwork',
+          legalNote: DEBT_LEGAL_NOTE,
+          action: action(m, 'Compare on the official page'),
+        }),
+      );
+    }
+    if (st.lateFeeInr && st.lateFeeInr >= 1)
+      out.push(
+        feeMove('late_fee', key, st.obligationId, null, {
+          title: 'Set an autopay for at least the minimum due',
+          why: `${card} charged a late fee of ${rupees(st.lateFeeInr)} including GST. An autopay for the minimum due avoids it.`,
+          saving: st.lateFeeInr,
+          confidence: 'medium',
+          effort: 'tap',
+          legalNote: null,
+          action: { url: null, label: "Set it up in your card's app" },
+        }),
+      );
+    if (st.forexMarkupInr && st.forexMarkupInr >= 1)
+      out.push(
+        feeMove('forex', key, st.obligationId, null, {
+          title: `${rupees(st.forexMarkupInr)} a month in forex markup + GST`,
+          why: `Charged on ${st.foreignSpendInr ? `${rupees(st.foreignSpendInr)} of ` : ''}foreign-currency payments. A zero-forex card or paying in INR avoids it.`,
+          saving: st.forexMarkupInr,
+          confidence: 'high',
+          effort: 'habit',
+          legalNote: null,
+        }),
+      );
+    if (st.annualFeeInr && st.annualFeeInr >= 1)
+      out.push(
+        feeMove('annual_fee', key, st.obligationId, null, {
+          title: `Annual fee of ${rupees(st.annualFeeInr)} charged`,
+          why: st.annualFeeWaiver
+            ? `Your statement says: ${st.annualFeeWaiver}.`
+            : 'Ask your bank whether it can be reversed or whether a lower-fee card suits you.',
+          saving: st.annualFeeInr / 12,
+          confidence: 'medium',
+          effort: 'tap',
+          legalNote: null,
+        }),
+      );
+  }
+  return out;
+}
+
+/** Bounced presentations in the 12 months up to today. */
+export function bouncesIn12Months(loan: LoanStatementSummary, today: string): number {
+  const from = addMonthsClamped(today, -11).slice(0, 7);
+  return loan.bounceRows.filter((m) => m >= from && m <= today.slice(0, 7)).length;
+}
+
+function loanSummaryMoves(ctx: Ctx, loans: LoanStatementSummary[]): Move[] {
+  const out: Move[] = [];
+  const yearAgo = addDays(ctx.today, -365);
+  for (const loan of latestBy(loans, loanKey, (l) => l.statementDate)) {
+    const key = loanKey(loan);
+    const name =
+      [loan.lender, loan.product?.toLowerCase()].filter(Boolean).join(' ') || 'your loan';
+    const bounces = bouncesIn12Months(loan, ctx.today);
+    const charges = loan.bounceCharges
+      .filter((c) => c.date >= yearAgo && c.date <= ctx.today)
+      .reduce((s, c) => s + c.amountInr, 0);
+    const late = loan.latePaymentChargesInr ?? 0;
+    if (bounces >= 1 && charges + late >= 1)
+      out.push(
+        feeMove('bounce', key, loan.obligationId, null, {
+          title: 'Keep the EMI amount in the account 1 day before the due date',
+          why: `EMI bounced ${bounces} time${bounces === 1 ? '' : 's'} in 12 months: ${rupees(charges)} in bounce charges + ${rupees(late)} late interest. Or ask the lender to move the EMI date nearer your income date.`,
+          saving: (charges + late) / 12,
+          confidence: 'high',
+          effort: 'habit',
+          legalNote: null,
+        }),
+      );
+    const rate = loan.annualRatePct;
+    const p = loan.futurePrincipalInr;
+    const n = loan.balanceTenureMonths;
+    if (loan.rateType !== 'floating' || rate == null || p == null || n == null || p <= 0 || n <= 0)
+      continue;
+    const m = genericModule(ctx, 'emi', loan.lender ?? '', loan.product ?? 'loan');
+    if (!m || m.valueKind !== 'loan_switch') continue;
+    const low = m.rules.ratePctLow;
+    if (low == null || rate <= low + 0.5) continue;
+    const cur = emi(p, rate, n);
+    const saving = cur - emi(p, low, n);
+    if (saving < 1) continue;
+    const high = m.rules.ratePctHigh;
+    const a = new Assumptions(ctx.profile.overrides);
+    a.use(`loan_switch:${key}:ratePct`, 'Your rate a year', rate, '%', 'your_data', false);
+    a.use(`loan_switch:${key}:principalInr`, 'Principal left', r0(p), '₹', 'your_data', false);
+    a.use(`loan_switch:${key}:months`, 'Months left', n, 'months', 'your_data', false);
+    const bounced = bounces >= 2;
+    out.push({
+      id: `loan_switch:${m.id}:${key}`,
+      kind: 'loan_switch',
+      moduleId: m.id,
+      obligationIds: loan.obligationId ? [loan.obligationId] : [],
+      title: `Ask about a lower rate on ${name}`,
+      why: `Your floating rate is ${rate}%; published rates start at ${low}%. On ${rupees(p)} over ${n} months that is about ${rupees(saving)} less EMI a month.${bounced ? ` ${BOUNCE_TRANSFER_NOTE}` : ''}`,
+      monthlySavingInr: r0(saving),
+      rangeInr: [r0(high != null && high < rate ? cur - emi(p, high, n) : 0), r0(saving)],
+      confidence: bounced ? 'low' : 'medium',
+      assumptions: a.list,
+      sources: m.sources.some((x) => x.kind === 'regulator')
+        ? m.sources
+        : [...m.sources, RBI_SOURCE],
+      effort: 'paperwork',
+      action: action(m, 'See published rates'),
+      unverifiedPrice: m.status === 'research',
+      legalNote: LOAN_LEGAL_NOTE,
+      sponsored: false,
+    });
+  }
+  return out;
+}
+
 /* ---------- ranking ---------- */
 
 export function rankMoves(moves: Move[]): Move[] {
@@ -704,9 +907,16 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
   const cityPack =
     (catalog?.cityPacks ?? []).find((p) => p.id === profile.cityPack && p.status !== 'retired') ??
     null;
-  const ctx: Ctx = { today, profile, catalog, obs, match, cityPack };
+  const ctx: Ctx = { today, profile, catalog, obs, match, cityPack, modules };
 
-  const moves: Move[] = [...overlapMoves(ctx), ...commuteMoves(ctx)];
+  // Statement summaries first: their loan moves are more exact than the obligation's own terms
+  // and win the de-duplication below.
+  const moves: Move[] = [
+    ...loanSummaryMoves(ctx, data.savings?.loans ?? []),
+    ...cardFeeMoves(ctx, data.savings?.statements ?? []),
+    ...overlapMoves(ctx),
+    ...commuteMoves(ctx),
+  ];
   for (const ob of obs) {
     const m = moduleOf(ctx, ob);
     let pausing = false;

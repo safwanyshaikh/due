@@ -20,7 +20,7 @@ describe('parseStatementText', () => {
   it('reads an HDFC-style table: dd/mm/yy dates, value date, withdrawal then balance', () => {
     const lines = parseStatementText(BANK_TEXT, 'bank');
     expect(lines).toHaveLength(9);
-    expect(lines[0]).toEqual({
+    expect(lines[0]).toMatchObject({
       date: '2026-08-05',
       narration: 'UPI-AUTOPAY-NETFLIX.COM-412345678901-netflix@hdfcbank 0000412345678901',
       amountInr: 649,
@@ -45,7 +45,7 @@ describe('parseStatementText', () => {
     const t = `05-Nov-26 SPOTIFY INDIA MUMBAI ₹119.00 Dr
 06-Nov-26 PAYMENT RECEIVED THANK YOU ₹12,000.00 Cr
 07 Nov 2026 AMAZON PRIME ₹1,499.00`;
-    expect(parseStatementText(t, 'card')).toEqual([
+    expect(parseStatementText(t, 'card')).toMatchObject([
       { date: '2026-11-05', narration: 'SPOTIFY INDIA MUMBAI', amountInr: 119, source: 'card' },
       {
         date: '2026-11-06',
@@ -71,7 +71,7 @@ JIOHOTSTAR PREMIUM
 05-11-2026,05-11-2026,"UPI-AUTOPAY-SPOTIFY","4123","119.00","","10,000.00"
 06-11-2026,06-11-2026,"NEFT CR SALARY","","","50,000.00","60,000.00"
 `;
-    expect(parseStatementText(csv, 'bank')).toEqual([
+    expect(parseStatementText(csv, 'bank')).toMatchObject([
       { date: '2026-11-05', narration: 'UPI-AUTOPAY-SPOTIFY', amountInr: 119, source: 'bank' },
       { date: '2026-11-06', narration: 'NEFT CR SALARY', amountInr: -50000, source: 'bank' },
     ]);

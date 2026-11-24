@@ -93,6 +93,7 @@ const KINDS: ValueKind[] = [
   'loan_switch',
   'price_change',
   'trial_end',
+  'fee_leak',
 ];
 
 function validModule(m: unknown): m is SavingsModule {

@@ -4,7 +4,7 @@ import { COMMUNITY_THRESHOLD, type ModuleCategory, type TransportMode, type Valu
 export const MODULE_STATUSES = ['research', 'verified', 'retired'] as const;
 export const CATEGORIES = ['mobility', 'food', 'telecom', 'ott', 'music', 'cloud', 'shopping', 'card', 'loan', 'utility', 'other'] as const satisfies readonly ModuleCategory[];
 export const VALUE_KINDS = [
-  'membership_breakeven', 'period_switch', 'overlap', 'commute_pass', 'debt_rate', 'loan_switch', 'price_change', 'trial_end',
+  'membership_breakeven', 'period_switch', 'overlap', 'commute_pass', 'debt_rate', 'loan_switch', 'price_change', 'trial_end', 'fee_leak',
 ] as const satisfies readonly ValueKind[];
 export const TRANSPORT_MODES = ['cab', 'auto', 'bike_taxi', 'local_train', 'metro', 'bus', 'shuttle', 'own_vehicle'] as const satisfies readonly TransportMode[];
 export const RESEARCH_STATUSES = ['open', 'researching', 'done', 'rejected'] as const;

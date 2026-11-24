@@ -12,7 +12,8 @@ export type ValueKind =
   | 'debt_rate'
   | 'loan_switch'
   | 'price_change'
-  | 'trial_end';
+  | 'trial_end'
+  | 'fee_leak';
 
 export interface SourceRef {
   url: string;

@@ -14,7 +14,8 @@ export type ValueKind =
   | 'debt_rate' // revolving card debt vs balance-transfer EMI (information)
   | 'loan_switch' // floating-rate loan vs a lower published rate (information)
   | 'price_change' // the user's own price went up
-  | 'trial_end'; // a free trial is about to convert to paid
+  | 'trial_end' // a free trial is about to convert to paid
+  | 'fee_leak'; // card interest, late fees, forex markup, annual fee from a statement
 
 export interface SourceRef {
   url: string;
@@ -221,6 +222,80 @@ export interface LedgerBaseline {
 export interface SavingsState {
   profile: SavingsProfile;
   ledger: LedgerEntry[];
+  /** Additive: card statement summaries the user saved from a statement import (no card numbers). */
+  statements?: CardStatementSummary[];
+  /** Additive: loan statement / welcome-letter summaries the user saved (no account numbers). */
+  loans?: LoanStatementSummary[];
+}
+
+/** Additive: a loan "Statement of Account" or welcome letter, read on the device. Rupees. */
+export interface LoanStatementSummary {
+  source: 'statement' | 'welcome_letter';
+  lender: string | null;
+  product: string | null;
+  rateType: 'floating' | 'fixed' | null;
+  annualRatePct: number | null;
+  emiInr: number | null;
+  /** Day of month the EMI is debited (1–31). */
+  emiDueDay: number | null;
+  loanAmountInr: number | null;
+  loanTenureMonths: number | null;
+  balanceTenureMonths: number | null;
+  futurePrincipalInr: number | null;
+  overdueInstalmentInr: number | null;
+  /** Late payment charges still owed (closing balance). */
+  latePaymentChargesInr: number | null;
+  /** Rows "Bounced MON/YYYY" (each presentation that bounced). */
+  bounceCount: number;
+  /** YYYY-MM of every bounced row (repeats when an EMI bounced twice). */
+  bounceRows: string[];
+  /** Distinct months with a bounce, sorted. */
+  bounceMonths: string[];
+  bounceChargesInr: number;
+  /** Each "Bounce Charges" debit, for windowed totals. */
+  bounceCharges: { date: string; amountInr: number }[];
+  processingFeeInr: number | null;
+  disbursementDate: string | null;
+  instalmentEndDate: string | null;
+  /** Date the statement was generated. */
+  statementDate: string | null;
+  /** Set when the user added this loan's EMI as an obligation. */
+  obligationId?: string | null;
+}
+
+/**
+ * Additive: the account summary printed on a credit-card statement, read on the device.
+ * Only masked digits of the card are kept. Rupees. null = not printed / not read.
+ */
+export interface CardStatementSummary {
+  issuer: string | null;
+  /** Visible digits of the masked card number only (e.g. "00" from "XXXX XXXX XXXX XX00"). */
+  last4: string | null;
+  statementDate: string | null;
+  dueDate: string | null;
+  creditLimit: number | null;
+  availableCredit: number | null;
+  totalDue: number | null;
+  minimumDue: number | null;
+  previousBalance: number | null;
+  payments: number | null;
+  purchases: number | null;
+  feesTaxesInterest: number | null;
+  /** Finance charges this statement, including the GST printed with them. */
+  financeChargeInr: number | null;
+  lateFeeInr: number | null;
+  forexMarkupInr: number | null;
+  /** Annual fee charged this statement (incl. GST); reversals are in annualFeeReversedInr. */
+  annualFeeInr: number | null;
+  annualFeeReversedInr?: number | null;
+  /** Spend-based waiver text, only when the statement prints exactly one. */
+  annualFeeWaiver?: string | null;
+  /** Monthly interest rate printed on the statement, e.g. 3.75. */
+  monthlyRatePct: number | null;
+  /** Foreign-currency purchases this statement (rupees), for the forex-markup move. */
+  foreignSpendInr?: number | null;
+  /** Set when the user added this card's bill as an obligation. */
+  obligationId?: string | null;
 }
 
 /** A provider Due found in the user's data but has no module for yet. Sent anonymously for research. */
@@ -237,6 +312,16 @@ export interface StatementLine {
   narration: string;
   amountInr: number; // positive = debit
   source: 'bank' | 'card';
+  /* Additive (engine): metadata read from the same line. */
+  /** Foreign amount and ISO currency when the line shows one ("26.67 USD"). amountInr stays the INR charge. */
+  foreignAmount?: number;
+  foreignCurrency?: string;
+  /** Tax printed with a fee line ("(EXCL TAX 2384.03)"): the GST on that fee, charged separately. */
+  taxInr?: number;
+  /** What the line is. Only 'purchase' lines can become subscriptions. */
+  lineKind?: 'purchase' | 'fee' | 'interest' | 'tax' | 'payment' | 'reversal';
+  /** YYYY-MM of the statement's closing date, when the text printed its period. */
+  statementPeriod?: string;
 }
 
 export interface RecurringCandidate {
@@ -250,6 +335,10 @@ export interface RecurringCandidate {
   occurrences: number;
   confidence: MoveConfidence;
   lineIndexes: number[];
+  /** Additive: subscription, or repeated usage top-ups (e.g. cloud credits), or unclear. */
+  kind?: 'subscription' | 'usage_topup' | 'unknown';
+  /** Additive: the foreign currency when the charges were billed in one. */
+  foreignCurrency?: string;
 }
 
 export const COMMUNITY_THRESHOLD = 20;

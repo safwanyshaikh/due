@@ -3,6 +3,12 @@
  * engine signature changes, and makes every network call failure-tolerant.
  */
 import {
+  addCardBill,
+  addLoanEmi,
+  parseCardStatementSummary,
+  parseLoanStatement,
+  type CardStatementSummary,
+  type LoanStatementSummary,
   computeMoves,
   defaultSavingsState,
   detectRecurring,
@@ -158,3 +164,23 @@ export const profileEdits = {
   setOptIn: (s: SavingsState, on: boolean) => setCommunityOptIn(s, on),
   markSent: (s: SavingsState, labels: string[]) => markResearchSent(s, labels),
 };
+
+/** Card statement summary (due date, totals, fees) from statement text, or null. */
+export function readCardSummary(text: string): CardStatementSummary | null {
+  try {
+    return parseCardStatementSummary(text);
+  } catch {
+    return null;
+  }
+}
+
+/** Loan statement / welcome letter summary from text, or null. */
+export function readLoanSummary(text: string): LoanStatementSummary | null {
+  try {
+    return parseLoanStatement(text);
+  } catch {
+    return null;
+  }
+}
+
+export { addCardBill, addLoanEmi };

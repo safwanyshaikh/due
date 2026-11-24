@@ -84,7 +84,18 @@ export function normaliseSavingsState(raw: unknown): SavingsState {
         (e) => isObj(e) && typeof e.moveId === 'string' && typeof e.status === 'string',
       ) as SavingsState['ledger'])
     : [];
-  return { profile, ledger };
+  const out: SavingsState = { profile, ledger };
+  if (Array.isArray(raw.statements))
+    out.statements = raw.statements.filter(isObj) as unknown as SavingsState['statements'];
+  if (Array.isArray(raw.loans))
+    out.loans = (raw.loans.filter(isObj) as unknown as NonNullable<SavingsState['loans']>).map(
+      (l) => ({
+        ...l,
+        bounceRows: Array.isArray(l.bounceRows) ? l.bounceRows : [],
+        bounceCharges: Array.isArray(l.bounceCharges) ? l.bounceCharges : [],
+      }),
+    );
+  return out;
 }
 
 function withProfile(state: SavingsState, patch: Partial<SavingsProfile>): SavingsState {
