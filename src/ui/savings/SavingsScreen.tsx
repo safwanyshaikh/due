@@ -20,11 +20,13 @@ function MoveRow({
   rank,
   onOpen,
   done,
+  tag = 'Marked done',
 }: {
   m: Move;
   rank: number;
   onOpen: () => void;
   done?: boolean;
+  tag?: string;
 }) {
   return (
     <li>
@@ -45,7 +47,7 @@ function MoveRow({
           <span className="chips">
             <Badge tone={CONFIDENCE_TONE[m.confidence]}>{CONFIDENCE_LABEL[m.confidence]}</Badge>
             {m.unverifiedPrice && <Badge tone="warm">{UNVERIFIED_PRICE}</Badge>}
-            {done && <Badge tone="calm">Marked done</Badge>}
+            {done && <Badge tone="calm">{tag}</Badge>}
           </span>
         </span>
         {m.severity === 'urgent' ? (
@@ -232,6 +234,24 @@ export function SavingsScreen() {
             ))}
           </ul>
         </section>
+      )}
+
+      {s.hidden.length > 0 && (
+        <details className="panel2" data-testid="hidden-moves">
+          <summary>Hidden moves ({s.hidden.length})</summary>
+          <ul className="sv-moves">
+            {s.hidden.map((m, i) => (
+              <MoveRow
+                key={m.id}
+                m={m}
+                rank={i + 1}
+                done
+                tag="Hidden"
+                onOpen={() => setOpenId(m.id)}
+              />
+            ))}
+          </ul>
+        </details>
       )}
 
       <Community />

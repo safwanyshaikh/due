@@ -39,6 +39,8 @@ export interface SavingsView {
   open: Move[];
   /** Moves marked "I did this" (still waiting for proof, or proven). */
   done: Move[];
+  /** Moves marked "Not for me" (can be shown again). */
+  hidden: Move[];
   all: Move[];
   research: ResearchNeed[];
   ledger: LedgerEntry[];
@@ -99,6 +101,7 @@ export function SavingsProvider({ children }: { children: ReactNode }) {
     return s === 'new' || s === 'doing';
   });
   const done = computed.moves.filter((m) => statusOf(m.id) === 'done');
+  const hidden = computed.moves.filter((m) => statusOf(m.id) === 'dismissed');
   const foundMonthlyInr = open.reduce((n, m) => n + m.monthlySavingInr, 0);
   const savedMonthlyInr = ledger.reduce((n, l) => n + (l.savedMonthlyInr ?? 0), 0);
 
@@ -138,6 +141,7 @@ export function SavingsProvider({ children }: { children: ReactNode }) {
     state,
     open,
     done,
+    hidden,
     all: computed.moves,
     research: computed.research,
     ledger,

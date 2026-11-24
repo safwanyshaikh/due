@@ -281,16 +281,16 @@ describe('9. fee_leak moves from card summaries', () => {
 
 describe('10. adding the card bill', () => {
   it('creates, then updates, one credit_card obligation and links the saved summary', () => {
-    const s = emptyIfNull(parseCardStatementSummary(B09));
+    const s = emptyIfNull(parseCardStatementSummary(A10));
     const r = addCardBill(dataWith(), s, { now: NOW });
     const c = r.data.commitments.find((x) => x.id === r.obligationId)!;
     expect(c).toMatchObject({
       type: 'credit_card',
       provider: 'SBI Card',
-      amountPaise: 35215320,
-      nextDue: '2026-10-05',
+      amountPaise: 2179318,
+      nextDue: '2026-11-04',
     });
-    expect(c.statement).toMatchObject({ cardNickname: 'SBI Card ••00', periodEnd: '2026-09-15' });
+    expect(c.statement).toMatchObject({ cardNickname: 'SBI Card ••00', periodEnd: '2026-10-15' });
     expect(r.data.savings.statements).toEqual([{ ...s, obligationId: r.obligationId }]);
     expect(r.data.audit).toHaveLength(1);
     const later = emptyIfNull(parseCardStatementSummary(A11));

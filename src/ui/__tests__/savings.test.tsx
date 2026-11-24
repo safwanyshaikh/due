@@ -258,6 +258,28 @@ describe('Move sheet edge cases', () => {
   });
 });
 
+describe('Hidden moves', () => {
+  it('lists a "Not for me" move under Hidden moves and brings it back with "Show this again"', async () => {
+    mockFetch();
+    renderApp({ data: sameer(), hash: '#/savings' });
+    const list = await screen.findByTestId('moves');
+    const first = within(list).getAllByRole('button')[0];
+    const id = first.getAttribute('data-move')!;
+    expect(screen.queryByTestId('hidden-moves')).toBeNull();
+    fireEvent.click(first);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Not for me' }));
+    const hidden = await screen.findByTestId('hidden-moves');
+    expect(hidden.textContent).toContain('Hidden moves (1)');
+    expect(screen.getByTestId('moves').querySelector(`[data-move="${id}"]`)).toBeNull();
+    fireEvent.click(hidden.querySelector(`[data-move="${id}"]`)!);
+    fireEvent.click(screen.getByRole('button', { name: 'Show this again' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('moves').querySelector(`[data-move="${id}"]`)).not.toBeNull(),
+    );
+    expect(screen.queryByTestId('hidden-moves')).toBeNull();
+  });
+});
+
 describe('Commute setup', () => {
   it('picks a city pack and home locality, adds and removes a leg', async () => {
     mockFetch();

@@ -431,8 +431,16 @@ function amountClusters(items: Item[], tol = TOLERANCE): Item[][] {
   for (const it of sorted) {
     const c = clusters[clusters.length - 1];
     if (c) {
-      const med = median([...c, it].map((x) => x.line.amountInr));
-      if ([...c, it].every((x) => Math.abs(x.line.amountInr - med) <= med * tol)) {
+      // Sorted ascending: the cluster's first item is its minimum and `it` the maximum, so a
+      // sweep with an O(1) median of (cluster + it) replaces re-sorting the cluster each time.
+      const n = c.length + 1;
+      const at = (k: number) => (k < c.length ? c[k].line.amountInr : it.line.amountInr);
+      const mid = Math.floor(n / 2);
+      const med = n % 2 ? at(mid) : (at(mid - 1) + at(mid)) / 2;
+      if (
+        Math.abs(c[0].line.amountInr - med) <= med * tol &&
+        Math.abs(it.line.amountInr - med) <= med * tol
+      ) {
         c.push(it);
         continue;
       }
@@ -471,11 +479,22 @@ function hasRepeatsInMonth(items: Item[], min: number): boolean {
   const byMonth = new Map<string, number[]>();
   for (const it of items) {
     const k = monthOfLine(it.line);
-    byMonth.set(k, [...(byMonth.get(k) ?? []), it.line.amountInr]);
+    const list = byMonth.get(k);
+    if (list) list.push(it.line.amountInr);
+    else byMonth.set(k, [it.line.amountInr]);
   }
-  for (const amounts of byMonth.values())
-    for (const a of amounts)
-      if (amounts.filter((b) => Math.abs(a - b) <= 1).length >= min) return true;
+  for (const amounts of byMonth.values()) {
+    amounts.sort((x, y) => x - y);
+    // Sliding window: is there a run of `min` amounts within ±₹1 of one of them?
+    let lo = 0;
+    let hi = 0;
+    for (let i = 0; i < amounts.length; i++) {
+      while (amounts[lo] < amounts[i] - 1) lo++;
+      if (hi < i) hi = i;
+      while (hi + 1 < amounts.length && amounts[hi + 1] <= amounts[i] + 1) hi++;
+      if (hi - lo + 1 >= min) return true;
+    }
+  }
   return false;
 }
 
@@ -493,11 +512,16 @@ function monthlyMerchant(
   const sorted = [...items].sort(
     (a, b) => a.line.date.localeCompare(b.line.date) || a.index - b.index,
   );
-  const months = [...new Set(sorted.map((it) => monthOfLine(it.line)))];
+  const monthTotals = new Map<string, number>();
+  for (const it of sorted) {
+    const m = monthOfLine(it.line);
+    monthTotals.set(m, (monthTotals.get(m) ?? 0) + it.line.amountInr);
+  }
+  const months = [...monthTotals.keys()];
   if (months.length < 2) return null;
-  const totals = months.map((m) =>
-    sorted.filter((it) => monthOfLine(it.line) === m).reduce((s, it) => s + it.line.amountInr, 0),
-  );
+  // More than a charge a day is a shop or a feed of top-ups, not one plan: no average to offer.
+  if (sorted.length / months.length > 31) return null;
+  const totals = [...monthTotals.values()];
   const usage = alias?.usage === true || hasRepeatsInMonth(sorted, 3);
   const med = median(totals);
   // A prorated first month or one overage month does not make it irregular: most months must sit

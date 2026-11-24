@@ -27,7 +27,8 @@ function title(s: string): string {
   return s.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
-const cardId = (x: CardStatementSummary) => `${x.issuer}|${x.last4}|${x.statementDate}`;
+const cardId = (x: CardStatementSummary) =>
+  `${x.issuer}|${x.last4}|${x.creditLimit ?? ''}|${x.statementDate}`;
 const loanId = (x: LoanStatementSummary) =>
   `${x.lender}|${x.product}|${x.disbursementDate}|${x.source}|${x.statementDate}`;
 
@@ -93,7 +94,18 @@ export function addCardBill(
   const existing =
     data.commitments.find((c) => !c.deletedAt && c.id === s.obligationId) ??
     data.commitments.find(
-      (c) => !c.deletedAt && c.type === 'credit_card' && c.statement?.cardNickname === cardNickname,
+      (c) =>
+        !c.deletedAt &&
+        c.type === 'credit_card' &&
+        c.statement?.cardNickname === cardNickname &&
+        // Same issuer and last four digits is not enough: two cards can share both. When the
+        // limits of the saved statements and this one are both printed, they must match too.
+        (data.savings?.statements ?? [])
+          .filter((x) => x.obligationId === c.id)
+          .every(
+            (x) =>
+              x.creditLimit == null || s.creditLimit == null || x.creditLimit === s.creditLimit,
+          ),
     ) ??
     null;
   const built = buildObligation(
@@ -233,6 +245,9 @@ export function addTelecomBill(
     },
     ctx.now,
   );
+  // JioFiber and Jio Postpaid are two different bills from one provider: keep them apart in the
+  // duplicate check (it compares canonical providers).
+  built.canonicalProvider = b.service === 'fiber' ? 'jio_fiber' : 'jio_postpaid';
   return upsert(data, existing, built, ctx, `${nickname} bill`, (st, id) =>
     saveTelecomBill(st, { ...b, obligationId: id }),
   );

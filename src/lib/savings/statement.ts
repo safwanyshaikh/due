@@ -82,6 +82,8 @@ interface AmountHit {
   start: number;
   end: number;
   marker: 'dr' | 'cr' | null;
+  /** Printed with a leading minus sign. */
+  negative: boolean;
 }
 
 function amountHits(line: string): AmountHit[] {
@@ -98,6 +100,7 @@ function amountHits(line: string): AmountHit[] {
       start: m.index,
       end: m.index + m[0].length,
       marker: mk ? (mk[1].toLowerCase() as 'dr' | 'cr') : null,
+      negative: /(?:^|\s)[-−](?:(?:₹|Rs\.?|INR)\s*)?$/i.test(line.slice(0, m.index)),
     });
   }
   return out;
@@ -332,6 +335,11 @@ function parseTextLines(text: string, source: StatementLine['source']): Statemen
         ),
     );
     if (!narration) {
+      lastWasLine = false;
+      continue;
+    }
+    // A bare negative figure with no Dr/Cr marker: nothing says whether it is a payment, so skip it.
+    if (!pick.marker && pick.negative) {
       lastWasLine = false;
       continue;
     }
