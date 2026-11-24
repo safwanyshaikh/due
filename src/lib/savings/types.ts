@@ -33,7 +33,18 @@ export interface SavingsModule {
   /** 2 Identify. */
   provider: string; // display name, e.g. "Uber"
   product: string; // e.g. "Uber One"
-  category: 'mobility' | 'food' | 'telecom' | 'ott' | 'music' | 'cloud' | 'shopping' | 'card' | 'loan' | 'utility' | 'other';
+  category:
+    | 'mobility'
+    | 'food'
+    | 'telecom'
+    | 'ott'
+    | 'music'
+    | 'cloud'
+    | 'shopping'
+    | 'card'
+    | 'loan'
+    | 'utility'
+    | 'other';
   country: string; // ISO-2, "IN"
   cityPack: string | null; // e.g. "in-mmr"
   /** 3 Rules: typed by valueKind. Unknown numbers are null, never guessed. */
@@ -41,9 +52,16 @@ export interface SavingsModule {
   /** 4 Value: which formula family the engine uses. */
   valueKind: ValueKind;
   /** 5 Proof: what later evidence proves the saving happened. */
-  proof: { signal: 'amount_drop' | 'charge_stopped' | 'new_plan_charge' | 'fewer_charges' | 'user_confirmed'; description: string };
+  proof: {
+    signal:
+      'amount_drop' | 'charge_stopped' | 'new_plan_charge' | 'fewer_charges' | 'user_confirmed';
+    description: string;
+  };
   /** 6 Nudge: when to tell the user. */
-  nudge: { trigger: 'before_renewal' | 'before_expiry' | 'usage_drop' | 'on_detect'; leadDays: number };
+  nudge: {
+    trigger: 'before_renewal' | 'before_expiry' | 'usage_drop' | 'on_detect';
+    leadDays: number;
+  };
   /** 7 Legal role. Phase 1: always 'information'. */
   legalRole: LegalRole;
   /** 8 Sources. A module needs at least one source; 'verified' needs an official one with lastVerifiedAt. */
@@ -78,7 +96,8 @@ export interface ModuleRules {
   conditions?: string[];
 }
 
-export type TransportMode = 'cab' | 'auto' | 'bike_taxi' | 'local_train' | 'metro' | 'bus' | 'shuttle' | 'own_vehicle';
+export type TransportMode =
+  'cab' | 'auto' | 'bike_taxi' | 'local_train' | 'metro' | 'bus' | 'shuttle' | 'own_vehicle';
 
 export interface CityPass {
   id: string;
@@ -181,6 +200,22 @@ export interface LedgerEntry {
   proofRef: string | null;
   foundAt: string;
   updatedAt: string;
+  /* Additive (engine): what the move was about, kept so later evidence can be checked. */
+  moduleId?: string | null;
+  obligationIds?: string[];
+  /** The obligation whose spend the move would cut (overlap: the duplicate; others: the first id). */
+  targetObligationId?: string | null;
+  /** Snapshot of the target obligation when the move was found (or last refreshed before 'done'). */
+  baseline?: LedgerBaseline | null;
+}
+
+/** Additive (engine): the target obligation as it was, used by proveSavings. */
+export interface LedgerBaseline {
+  obligationId: string;
+  monthlyPaise: number | null;
+  status: string;
+  interestRatePct: number | null;
+  at: string;
 }
 
 export interface SavingsState {

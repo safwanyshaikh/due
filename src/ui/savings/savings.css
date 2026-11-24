@@ -1,0 +1,241 @@
+/* Savings: uses the Due v2 tokens (8px spacing, 48px targets, light/dark). */
+.align-start {
+  align-self: flex-start;
+}
+.sv-page {
+  min-width: 0;
+}
+.sv-h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+.sv-big {
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sv-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.sv-total {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow);
+  padding: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+@media (max-width: 359px) {
+  .sv-totals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.sv-moves,
+.sv-legs,
+.sv-cands,
+.sv-sources,
+.sv-assumes,
+.sv-comm,
+.chip-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.chip-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.sv-move {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--s-2);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.sv-move:hover {
+  border-color: var(--accent);
+}
+.sv-move-done {
+  grid-template-columns: minmax(0, 1fr) auto;
+  box-shadow: none;
+}
+.sv-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.sv-move-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.sv-move-title {
+  font-weight: 650;
+}
+.sv-move-amt {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.sv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-2);
+}
+@media (min-width: 900px) {
+  .sv-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+.sv-leg,
+.sv-cand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-1);
+  padding: var(--s-1) 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg);
+}
+.sv-leg-text,
+.sv-cand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sv-cand .switch-row {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.sv-cand-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex-wrap: wrap;
+}
+.sv-cand-meta select {
+  min-height: 48px;
+}
+.sv-leg-form {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-2);
+}
+.sv-assume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+  min-height: 48px;
+  padding: 0 4px 0 14px;
+  border-radius: 24px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+.sv-assume .text-btn {
+  min-height: 44px;
+}
+.sv-assume-edit {
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.sv-assume-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  width: 100%;
+}
+.sv-num {
+  width: 8em;
+  max-width: 100%;
+}
+.sv-sources li,
+.sv-comm li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sv-src-link {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.sv-sheet-actions .btn {
+  flex: 1 1 auto;
+}
+.sv-legal {
+  border-left: 3px solid var(--line);
+  padding-left: 12px;
+}
+
+/* Home summary entry: one compact line inside the summary card. */
+.sv-home-entry {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 650;
+  font-size: 0.88rem;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: none;
+}
+.summary-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* Landing hero on the start page. */
+.start-hero h1 {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}

@@ -5,6 +5,9 @@ import { createPool } from './db.js';
 import { Scheduler } from './jobs/scheduler.js';
 import { QueueWorker } from './queue/index.js';
 import { workerDepsOf } from './app.js';
+import { resolve } from 'node:path';
+import { SERVER_ROOT } from './paths.js';
+import { seedSavings } from './savings/repo.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -14,6 +17,14 @@ async function main(): Promise<void> {
   if (config.adminSetupToken) {
     const n = (await pool.query<{ n: number }>('SELECT count(*)::int AS n FROM users')).rows[0]?.n ?? 0;
     if (n > 0) app.log.warn('ADMIN_SETUP_TOKEN is set but users exist: setup is disabled. Remove the variable.');
+  }
+  // Idempotent: fills empty savings tables from the bundled seed file (no-op when the file is absent).
+  try {
+    const seeded = await seedSavings(pool, resolve(SERVER_ROOT, 'src/seed/savings-data.json'), new Date());
+    if (seeded.file) app.log.info({ modules: seeded.modulesInserted, cityPacks: seeded.packsInserted }, 'savings seed checked');
+    for (const w of seeded.skipped) app.log.warn(w);
+  } catch (err) {
+    app.log.error({ err }, 'savings seed failed');
   }
   const scheduler = config.runScheduler ? new Scheduler(app.deps.monitor, config.schedulerTickMs) : null;
   // Normally the separate due-worker service processes the queue; RUN_QUEUE_WORKER=true runs it here instead.

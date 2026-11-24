@@ -2,15 +2,20 @@ import { EMAIL_INGESTION_COPY, FORWARD_PERMISSIONS, INTAKE_LINE } from '../../co
 import { Glyph } from '../components/Glyph';
 import { Badge } from '../components/ui';
 import { StartChoices } from '../components/StartChoices';
+import { HERO_HEADLINE, HERO_SUBLINE } from '../../content/savings';
 
 /** The five first-use choices on their own page (also shown on an empty Home). */
 export function StartPaths() {
   return (
     <div className="page2">
-      <header className="page-head">
-        <h1 id="start-h">How would you like to start?</h1>
-        <p className="muted">{INTAKE_LINE}</p>
+      <header className="page-head start-hero" data-block="hero">
+        <h1>{HERO_HEADLINE}</h1>
+        <p className="hero-sub">{HERO_SUBLINE}</p>
       </header>
+      <section className="stack-8" aria-labelledby="start-h">
+        <h2 id="start-h">How would you like to start?</h2>
+        <p className="muted">{INTAKE_LINE}</p>
+      </section>
       <StartChoices headingId="start-h" />
       <EmailIngestionCard />
     </div>

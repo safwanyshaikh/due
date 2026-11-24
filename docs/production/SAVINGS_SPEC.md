@@ -65,6 +65,7 @@ Admin UI page "Savings" with tabs: Modules (the 8-field plug-in form, grouped as
   - Ranking: monthlySavingInr × confidence weight (high 1, medium 0.7, low 0.4), effort as tie-break (tap > habit > paperwork). Sponsored never affects rank.
 - `ledgerFromMoves`, `markMove(state, moveId, status)`, `proveSavings(data, ledger)` — a `done` move becomes `saved` only when evidence appears (the obligation's amount drops, it is cancelled/paused by the user, or a new import shows the new plan).
 - `returnRatio(ledger, planFeeMonthlyInr)` → found and saved ratios.
+- Additive contract fields (engine): `LedgerEntry.moduleId?`, `obligationIds?`, `targetObligationId?`, `baseline?: LedgerBaseline` (snapshot of the target obligation used as proof evidence).
 - `AppData.savings: SavingsState` with defaults; migration fills it for existing data.
 - Test coverage: each generator, recurring detection on realistic Indian statement text, PII-free research labels, ranking.
 

@@ -28,6 +28,7 @@ import { INTAKE_COOKIE, resolveTempSession } from './intake/service.js';
 import { telemetryRoutes } from './routes/telemetry.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
+import { savingsPublicRoutes } from './routes/savings.js';
 import { deletionRoutes } from './consumer/deletion.js';
 import { notificationRoutes } from './consumer/notifications.js';
 import { uploadRoutes } from './consumer/uploads.js';
@@ -204,6 +205,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(legalRoutes);
   await app.register(authRoutes);
   await app.register(publicRoutes);
+  await app.register(savingsPublicRoutes);
   await app.register(adminRoutes, { prefix: '/api/admin' });
   await app.register(accountRoutes);
   await app.register(householdRoutes);

@@ -5,6 +5,7 @@ import type { ImportItem } from './imports';
 import type { DuplicateDecision } from './duplicates';
 import type { ReminderState, ReminderSeverity, DeliveryChannel } from './reminderPlan';
 import type { UserEvent } from './intake';
+import type { SavingsState } from './savings/types';
 
 export type { RecurrenceRule };
 
@@ -300,6 +301,8 @@ export interface AppData {
   userEvents: UserEvent[];
   duplicateDecisions: DuplicateDecision[];
   reminderStates: ReminderState[];
+  /** Savings engine state (profile + ledger). On the device only. */
+  savings: SavingsState;
 }
 
 /** Shape of a v1 dataset (before the v2 migration). */

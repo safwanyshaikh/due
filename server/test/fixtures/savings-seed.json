@@ -1,0 +1,34 @@
+{
+  "modules": [
+    {
+      "id": "uber-one-in",
+      "status": "verified",
+      "detect": { "merchantAliases": ["UBER ONE", "Uber India"], "senderDomains": ["uber.com"], "keywords": ["uber one"] },
+      "provider": "Uber",
+      "product": "Uber One",
+      "category": "mobility",
+      "country": "IN",
+      "cityPack": null,
+      "rules": { "prices": [{ "label": "Monthly", "priceInr": 149, "periodDays": 30 }], "creditPct": 5, "conditions": ["Fixture only"] },
+      "valueKind": "membership_breakeven",
+      "proof": { "signal": "charge_stopped", "description": "The Uber One charge stops" },
+      "nudge": { "trigger": "before_renewal", "leadDays": 3 },
+      "legalRole": "information",
+      "sources": [{ "url": "https://example.test/uber-one", "label": "Uber One page", "kind": "official", "lastVerifiedAt": "2026-11-20T00:00:00Z" }],
+      "actionUrl": "https://example.test/uber-one",
+      "actionLabel": "Open Uber One"
+    },
+    { "id": "broken-one", "provider": "No other fields" }
+  ],
+  "cityPacks": [
+    {
+      "id": "in-mmr",
+      "name": "Mumbai (fixture)",
+      "country": "IN",
+      "localities": ["Thane", "Powai"],
+      "passes": [],
+      "typicalFareInr": { "cab": 250 },
+      "status": "research"
+    }
+  ]
+}

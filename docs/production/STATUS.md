@@ -218,3 +218,13 @@ Built to `LAUNCH_SPEC.md`, with four build agents and two independent QA passes 
 | Error tracking | `SENTRY_DSN` (optional) |
 | Legal | Real company and grievance details entered in Admin → Legal details |
 | Live check | A live smoke test on Render. This session cannot reach the deployed site. |
+
+## Update: savings engine, phase 1 (24 Nov 2026)
+
+Built to `SAVINGS_SPEC.md` with four agents (research, server/admin, engine, UI).
+
+- **Engine (on device):** statement reader (bank/card text, CSV, PDF via pdf.js), recurring detection with rails (UPI AutoPay, NACH/ECS, card), 8 move types, labelled and editable assumptions, research needs for unknown providers, ledger that counts a saving only after evidence.
+- **Server:** migration 009, public catalog / research / report / community endpoints (community hidden below 20 reports), admin Savings page (modules, city packs, research queue), idempotent seed of 21 modules and the Mumbai MMR pack. All seeded prices are status `research` (unverified).
+- **UI:** Savings screen, move sheet, commute setup, statement import, Home "₹X/month found" entry, landing tagline "Same life. Smaller bills." No guarantee or minimum-saving wording.
+- **Tests:** app 445 unit + 28 e2e, server 184, admin 50; lint and typecheck clean.
+- **Open:** verify top prices against official pages; Gala Bus and Cityflo pass prices need owner screenshots; admin city-pack editing is JSON only.

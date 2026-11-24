@@ -61,7 +61,16 @@ describe('MVP guardrails', () => {
       'src/lib/account/client.ts',
       'src/lib/account/identities.ts',
       'src/lib/offers/api.ts',
+      'src/lib/savings/api.ts',
     ]);
+  });
+  it('the savings client only calls Due’s own relative /api/public/savings paths, without credentials', () => {
+    const api = readFileSync(join(root, 'src/lib/savings/api.ts'), 'utf8');
+    expect(api).toContain("SAVINGS_CATALOG_PATH = '/api/public/savings/catalog'");
+    expect(api).toContain("credentials: 'omit'");
+    expect(api).not.toMatch(/https?:\/\/[a-z0-9]/i);
+    for (const m of api.matchAll(/'(\/api\/[^']*)'/g))
+      expect(m[1]).toMatch(/^\/api\/public\/savings\//);
   });
   it('the account client only calls Due’s own relative /api paths', () => {
     const c = readFileSync(join(root, 'src/lib/account/client.ts'), 'utf8');

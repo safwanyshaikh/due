@@ -22,6 +22,8 @@ const SIMPLE = [
   'offers-calc',
   'relay',
   'reminders-ics',
+  'savings',
+  'savings-import',
 ] as const;
 type SimpleName = (typeof SIMPLE)[number];
 

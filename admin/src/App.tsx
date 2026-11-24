@@ -15,6 +15,7 @@ import { AutomationPage } from './pages/Automation';
 import { SettingsPage } from './pages/Settings';
 import { PlansPage } from './pages/Plans';
 import { OfferDetailPage, OffersPage } from './pages/Offers';
+import { SavingsPage } from './pages/Savings';
 import { ReviewPage } from './pages/Review';
 import { ParsersPage } from './pages/Parsers';
 import { LegalPage } from './pages/Legal';
@@ -104,6 +105,7 @@ export function AppRoutes() {
         />
         <Route path="offers" element={<OffersPage />} />
         <Route path="offers/:id" element={<OfferDetailPage />} />
+        <Route path="savings" element={<SavingsPage />} />
         <Route path="review" element={<ReviewPage />} />
         <Route path="parsers" element={<ParsersPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />

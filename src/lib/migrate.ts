@@ -1,6 +1,7 @@
 import { CURRENT_MIGRATIONS, deleteCommitment, emptyData } from './data';
 import { emptyRelay } from './offers/relay';
 import { upgradeCommitment } from './provenance';
+import { normaliseSavingsState } from './savings/state';
 import type { AppData, AppDataV1, Commitment, CommitmentV1 } from './types';
 
 export const DROP_BUNDLED_EXAMPLES = CURRENT_MIGRATIONS[0];
@@ -74,6 +75,7 @@ export function migrateV1toV2(input: AppDataV1 | AppData): AppData {
     userEvents: base.userEvents ?? [],
     duplicateDecisions: base.duplicateDecisions ?? [],
     reminderStates: base.reminderStates ?? [],
+    savings: normaliseSavingsState(base.savings),
   };
 }
 

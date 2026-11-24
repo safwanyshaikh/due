@@ -1,0 +1,1760 @@
+{
+  "modules": [
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "uber-one-in",
+      "detect": {
+        "merchantAliases": [
+          "uber"
+        ],
+        "senderDomains": [
+          "uber.com"
+        ],
+        "keywords": [
+          "uber one"
+        ]
+      },
+      "provider": "Uber",
+      "product": "Uber One",
+      "category": "mobility",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "3 months",
+            "priceInr": 349,
+            "periodDays": 90
+          },
+          {
+            "label": "Yearly",
+            "priceInr": 1499,
+            "periodDays": 365
+          }
+        ],
+        "creditPct": 10,
+        "creditCapPerUnitInr": 150,
+        "creditExpiryDays": 60,
+        "includes": [
+          {
+            "key": "zomato_gold",
+            "label": "Zomato Gold",
+            "months": 3
+          }
+        ],
+        "conditions": [
+          "Credits up to 10% on cab, auto and bike rides; up to 150 rides on monthly and quarterly plans, 600 on yearly (launch coverage).",
+          "Zomato Gold 3 months via voucher code (launch coverage; may have been a limited-time offer).",
+          "Prices are from 2024 launch coverage; check the Uber app."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Uber One charge stops, or the user confirms pausing it."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 7
+      },
+      "sources": [
+        {
+          "url": "https://www.outlookbusiness.com/ampstories/corporate/uber-launches-uber-one-membership-program-check-details-on-monthly-plans-here",
+          "label": "Outlook Business: Uber One launch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.gizbot.com/apps/news/uber-one-subscription-service-launched-in-india-earn-cashbacks-on-trips-free-zomato-gold-membershi-106265.html",
+          "label": "Gizbot: Uber One launch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.uber.com/in/en/legal/renewable-passes-terms/",
+          "label": "Uber India renewable passes terms",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.uber.com/in/en/",
+      "actionLabel": "Open Uber India"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "swiggy-one-lite-in",
+      "detect": {
+        "merchantAliases": [
+          "swiggy_one"
+        ],
+        "senderDomains": [
+          "swiggy.in"
+        ],
+        "keywords": [
+          "swiggy one lite"
+        ]
+      },
+      "provider": "Swiggy",
+      "product": "Swiggy One Lite",
+      "category": "food",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "3 months",
+            "priceInr": 99,
+            "periodDays": 90
+          }
+        ],
+        "freeDeliveryMinOrderInr": null,
+        "deliveryFeeSavedPerOrderInr": null,
+        "conditions": [
+          "Price from October 2023 launch coverage; not re-confirmed for 2026."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Swiggy One Lite charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.swiggy.com/corporate/press-release/swiggy-launches-swiggy-one-lite-membership-for-consumers-free-delivery-extra-benefits-in-food-grocery-and-more-at-rs-99/",
+          "label": "Swiggy press release: One Lite",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://telanganatoday.com/swiggy-one-lite-membership-unveiled-at-rs-99-for-consumers",
+          "label": "Telangana Today: One Lite",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.swiggy.com/",
+      "actionLabel": "Open Swiggy"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "swiggy-one-in",
+      "detect": {
+        "merchantAliases": [
+          "swiggy_one"
+        ],
+        "senderDomains": [
+          "swiggy.in"
+        ],
+        "keywords": [
+          "swiggy one"
+        ]
+      },
+      "provider": "Swiggy",
+      "product": "Swiggy One",
+      "category": "food",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "3 months",
+            "priceInr": null,
+            "periodDays": 90
+          }
+        ],
+        "freeDeliveryMinOrderInr": null,
+        "deliveryFeeSavedPerOrderInr": null,
+        "conditions": [
+          "No reliable current price found; check the Swiggy app. One BLCK tier reported at ₹299 for 3 months (invite only)."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Swiggy One charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.outlookbusiness.com/start-up/news/swiggy-launches-one-blck-amidst-growing-competition-from-zomato-gold-zepto-pass",
+          "label": "Outlook Business: Swiggy One BLCK",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.swiggy.com/",
+      "actionLabel": "Open Swiggy"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "zomato-gold-in",
+      "detect": {
+        "merchantAliases": [
+          "zomato"
+        ],
+        "senderDomains": [
+          "zomato.com"
+        ],
+        "keywords": [
+          "zomato gold"
+        ]
+      },
+      "provider": "Zomato",
+      "product": "Zomato Gold",
+      "category": "food",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "3 months",
+            "priceInr": 149,
+            "periodDays": 90
+          },
+          {
+            "label": "12 months",
+            "priceInr": null,
+            "periodDays": 365
+          }
+        ],
+        "freeDeliveryMinOrderInr": 199,
+        "deliveryFeeSavedPerOrderInr": null,
+        "conditions": [
+          "₹149 for 3 months is from the January 2023 relaunch coverage; not re-confirmed for 2026.",
+          "Free delivery above ₹199 within 7 km (per Uber One launch coverage)."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Zomato Gold charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.businesstoday.in/technology/story/zomato-gold-relaunched-in-india-price-benefits-and-other-details-you-need-to-know-367316-2023-01-24",
+          "label": "Business Today: Zomato Gold relaunch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.grabon.in/indulge/food/zomato-gold-membership-plan/",
+          "label": "GrabOn: Zomato Gold plan",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.zomato.com/",
+      "actionLabel": "Open Zomato"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "rapido-pass-in",
+      "detect": {
+        "merchantAliases": [
+          "rapido"
+        ],
+        "senderDomains": [
+          "rapido.bike"
+        ],
+        "keywords": [
+          "rapido pass",
+          "power pass"
+        ]
+      },
+      "provider": "Rapido",
+      "product": "Rapido ride pass (Power Pass)",
+      "category": "mobility",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "Pass",
+            "priceInr": null,
+            "periodDays": 30
+          }
+        ],
+        "conditions": [
+          "Rider pass price not confirmed from an official source; a coupon site lists unverified numbers. Left null."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The pass charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://yourstory.com/2019/07/bike-taxi-app-rapido-power-pass-subscription-programme",
+          "label": "YourStory: Rapido Power Pass (2019)",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.zoutons.com/rapido-coupons",
+          "label": "Zoutons: Rapido coupons (unverified)",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.rapido.bike/",
+      "actionLabel": "Open Rapido"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "ola-pass-in",
+      "detect": {
+        "merchantAliases": [
+          "ola"
+        ],
+        "senderDomains": [
+          "olacabs.com"
+        ],
+        "keywords": [
+          "ola pass"
+        ]
+      },
+      "provider": "Ola",
+      "product": "Ola Pass (rider passes)",
+      "category": "mobility",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "Pass",
+            "priceInr": null,
+            "periodDays": 30
+          }
+        ],
+        "conditions": [
+          "Ola blog mentions distance-based rider passes with fare caps (e.g. ₹130 Micro, ₹140 Mini, ₹170 Prime up to 10 km); undated, so no price stored."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The pass charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://blog.olacabs.com/176771444-2/",
+          "label": "Ola blog: discounted fares passes",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.olacabs.com/",
+      "actionLabel": "Open Ola"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jio-prepaid-in",
+      "detect": {
+        "merchantAliases": [
+          "jio"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "jio recharge"
+        ]
+      },
+      "provider": "Jio",
+      "product": "Jio prepaid",
+      "category": "telecom",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly ₹349 (28 days)",
+            "priceInr": 349,
+            "periodDays": 28
+          },
+          {
+            "label": "Yearly ₹3,599",
+            "priceInr": 3599,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar (Mobile)",
+            "months": 3
+          },
+          {
+            "key": "google_gemini_pro",
+            "label": "Google Gemini Pro (yearly plan)",
+            "months": 18
+          }
+        ],
+        "conditions": [
+          "Both plans reported with 3 months JioHotstar Mobile, JioTV and 50 GB JioAICloud; 349 plan 2 GB/day, 3,599 plan 2.5 GB/day.",
+          "Benefits changed around the Sept 2026 anniversary offer; check MyJio."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 2
+      },
+      "sources": [
+        {
+          "url": "https://www.digit.in/news/telecom/jio-rs-349-vs-airtel-rs-349-prepaid-plan-validity-data-benefits-and-more.html",
+          "label": "Digit: Jio 349 plan",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.gizbot.com/telecom/features/best-annual-recharge-plans-2026-122000.html",
+          "label": "Gizbot: best annual plans 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/jios-rs3599-anniversary-plan-vs-airtel-and-vi-which-annual-recharge-offers-the-most-value-553579-2026-09-07",
+          "label": "Business Today: Jio 3,599 vs Airtel vs Vi, Sep 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.jio.com/selfcare/recharge/mobility/",
+      "actionLabel": "Open Jio recharge"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "airtel-prepaid-in",
+      "detect": {
+        "merchantAliases": [
+          "airtel"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "airtel recharge"
+        ]
+      },
+      "provider": "Airtel",
+      "product": "Airtel prepaid",
+      "category": "telecom",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly ₹399 (28 days)",
+            "priceInr": 399,
+            "periodDays": 28
+          },
+          {
+            "label": "Yearly ₹3,599",
+            "priceInr": 3599,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar (₹399 plan 28 days; yearly plan in select circles)",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "₹399 plan: 2.5 GB/day, unlimited 5G, 28-day JioHotstar per 2026 coverage.",
+          "Yearly ₹3,599: 2 GB/day; JioHotstar and Xstream Play Premium reported in select circles only.",
+          "Benefits vary by circle; no official Airtel page seen."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 2
+      },
+      "sources": [
+        {
+          "url": "https://gadgets.beebom.com/news/airtel-re-introduces-rs-399-plan-with-ipl-2026-benefits",
+          "label": "Beebom: Airtel 399 plan",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.digit.in/news/telecom/vi-rs-3749-vs-airtel-rs-3599-prepaid-plan-validity-data-benefits-and-more.html",
+          "label": "Digit: Airtel 3,599 vs Vi",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://telecomtalk.info/?p=997282",
+          "label": "TelecomTalk: Airtel yearly plans with JioHotstar",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.airtel.in/prepaid-tariff",
+          "label": "Airtel prepaid tariff",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.airtel.in/prepaid-tariff",
+      "actionLabel": "Open Airtel recharge"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "vi-prepaid-in",
+      "detect": {
+        "merchantAliases": [
+          "vi"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "vi recharge"
+        ]
+      },
+      "provider": "Vi",
+      "product": "Vi prepaid",
+      "category": "telecom",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly (28 days)",
+            "priceInr": null,
+            "periodDays": 28
+          },
+          {
+            "label": "Yearly ₹3,499",
+            "priceInr": 3499,
+            "periodDays": 365
+          }
+        ],
+        "includes": [],
+        "conditions": [
+          "Vi blog lists the ₹3,499 plan with 1.5 GB/day; no 28-day price found. A third party says 2.5 GB/day, so data allowance unconfirmed.",
+          "Prices vary by circle."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 2
+      },
+      "sources": [
+        {
+          "url": "https://www.myvi.in/blog/vi-long-validity-prepaid-plans",
+          "label": "Vi blog: long validity prepaid plans",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://bajajfinserv.in/3499-vi-plan-details",
+          "label": "Bajaj Finserv: Vi 3,499 plan",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.myvi.in/prepaid",
+      "actionLabel": "Open Vi recharge"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "netflix-in",
+      "detect": {
+        "merchantAliases": [
+          "netflix"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "netflix"
+        ]
+      },
+      "provider": "Netflix",
+      "product": "Netflix",
+      "category": "ott",
+      "valueKind": "price_change",
+      "rules": {
+        "prices": [
+          {
+            "label": "Mobile",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "Basic",
+            "priceInr": 199,
+            "periodDays": 30
+          },
+          {
+            "label": "Standard",
+            "priceInr": 499,
+            "periodDays": 30
+          },
+          {
+            "label": "Premium",
+            "priceInr": 649,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "netflix",
+            "label": "Netflix",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Monthly prices per Netflix help page snippet; taxes may be added. No annual plan."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The subscription charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://help.netflix.com/en/node/24926/in",
+          "label": "Netflix Help: plans and pricing India",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.netflix.com/in/",
+      "actionLabel": "Open Netflix"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jiohotstar-in",
+      "detect": {
+        "merchantAliases": [
+          "jiohotstar"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "jiohotstar"
+        ]
+      },
+      "provider": "JioHotstar",
+      "product": "JioHotstar",
+      "category": "ott",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Mobile monthly",
+            "priceInr": 79,
+            "periodDays": 30
+          },
+          {
+            "label": "Mobile quarterly",
+            "priceInr": 149,
+            "periodDays": 90
+          },
+          {
+            "label": "Mobile yearly",
+            "priceInr": 499,
+            "periodDays": 365
+          },
+          {
+            "label": "Super monthly",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "Super quarterly",
+            "priceInr": 349,
+            "periodDays": 90
+          },
+          {
+            "label": "Super yearly",
+            "priceInr": 1099,
+            "periodDays": 365
+          },
+          {
+            "label": "Premium monthly",
+            "priceInr": 299,
+            "periodDays": 30
+          },
+          {
+            "label": "Premium quarterly",
+            "priceInr": 699,
+            "periodDays": 90
+          },
+          {
+            "label": "Premium yearly",
+            "priceInr": 2199,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Prices for new subscribers from 28 Jan 2026; existing subscribers may be on older plans.",
+          "Free via some Jio and Airtel plans; check overlap."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.jiostar.com/news/jiohotstar-introduces-monthly-plans-across-tiers-giving-viewers-more-choice-in-how-they-watch/",
+          "label": "JioStar: monthly plans across tiers",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/jiohotstar-adds-rs-79-monthly-plan-raises-quarterly-and-annual-prices-511647-2026-01-20",
+          "label": "Business Today: JioHotstar price change",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.hotstar.com/in",
+      "actionLabel": "Open JioHotstar"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "amazon-prime-in",
+      "detect": {
+        "merchantAliases": [
+          "amazon_prime"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "amazon prime"
+        ]
+      },
+      "provider": "Amazon",
+      "product": "Amazon Prime",
+      "category": "ott",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly",
+            "priceInr": 299,
+            "periodDays": 30
+          },
+          {
+            "label": "Yearly",
+            "priceInr": 1499,
+            "periodDays": 365
+          },
+          {
+            "label": "Prime Lite yearly",
+            "priceInr": null,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "primevideo",
+            "label": "Prime Video",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Prime prices from 2023 coverage; Prime Lite reported at ₹999 then ₹799, so left null.",
+          "Quarterly price conflicts (₹499 vs ₹599), not stored."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.aboutamazon.in/amazon-prime-lite-subscription",
+          "label": "About Amazon India: Prime Lite",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/story/amazon-prime-vs-prime-lite-subscription-plans-price-validity-and-other-features-compared-385711-2023-06-15",
+          "label": "Business Today: Prime vs Prime Lite",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.amazon.in/prime",
+      "actionLabel": "Open Amazon"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "spotify-in",
+      "detect": {
+        "merchantAliases": [
+          "spotify"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "spotify premium"
+        ]
+      },
+      "provider": "Spotify",
+      "product": "Spotify Premium",
+      "category": "music",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Individual monthly",
+            "priceInr": 139,
+            "periodDays": 30
+          },
+          {
+            "label": "Individual yearly",
+            "priceInr": null,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "spotify",
+            "label": "Spotify",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "₹139 individual is from Aug 2025 and May 2026 coverage; sources disagree on which tier was cut or discontinued in May 2026. No annual plan found."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.businesstoday.in/technology/story/spotify-cuts-subscription-prices-in-india-discontinues-premium-lite-531507-2026-05-14",
+          "label": "Business Today: Spotify price cut May 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/spotify-increases-premium-prices-by-28-in-india-heres-how-much-you-will-pay-now-487824-2025-08-05",
+          "label": "Business Today: Spotify Aug 2025",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.spotify.com/in-en/premium/",
+      "actionLabel": "Open Spotify"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "youtube-premium-in",
+      "detect": {
+        "merchantAliases": [
+          "youtube_premium"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "youtube premium"
+        ]
+      },
+      "provider": "YouTube",
+      "product": "YouTube Premium",
+      "category": "music",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Individual monthly (recurring)",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "Individual 1 month (prepaid)",
+            "priceInr": 159,
+            "periodDays": 30
+          },
+          {
+            "label": "Individual yearly (prepaid)",
+            "priceInr": 1490,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "youtube_premium",
+            "label": "YouTube Premium",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "From Aug 2024 price-hike coverage; likely outdated."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/youtube-premium-subscription-prices-increased-by-up-to-58-in-india-check-revised-pricing-443181-2024-08-27",
+          "label": "Business Today: YouTube Premium 2024 prices",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.business-standard.com/webstories/youtube-increases-prices-across-all-premium-plans-in-india-1240827163141ws",
+          "label": "Business Standard: YouTube price hike",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.youtube.com/premium",
+      "actionLabel": "Open YouTube"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "apple-music-in",
+      "detect": {
+        "merchantAliases": [
+          "apple"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "apple music"
+        ]
+      },
+      "provider": "Apple",
+      "product": "Apple Music",
+      "category": "music",
+      "valueKind": "price_change",
+      "rules": {
+        "prices": [
+          {
+            "label": "Individual monthly",
+            "priceInr": 139,
+            "periodDays": 30
+          },
+          {
+            "label": "Student monthly",
+            "priceInr": 69,
+            "periodDays": 30
+          },
+          {
+            "label": "Family monthly",
+            "priceInr": 229,
+            "periodDays": 30
+          }
+        ],
+        "includes": [
+          {
+            "key": "apple_music",
+            "label": "Apple Music",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Prices from July 2026 coverage; not seen on an Apple page."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The subscription charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/apple-one-apple-music-gets-costlier-in-india-individual-plan-now-starts-at-543864-2026-07-20",
+          "label": "Business Today: Apple Music price hike Jul 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://fossbytes.com/apple-raised-apple-music-and-apple-one-prices-in-india-full-price-list/",
+          "label": "Fossbytes: Apple price list",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.apple.com/in/apple-music/",
+      "actionLabel": "Open Apple"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "google-one-in",
+      "detect": {
+        "merchantAliases": [
+          "google_one"
+        ],
+        "senderDomains": [],
+        "keywords": [
+          "google one (100 gb)"
+        ]
+      },
+      "provider": "Google",
+      "product": "Google One (100 GB)",
+      "category": "cloud",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "100 GB monthly",
+            "priceInr": 130,
+            "periodDays": 30
+          },
+          {
+            "label": "100 GB yearly",
+            "priceInr": 1300,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "google_one",
+            "label": "Google One storage",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "₹130 / ₹1,300 from older regular-price listings; Dec 2025 promos (₹1,049 first year) had ended. Check one.google.com.",
+          "Some Jio and Pixel/Gemini bundles include Google One storage."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.freepressjournal.in/tech/google-one-slashes-prices-on-annual-plans-in-india-what-you-need-to-know",
+          "label": "Free Press Journal: Google One annual plans",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://one.google.com/about/plans?hl=te",
+          "label": "Google One plans",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://one.google.com/about/plans",
+      "actionLabel": "Open Google"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "hsbc-card-balance-transfer-in",
+      "detect": {
+        "merchantAliases": [
+          "hsbc"
+        ],
+        "senderDomains": [
+          "hsbc.co.in"
+        ],
+        "keywords": [
+          "hsbc credit card",
+          "revolving",
+          "finance charge"
+        ]
+      },
+      "provider": "HSBC India",
+      "product": "Credit card balance transfer on EMI",
+      "category": "card",
+      "valueKind": "debt_rate",
+      "rules": {
+        "ratePctLow": 10.99,
+        "ratePctHigh": 15.99,
+        "processingFeePct": 1.5,
+        "conditions": [
+          "Tenure 3 to 24 months; rate depends on card and plan. Processing fee 1.5% (minimum ₹200) per aggregator summary of HSBC page.",
+          "Information only. Check your bank's own offer."
+        ]
+      },
+      "proof": {
+        "signal": "amount_drop",
+        "description": "The card interest or finance charge falls on later statements."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://www.hsbc.co.in/credit-cards/balance-transfer/",
+          "label": "HSBC India balance transfer",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://forms.hsbc.co.in/credit-cards/features/balance-transfer/",
+          "label": "HSBC India features: balance transfer",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.hsbc.co.in/credit-cards/balance-transfer/",
+      "actionLabel": "See HSBC balance transfer"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "sbi-card-balance-transfer-in",
+      "detect": {
+        "merchantAliases": [
+          "sbi_card"
+        ],
+        "senderDomains": [
+          "sbicard.com"
+        ],
+        "keywords": [
+          "sbi card",
+          "finance charges"
+        ]
+      },
+      "provider": "SBI Card",
+      "product": "Balance Transfer on EMI",
+      "category": "card",
+      "valueKind": "debt_rate",
+      "rules": {
+        "ratePctLow": 10,
+        "ratePctHigh": 15.25,
+        "processingFeePct": 1,
+        "conditions": [
+          "Tenures 3 and 6 months; rate band 10.00% to 15.25% p.a. (terms w.e.f. 9 Dec 2024), depends on bureau score.",
+          "Foreclosure fee 3% of outstanding principal.",
+          "Information only. Check your bank's own offer."
+        ]
+      },
+      "proof": {
+        "signal": "amount_drop",
+        "description": "The card interest or finance charge falls on later statements."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page",
+          "label": "SBI Card: Balance Transfer on EMI",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.sbicard.com/sbi-card-en/assets/docs/pdf/tnc/balance-transfer-on-emi-tnc.pdf",
+          "label": "SBI Card: BT on EMI terms",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page",
+      "actionLabel": "See SBI Card offer"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "home-loan-floating-switch-in",
+      "detect": {
+        "merchantAliases": [],
+        "senderDomains": [],
+        "keywords": [
+          "home loan",
+          "housing loan",
+          "emi"
+        ]
+      },
+      "provider": "Banks (published starting rate)",
+      "product": "Home loan floating-rate switch",
+      "category": "loan",
+      "valueKind": "loan_switch",
+      "rules": {
+        "ratePctLow": 7.5,
+        "conditions": [
+          "7.50% is the low end of SBI regular home loan rates reported Oct 2026 (aggregator coverage); actual rate depends on credit profile. SBI EBLR 8.15% + CRP + BSP w.e.f. 15 Oct 2026.",
+          "RBI directions: no prepayment charges on floating-rate loans to individuals; switching lender may still carry processing and legal fees.",
+          "Information only. Check your bank's own offer."
+        ]
+      },
+      "proof": {
+        "signal": "amount_drop",
+        "description": "The EMI or interest rate on the loan statement falls."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12878",
+          "label": "RBI: prepayment charges directions",
+          "kind": "regulator",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/personal-finance/story/sbi-raises-home-loan-rates-by-25-bps-562229-2026-10-18",
+          "label": "Business Today: SBI home loan rates Oct 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/personal-finance/banking/story/rbi-removes-prepayment-charges-floating-rate-loans-2026-483120-2025-07-04",
+          "label": "Business Today: RBI removes prepayment charges",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.rbi.org.in/scripts/FS_Notification.aspx?Id=12878",
+      "actionLabel": "Read the RBI rule"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "generic-price-change",
+      "detect": {
+        "merchantAliases": [],
+        "senderDomains": [],
+        "keywords": [
+          "price revision",
+          "price change",
+          "revised price"
+        ]
+      },
+      "provider": "Any",
+      "product": "Price increase on a recurring bill",
+      "category": "other",
+      "valueKind": "price_change",
+      "rules": {
+        "conditions": [
+          "Generic rule: uses the user's own last two recorded amounts."
+        ]
+      },
+      "proof": {
+        "signal": "user_confirmed",
+        "description": "User confirms they changed or cancelled the plan."
+      },
+      "nudge": {
+        "trigger": "on_detect",
+        "leadDays": 0
+      },
+      "sources": [
+        {
+          "url": "https://www.business-standard.com/webstories/youtube-increases-prices-across-all-premium-plans-in-india-1240827163141ws",
+          "label": "Example: subscription price hike coverage",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": null,
+      "actionLabel": null
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "generic-trial-end",
+      "detect": {
+        "merchantAliases": [],
+        "senderDomains": [],
+        "keywords": [
+          "free trial",
+          "trial ends"
+        ]
+      },
+      "provider": "Any",
+      "product": "Free trial about to convert to paid",
+      "category": "other",
+      "valueKind": "trial_end",
+      "rules": {
+        "conditions": [
+          "Generic rule: uses the user's own trial end date."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "No paid charge appears after the trial."
+      },
+      "nudge": {
+        "trigger": "before_expiry",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.uber.com/in/en/legal/renewable-passes-terms/",
+          "label": "Example: renewable pass terms",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": null,
+      "actionLabel": null
+    }
+  ],
+  "cityPacks": [
+    {
+      "id": "in-mmr",
+      "name": "Mumbai, Navi Mumbai, Thane",
+      "country": "IN",
+      "localities": [
+        "Kharghar",
+        "Vashi",
+        "Nerul",
+        "Belapur",
+        "Airoli",
+        "Ghansoli",
+        "Panvel",
+        "Thane",
+        "Thane West",
+        "Wagle Estate",
+        "Majiwada",
+        "Ghodbunder Road",
+        "Kalyan",
+        "Dombivli",
+        "Mulund",
+        "BKC",
+        "Andheri East",
+        "Powai",
+        "Lower Parel",
+        "Worli",
+        "Nariman Point",
+        "Goregaon",
+        "Malad",
+        "Borivali",
+        "Dadar",
+        "Sion",
+        "Chembur",
+        "Kurla",
+        "Ghatkopar",
+        "Vikhroli",
+        "Bhandup",
+        "Kanjurmarg",
+        "Seawoods",
+        "Turbhe",
+        "Rabale",
+        "Juinagar",
+        "Sanpada",
+        "Ulwe",
+        "Taloja",
+        "Mumbai",
+        "Navi Mumbai"
+      ],
+      "passes": [
+        {
+          "id": "cityflo-metro3-feeder-monthly",
+          "operator": "Cityflo",
+          "mode": "bus",
+          "name": "Metro 3 feeder monthly pass",
+          "priceInr": 499,
+          "periodDays": 30,
+          "trips": null,
+          "coverage": [
+            "BKC",
+            "Worli"
+          ],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://www.freepressjournal.in/mumbai/mumbai-metro-3-ties-up-with-cityflo-for-seamless-metro-bus-connectivity",
+              "label": "FPJ: Metro 3 x Cityflo fares",
+              "kind": "press",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.autocarpro.in/news/mmrc-and-cityflo-launch-feeder-bus-service-for-mumbai-metro-line-3-129226",
+              "label": "Autocar Pro: MMRC Cityflo feeder",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://www.cityflo.com/"
+        },
+        {
+          "id": "cityflo-flexi",
+          "operator": "Cityflo",
+          "mode": "bus",
+          "name": "Flexi Pass (weekly / monthly)",
+          "priceInr": null,
+          "periodDays": 30,
+          "trips": null,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://www.cityflo.com/flexi-pass-policy/",
+              "label": "Cityflo: Flexi Pass policy",
+              "kind": "official",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://www.cityflo.com/"
+        },
+        {
+          "id": "gala-bus",
+          "operator": "Gala Bus",
+          "mode": "shuttle",
+          "name": "Gala Bus pass (user confirmed)",
+          "priceInr": null,
+          "periodDays": null,
+          "trips": null,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://play.google.com/store/search?q=Gala%20Bus",
+              "label": "Play Store search: Gala Bus (no listing found in web search)",
+              "kind": "user_shared",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://play.google.com/store/search?q=Gala%20Bus"
+        },
+        {
+          "id": "best-chalo-60-slab6",
+          "operator": "BEST (Chalo)",
+          "mode": "bus",
+          "name": "Super Saver 60 trips / 28 days (₹6 fare slab)",
+          "priceInr": 300,
+          "periodDays": 28,
+          "trips": 60,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://chalo.com/mumbai/super-saver",
+              "label": "Chalo: BEST Super Saver (Mumbai)",
+              "kind": "official",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://chalo.com/mumbai/super-saver"
+        },
+        {
+          "id": "best-chalo-60-slab13",
+          "operator": "BEST (Chalo)",
+          "mode": "bus",
+          "name": "Super Saver 60 trips / 28 days (₹13 fare slab)",
+          "priceInr": 700,
+          "periodDays": 28,
+          "trips": 60,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://chalo.com/mumbai/super-saver",
+              "label": "Chalo: BEST Super Saver (Mumbai)",
+              "kind": "official",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://chalo.com/mumbai/super-saver"
+        },
+        {
+          "id": "best-chalo-60-slab19",
+          "operator": "BEST (Chalo)",
+          "mode": "bus",
+          "name": "Super Saver 60 trips / 28 days (₹19 fare slab)",
+          "priceInr": 1050,
+          "periodDays": 28,
+          "trips": 60,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://chalo.com/mumbai/super-saver",
+              "label": "Chalo: BEST Super Saver (Mumbai)",
+              "kind": "official",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://chalo.com/mumbai/super-saver"
+        },
+        {
+          "id": "best-chalo-60-slab25",
+          "operator": "BEST (Chalo)",
+          "mode": "bus",
+          "name": "Super Saver 60 trips / 28 days (₹25 fare slab)",
+          "priceInr": 1350,
+          "periodDays": 28,
+          "trips": 60,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://chalo.com/mumbai/super-saver",
+              "label": "Chalo: BEST Super Saver (Mumbai)",
+              "kind": "official",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.freepressjournal.in/mumbai/mumbai-best-annonces-super-saver-plans-for-chalo-app-and-chalo-card-consumers",
+              "label": "FPJ: BEST Super Saver plans",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://chalo.com/mumbai/super-saver"
+        },
+        {
+          "id": "metro-one-trip-pass",
+          "operator": "Mumbai Metro One",
+          "mode": "metro",
+          "name": "Digital trip pass (WhatsApp), Versova-Andheri-Ghatkopar",
+          "priceInr": null,
+          "periodDays": 30,
+          "trips": null,
+          "coverage": [
+            "Andheri East",
+            "Ghatkopar"
+          ],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://www.freepressjournal.in/mumbai/mumbai-metro-one-launches-digital-passes-on-whatsapp-for-commuters",
+              "label": "FPJ: Metro One WhatsApp digital passes",
+              "kind": "press",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.mmmocl.co.in/fare_schemes_products",
+              "label": "MMMOCL fare schemes",
+              "kind": "official",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://www.mmmocl.co.in/fare_schemes_products"
+        },
+        {
+          "id": "metro3-digital-pass",
+          "operator": "Mumbai Metro Line 3 (MMRC)",
+          "mode": "metro",
+          "name": "60-trip digital pass on MetroConnect3 (about 15% off, distance based)",
+          "priceInr": null,
+          "periodDays": null,
+          "trips": 60,
+          "coverage": [
+            "BKC",
+            "Worli",
+            "Lower Parel",
+            "Nariman Point"
+          ],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://www.lokmattimes.com/mumbai/mumbai-metro-line-3-indias-first-app-enabled-monthly-digital-pass-with-discounts-now-available-for-commuters-a525",
+              "label": "Lokmat Times: Metro 3 monthly digital pass",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://www.lokmattimes.com/mumbai/mumbai-metro-line-3-indias-first-app-enabled-monthly-digital-pass-with-discounts-now-available-for-commuters-a525"
+        },
+        {
+          "id": "navi-mumbai-metro-l1",
+          "operator": "Navi Mumbai Metro (CIDCO)",
+          "mode": "metro",
+          "name": "Line 1 Belapur-Pendhar fares (no pass price found)",
+          "priceInr": null,
+          "periodDays": null,
+          "trips": null,
+          "coverage": [
+            "Belapur",
+            "Kharghar",
+            "Taloja"
+          ],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://www.freepressjournal.in/amp/mumbai/navi-mumbai-cidco-to-cut-down-metro-fares-by-33-on-belapur-uran-route-check-new-rates-inside",
+              "label": "FPJ: Navi Mumbai Metro fare cut",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://www.freepressjournal.in/amp/mumbai/navi-mumbai-cidco-to-cut-down-metro-fares-by-33-on-belapur-uran-route-check-new-rates-inside"
+        },
+        {
+          "id": "nmmt-bus",
+          "operator": "NMMT",
+          "mode": "bus",
+          "name": "NMMT bus pass (price not found)",
+          "priceInr": null,
+          "periodDays": null,
+          "trips": null,
+          "coverage": [
+            "Vashi",
+            "Nerul",
+            "Belapur",
+            "Kharghar",
+            "Panvel",
+            "Airoli",
+            "Ghansoli"
+          ],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://apps.apple.com/us/app/id1235574124",
+              "label": "NMMT BusTracker app",
+              "kind": "official",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.freepressjournal.in/mumbai/navi-mumbai-municipal-transport-joins-mumbai-one-app-for-seamless-integrated-public-transport",
+              "label": "FPJ: NMMT joins Mumbai One app",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://apps.apple.com/us/app/id1235574124"
+        }
+      ],
+      "typicalFareInr": {},
+      "status": "research",
+      "updatedAt": "2026-11-24T00:00:00.000Z"
+    }
+  ]
+}

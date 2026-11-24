@@ -34,6 +34,9 @@ import { AddService } from './offers/AddService';
 import { ServiceCard } from './offers/ServiceCard';
 import { ScenarioCalculator } from './offers/ScenarioCalculator';
 import { RelayInbox } from './offers/RelayInbox';
+import { SavingsProvider } from './savings/SavingsProvider';
+import { SavingsScreen } from './savings/SavingsScreen';
+import { StatementImport } from './savings/StatementImport';
 import type { AccountClient } from '../lib/account/client';
 import type { AppData } from '../lib/types';
 import { nav, parseRoute, toHash, type Route } from './lib/nav';
@@ -128,6 +131,10 @@ function View({ route }: { route: Route }) {
       return <OfferDetail id={route.id} />;
     case 'service':
       return <ServiceCard id={route.id} nav={nav} />;
+    case 'savings':
+      return <SavingsScreen />;
+    case 'savings-import':
+      return <StatementImport />;
   }
 }
 
@@ -250,7 +257,9 @@ export function App({
         <AppProvider initialData={initialData}>
           <AccountProvider client={client}>
             <CatalogProvider>
-              <Shell />
+              <SavingsProvider>
+                <Shell />
+              </SavingsProvider>
             </CatalogProvider>
           </AccountProvider>
         </AppProvider>

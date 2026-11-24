@@ -16,6 +16,7 @@ import { offersTileText } from '../lib/offersTile';
 import { greeting, homeTiles, type HomeTile } from '../lib/homeTiles';
 import { inr, weekdayDate } from '../lib/format';
 import { readJsonPref, writeJsonPref } from '../lib/prefs';
+import { HomeSavingsEntry } from '../savings/HomeSavingsEntry';
 
 /** Compact summary card: planned this month, next due item with its confidence and source, actions. */
 function SummaryCard({
@@ -49,14 +50,17 @@ function SummaryCard({
             {unknown > 0 && <span className="muted small"> + {unknown} without amount</span>}
           </p>
         </div>
-        <button
-          type="button"
-          className="text-btn press"
-          onClick={onWhy}
-          aria-label="How is this worked out?"
-        >
-          How?
-        </button>
+        <div className="summary-top-actions">
+          <HomeSavingsEntry />
+          <button
+            type="button"
+            className="text-btn press"
+            onClick={onWhy}
+            aria-label="How is this worked out?"
+          >
+            How?
+          </button>
+        </div>
       </div>
       {next ? (
         <>

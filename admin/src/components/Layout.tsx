@@ -12,6 +12,7 @@ const NAV: { to: string; label: string; perm?: 'admin' }[] = [
   { to: '/sources', label: 'Sources' },
   { to: '/records', label: 'Data' },
   { to: '/offers', label: 'Offers' },
+  { to: '/savings', label: 'Savings' },
   { to: '/review', label: 'Change review' },
   { to: '/parsers', label: 'Parser versions' },
   { to: '/categories', label: 'Categories' },
