@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Due Savings: 3-day launch plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: founder dashboard. One line per fact, pictures over paragraphs.
+   IDEA: a river: bills flow in from 4 doors, the engine turns them into moves, moves become proven savings.
+   COLOUR and TYPE: Ice and ink, hot pink only for money and "today". Space Grotesk + Inter. */
+:root{color-scheme:light dark;--bg:light-dark(#dff1f7,#06222e);--panel:light-dark(#fff,#0b3242);--ink:light-dark(#06222e,#e4f4f9);--mute:light-dark(#3d5a66,#9cc3d1);--line:light-dark(#b9dbe6,#1d4a5c);--hot:#ff2e7e;--hot2:light-dark(#c4004f,#ff6ea4);--ok:light-dark(#0f6a44,#7fe0b4)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;line-height:1.08;text-wrap:balance;margin:0 0 .45em}
+h1{font-size:clamp(30px,4.6vw,50px)}h2{font-size:clamp(23px,3vw,32px)}h3{font-size:18px;line-height:1.2}
+p{margin:.3em 0 .8em;max-width:72ch}
+.band{padding:clamp(26px,4vw,56px) max(5vw,16px)}.wrap{max-width:1200px;margin:0 auto}
+.ink{background:var(--ink);color:var(--bg)}.ink .card{color:var(--ink)}
+.mute{color:var(--mute)}.ink .mute{color:light-dark(#9cc3d1,#3d5a66)}.small{font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;counter-reset:d}
+.day{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;border-top:6px solid var(--line)}
+.day.now{border-top-color:var(--hot)}
+.day b.h{display:block;font:700 20px "Space Grotesk",sans-serif;margin-bottom:6px}
+.day ul,.card ul{margin:0;padding-left:1.1em}.day li,.card li{margin:.25em 0}
+.tag{display:inline-block;font-size:12.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.tag.hot{border-color:var(--hot);color:var(--hot2)}.tag.ok{border-color:var(--ok);color:var(--ok)}
+.flow{position:relative;min-height:360px;background:var(--panel);border:1px solid var(--line);border-radius:14px;color:var(--ink)}.flow>svg{position:absolute;inset:0;width:100%;height:100%}
+ol.tag-list{counter-reset:t;list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+ol.tag-list li{counter-increment:t;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px 12px 48px;position:relative;font:500 17px "Space Grotesk",sans-serif;color:var(--ink)}
+ol.tag-list li::before{content:counter(t);position:absolute;left:14px;top:11px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);font:600 13px/24px Inter;text-align:center}
+ol.tag-list li.pick{border:2px solid var(--hot)}ol.tag-list li.pick::before{background:var(--hot);color:#fff}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden;color:var(--ink)}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}th{font-family:"Space Grotesk",sans-serif;font-weight:500}
+.scroll{overflow-x:auto}
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);color:var(--ink)}
+.vs div{padding:12px 14px;border-bottom:1px solid var(--line)}.vs div:nth-child(odd){border-right:1px solid var(--line)}
+.vs .hd{font:600 15px "Space Grotesk",sans-serif;background:light-dark(#eef8fb,#0e3a4c)}
+.q{display:grid;gap:10px}.q .card b{font-family:"Space Grotesk",sans-serif}
+@media(max-width:600px){.vs{grid-template-columns:minmax(0,1fr)}.vs div:nth-child(odd){border-right:0}.vs .hd:nth-child(2){display:none}.vs div:nth-child(even):not(.hd)::before{content:"Our answer: ";font-weight:600;color:var(--ok)}}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap">
+<p class="mute small">Due by KAI · Savings launch · plan for approval · 24 Nov 2026</p>
+<h1>Same life. Smaller bills. Live this weekend.</h1>
+<div class="grid" style="margin-top:14px">
+<div class="card"><span class="tag hot">Building now</span><h3 style="margin-top:8px">4 agents at work</h3><span class="small">Research · Server + admin · Savings engine · Screens</span></div>
+<div class="card"><span class="tag">Launch</span><h3 style="margin-top:8px">Sunday 29 Nov</h3><span class="small">Free beta, first 10 users in Navi Mumbai / Thane</span></div>
+<div class="card"><span class="tag ok">Rule</span><h3 style="margin-top:8px">No guarantee wording</h3><span class="small">Lawyer's advice applied. 2× stays an internal target.</span></div>
+</div>
+</div></header>
+
+<section class="band ink"><div class="wrap">
+<h2>Pick the tagline: 10 options, no guarantee, no amounts</h2>
+<p class="mute">My pick is No. 1 (already on the landing page draft). Reply with a number to change it.</p>
+<ol class="tag-list">
+<li class="pick">Same life. Smaller bills.</li>
+<li>Now save on every subscription.</li>
+<li>Stop paying twice for the same thing.</li>
+<li>Know before you renew.</li>
+<li>Your bills, rechecked every month.</li>
+<li>Pay for what you use. Skip the rest.</li>
+<li>Rides, recharges, OTT, EMIs: one smart check.</li>
+<li>Keep what you love. Pay less for it.</li>
+<li>Your money's quiet leaks, found.</li>
+<li>Smarter renewals, every month.</li>
+</ol>
+</div></section>
+
+<section class="band"><div class="wrap">
+<h2>How a bill becomes a saving</h2>
+<div class="flow" role="img" aria-label="Flow: four doors (Gmail, forwarded email, uploaded statement, typed in) feed the bill reader; the engine checks each bill against the offer library; known bills become ranked moves with confident assumptions; unknown bills go to the research queue and come back later; done moves become proven savings."><svg id="flow"></svg></div>
+<div class="grid" style="margin-top:14px">
+<div class="card"><h3>Door 1–4: how bills come in</h3><ul><li>Gmail connect (when Google approves)</li><li>Forward a bill email</li><li>Upload or paste bank / card statement</li><li>Type it in</li></ul></div>
+<div class="card"><h3>Statements catch the hidden ones</h3><ul><li>UPI AutoPay mandates</li><li>NACH / ECS loan EMIs</li><li>Card standing instructions</li><li>Bill date, amount, frequency: auto-detected</li></ul></div>
+<div class="card"><h3>Confident assumptions</h3><ul><li>Missing a number? Due uses a typical value</li><li>Shown as "We assumed 8 rides a month · Change"</li><li>Lower confidence = ranked lower</li></ul></div>
+<div class="card"><h3>Unknown bill? Research queue</h3><ul><li>App says "We're studying this bill"</li><li>Only the provider name is sent, never amounts or identity</li><li>We research, verify, and the move appears later</li></ul></div>
+<div class="card"><h3>"People saved by switching"</h3><ul><li>Real, anonymous, opt-in reports only</li><li>Shows after 20 reports per item</li><li>Empty at launch, never faked</li></ul></div>
+<div class="card"><h3>Ads (later)</h3><ul><li>Off at launch</li><li>Only when it saves that user money</li><li>Rules already written in Value Graph v2</li></ul></div>
+</div>
+</div></section>
+
+<section class="band ink"><div class="wrap">
+<h2>Phases: today to first customer</h2>
+<div class="tl" style="color:var(--ink)">
+<div class="day now"><b class="h">Day 1 · Tue–Wed</b><ul><li>Spec + contract ✔</li><li>Offer library research (sources)</li><li>Server: catalog, research queue, admin</li><li>Engine: statement reader, 8 move types</li><li>Screens: Savings, move card, commute</li></ul></div>
+<div class="day"><b class="h">Day 2 · Thu</b><ul><li>Join the parts, full test run</li><li>Independent QA pass, fix bugs</li><li>Check top 20 prices against official pages</li><li>You: approve tagline + beta mode</li></ul></div>
+<div class="day"><b class="h">Day 3 · Fri–Sat</b><ul><li>Deploy to Render</li><li>Live smoke test with you on your phone</li><li>You: Render approve + 2 secrets</li><li>Gala Bus / Cityflo price screenshots in</li></ul></div>
+<div class="day"><b class="h">Launch · Sun</b><ul><li>First 10 beta users (friends, Navi Mumbai / Thane)</li><li>Each: 5-minute onboarding call</li><li>Track: money found per user</li></ul></div>
+<div class="day"><b class="h">Weeks 2–8</b><ul><li>50-household pilot</li><li>Turn on paid Plus (Razorpay keys)</li><li>Gmail after Google approval</li><li>Ads only after trust is proven</li></ul></div>
+</div>
+</div></section>
+
+<section class="band"><div class="wrap">
+<h2>Devil's advocate: the attacks and our answers</h2>
+<div class="vs">
+<div class="hd">Attack</div><div class="hd">Our answer</div>
+<div>"Nobody gives Gmail to a new app."</div><div>Statement upload and forwarding work without Gmail. Gmail is a bonus, not the core.</div>
+<div>"Assumptions are guesses."</div><div>Labelled, editable, and ranked lower. Real receipts replace them automatically.</div>
+<div>"Prices go stale."</div><div>Every price has a source and date; unchecked ones say "Reported price, check before switching".</div>
+<div>"You can't cover every provider."</div><div>Unknown bills go to the research queue; the user sees "studying", not nothing.</div>
+<div>"Free beta = no revenue."</div><div>Beta proves the saving first. Paid Plus switches on with Razorpay keys, no rebuild.</div>
+<div>"CRED copies you."</div><div>CRED earns from loans. Due earns only from users. That can't be copied.</div>
+<div>"Ads will kill trust."</div><div>Off at launch; later only savings-ranked, labelled, capped 3 a week.</div>
+<div>"Social proof is empty on day 1."</div><div>Hidden until 20 real reports. Fake numbers would be a legal and trust disaster.</div>
+<div>"Commute savings need habit change."</div><div>Marked "habit" effort, ranked below one-tap moves like plan switches.</div>
+<div>"Lawyer risk."</div><div>No guarantee wording, no minimum amounts, information-only on loans.</div>
+</div>
+</div></section>
+
+<section class="band ink"><div class="wrap">
+<h2>Real vs dummy credentials</h2>
+<div class="scroll"><table><thead><tr><th>Item</th><th>While building</th><th>At launch</th></tr></thead><tbody>
+<tr><td>Payments (Razorpay)</td><td>Dummy</td><td>Free beta; real keys when you're ready</td></tr>
+<tr><td>Email (SMTP)</td><td>Dummy</td><td>Needed for login links and reminders: add before Sunday</td></tr>
+<tr><td>Gmail (Google)</td><td>Dummy</td><td>Off until Google approves (weeks); app says so honestly</td></tr>
+<tr><td>Forwarding inbox</td><td>Dummy</td><td>Optional for beta</td></tr>
+<tr><td>Encryption, sessions</td><td>Dummy</td><td>Render generates them automatically</td></tr>
+</tbody></table></div>
+</div></section>
+
+<section class="band"><div class="wrap">
+<h2>Your answers needed (reply with numbers)</h2>
+<div class="q">
+<div class="card"><b>1 · Beta mode:</b> launch Sunday as a free beta (Plus features free, no payments)? <span class="tag ok">Recommended: yes</span></div>
+<div class="card"><b>2 · Tagline:</b> keep No. 1, or pick another number.</div>
+<div class="card"><b>3 · Prices only you can get:</b> screenshots of Gala Bus and Cityflo monthly pass prices for 2–3 routes (Kharghar/Vashi → Thane, Thane → BKC). Their apps hide prices from the web.</div>
+<div class="card"><b>4 · Email for login:</b> which email service do you have (Zoho, Google Workspace, other)? One SMTP login is enough for launch.</div>
+<div class="card"><b>Manus:</b> not needed right now. If the agents get blocked on a website, I'll tell you exactly what to ask it.</div>
+</div>
+</div></section>
+
+<script>{
+const s=document.getElementById('flow');
+function draw(){const W=s.clientWidth,H=s.clientHeight,ink=getComputedStyle(s).color,n=W<560,fs=n?11:14;
+const doors=['Gmail','Forward','Statement','Type in'];
+const bx=(x,y,w,h,t,fill,tc)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}" stroke="${ink}" stroke-opacity=".25"/><text x="${x+w/2}" y="${y+h/2+5}" text-anchor="middle" fill="${tc||ink}" font-size="${fs}" font-weight="600" font-family="Inter">${t}</text>`;
+let h='';const dw=n?W*0.2:W*0.14,dh=34,c1=10,c2=W*0.3,c3=W*0.55,c4=W*0.8;
+doors.forEach((d,i)=>{const y=H*(i+1)/5-dh/2;h+=`<path d="M${c1+dw},${y+dh/2} C${c2-20},${y+dh/2} ${c2-30},${H/2} ${c2},${H/2}" fill="none" stroke="#ff2e7e" stroke-width="2.5"/>`+bx(c1,y,dw,dh,d,'transparent')});
+const ew=n?W*0.2:W*0.17;
+h+=bx(c2,H/2-30,ew,60,n?'Engine':'Bill reader + engine','#ff2e7e','#fff');
+const yk=H*0.3,yu=H*0.72;
+h+=`<path d="M${c2+ew},${H/2} C${c3-10},${H/2} ${c3-20},${yk} ${c3},${yk}" fill="none" stroke="${ink}" stroke-opacity=".5" stroke-width="2.5"/><path d="M${c2+ew},${H/2} C${c3-10},${H/2} ${c3-20},${yu} ${c3},${yu}" fill="none" stroke="${ink}" stroke-opacity=".5" stroke-width="2.5" stroke-dasharray="6 6"/>`;
+const mw=n?W*0.19:W*0.17;
+h+=bx(c3,yk-20,mw,40,n?'Moves':'Ranked moves','transparent')+bx(c3,yu-20,mw,40,n?'Research':'Research queue','transparent');
+h+=`<path d="M${c3+mw/2},${yu-20} L${c3+mw/2},${yk+20}" stroke="${ink}" stroke-opacity=".4" stroke-width="2" stroke-dasharray="3 5"/><text x="${c3+mw/2+6}" y="${(yk+yu)/2+4}" fill="${ink}" fill-opacity=".7" font-size="${n?10:12}" font-family="Inter">${n?'later':'answered later'}</text>`;
+h+=`<path d="M${c3+mw},${yk} L${c4},${yk}" stroke="${ink}" stroke-opacity=".5" stroke-width="2.5"/>`+bx(c4,yk-24,W-c4-10,48,n?'Saved ✓':'Proven saving ✓','transparent');
+s.innerHTML=h}
+new ResizeObserver(draw).observe(s);}
+</script>
+</body>
+</html>
