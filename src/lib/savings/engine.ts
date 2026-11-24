@@ -1370,6 +1370,11 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
     ...overlapMoves(ctx),
     ...commuteMoves(ctx),
   ];
+  // A postpaid or fiber bill (read from its own statement) is not a prepaid pack: never offer it the
+  // prepaid "switch to the yearly plan" move that its provider alias would otherwise match.
+  const telecomBillIds = new Set(
+    (data.savings?.telecom ?? []).map((t) => t.obligationId).filter((id): id is string => !!id),
+  );
   for (const ob of obs) {
     const m = moduleOf(ctx, ob);
     let pausing = false;
@@ -1381,7 +1386,7 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
           pausing = true;
         }
       }
-      if (!pausing) {
+      if (!pausing && !telecomBillIds.has(ob.id)) {
         const p = periodSwitchMove(ob, m);
         if (p) moves.push(p);
       }

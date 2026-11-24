@@ -54,6 +54,11 @@ function AssumptionChip({
       setErr('Enter a number, 0 or more.');
       return;
     }
+    // A typo such as an extra zero must not inflate the "found" total.
+    if (n > (a.unit === '%' ? 100 : 1_000_000)) {
+      setErr(a.unit === '%' ? 'Enter a percentage up to 100.' : 'Enter a smaller number.');
+      return;
+    }
     onSave(a.key, n);
     setEditing(false);
   };

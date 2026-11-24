@@ -116,6 +116,22 @@ export function SavingsScreen() {
   const [openId, setOpenId] = useState<string | null>(null);
   useResearchSender();
   const current = s.all.find((m) => m.id === openId) ?? null;
+  // The open move can disappear (an edited assumption removes the saving): close the sheet for good
+  // so it does not pop open again later, and keep keyboard focus on the page.
+  if (openId && !current) setOpenId(null);
+  const movesHead = useRef<HTMLHeadingElement>(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (openId) {
+      wasOpen.current = true;
+      return;
+    }
+    if (!wasOpen.current) return;
+    wasOpen.current = false;
+    // The row that opened the sheet may be gone (moved to "You did these", or removed).
+    const a = document.activeElement;
+    if (!a || a === document.body) movesHead.current?.focus();
+  }, [openId]);
   const optIn = s.state.profile.communityOptIn;
 
   return (
@@ -148,7 +164,9 @@ export function SavingsScreen() {
 
       <section className="stack-12" aria-labelledby="sv-moves-h">
         <div className="section-head">
-          <h2 id="sv-moves-h">Moves, best first</h2>
+          <h2 id="sv-moves-h" ref={movesHead} tabIndex={-1}>
+            Moves, best first
+          </h2>
           {s.phase === 'unavailable' && (
             <button type="button" className="text-btn press" onClick={s.refresh}>
               Try again

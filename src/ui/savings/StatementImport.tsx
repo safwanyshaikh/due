@@ -8,11 +8,12 @@ import type {
   RecurringCandidate,
   StatementLine,
 } from '../../lib/savings/types';
-import type { CommitmentType, Rail } from '../../lib/types';
+import type { AppData, CommitmentType, Rail } from '../../lib/types';
 import { createObligation, type MutationResult } from '../../lib/mutations';
 import { rules, type RecurrenceRule } from '../../lib/recurrence';
 import { addDays, formatDate } from '../../lib/dates';
 import { looksSensitive } from '../../lib/sensitive';
+import { merchantKey } from '../../lib/merchants';
 import { STATEMENT_NOTE } from '../../content/savings';
 import { useApp } from '../store';
 import { Badge, Field, Notice } from '../components/ui';
@@ -36,6 +37,8 @@ import {
 import { CADENCE_TEXT, CONFIDENCE_LABEL, CONFIDENCE_TONE, RAIL_TEXT, rupees } from './format';
 
 const MAX_BYTES = 15 * 1024 * 1024;
+/** Far more than any real statement (a year of rows is ~0.3 MB); beyond it the page would freeze. */
+const MAX_TEXT_CHARS = 1_000_000;
 const TYPE_CHOICES: [CommitmentType, string][] = [
   ['subscription', 'Subscription'],
   ['bill', 'Bill'],
@@ -54,12 +57,25 @@ function ruleFor(c: RecurringCandidate, today: string): RecurrenceRule {
   return rules.monthly(next);
 }
 
+/** True when a live item with the same merchant and a similar amount is already in the list. */
+export function alreadyTracked(data: AppData, c: RecurringCandidate): boolean {
+  const key = merchantKey(c.label);
+  if (!key) return false;
+  return data.commitments.some((o) => {
+    if (o.deletedAt) return false;
+    if (merchantKey(o.provider) !== key && merchantKey(o.nickname) !== key) return false;
+    const amount = o.amount ? o.amount.value : o.amountPaise;
+    if (!amount || amount <= 0 || c.averageInr <= 0) return true;
+    return Math.abs(amount / 100 - c.averageInr) <= c.averageInr * 0.4;
+  });
+}
+
 function guessType(c: RecurringCandidate): CommitmentType {
   return c.rail === 'bank_mandate' && c.averageInr >= 3000 ? 'emi' : 'subscription';
 }
 
 export function StatementImport() {
-  const { mutate, update, ctx, today } = useApp();
+  const { mutate, update, ctx, today, data } = useApp();
   const [text, setText] = useState('');
   const [source, setSource] = useState<StatementLine['source']>('bank');
   const [busy, setBusy] = useState(false);
@@ -78,6 +94,16 @@ export function StatementImport() {
   const check = (t: string) => {
     setMsg(null);
     setAdded(null);
+    if (t.length > MAX_TEXT_CHARS) {
+      setFound(null);
+      setCard(null);
+      setLoan(null);
+      setBank(null);
+      setTelecom(null);
+      setUpi(null);
+      setMsg('This is too long to read at once. Paste one statement, or two or three months.');
+      return;
+    }
     const tb = readTelecomBill(t);
     setTelecom(tb);
     if (tb) {
@@ -193,11 +219,19 @@ export function StatementImport() {
   const add = () => {
     const bad = chosen.map((c) => looksSensitive(c.label)).find(Boolean);
     if (bad) return setMsg(bad);
+    // Importing the same statement twice must not double the list: skip what is already tracked.
+    const fresh = chosen.filter((c) => !alreadyTracked(data, c));
+    if (!fresh.length)
+      return setMsg(
+        chosen.length === 1
+          ? 'This is already in your list.'
+          : 'These are already in your list. Nothing was added twice.',
+      );
     const r = mutate(
       (d) => {
         const out: MutationResult[] = [];
         let cur = d;
-        for (const c of chosen) {
+        for (const c of fresh) {
           const res = createObligation(
             cur,
             {
@@ -219,7 +253,11 @@ export function StatementImport() {
         return out;
       },
       {
-        message: `Added ${chosen.length} item${chosen.length === 1 ? '' : 's'} from your statement`,
+        message: `Added ${fresh.length} item${fresh.length === 1 ? '' : 's'} from your statement${
+          fresh.length < chosen.length
+            ? ` (${chosen.length - fresh.length} already in your list)`
+            : ''
+        }`,
       },
     );
     if (r) nav.go({ name: 'savings' });

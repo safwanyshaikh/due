@@ -1483,8 +1483,7 @@
       "id": "jio-postpaid-in",
       "detect": {
         "merchantAliases": [
-          "jio_postpaid",
-          "jio"
+          "jio_postpaid"
         ],
         "senderDomains": [
           "jio.com"

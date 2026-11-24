@@ -148,4 +148,32 @@ describe('statement import: summary step', () => {
       obligationId: d.commitments[0].id,
     });
   });
+
+  it('importing the same statement twice does not duplicate the repeat payments', async () => {
+    const run = async () => {
+      cleanup();
+      renderApp({ data: stored() ?? emptyData(), hash: '#/savings-import' });
+      fireEvent.change(screen.getByLabelText('Or paste statement text'), {
+        target: { value: fx('union-bank-savings.txt') },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Find repeat payments' }));
+      fireEvent.click(await screen.findByRole('button', { name: /^Add \d+ selected$/ }));
+    };
+    await run();
+    await waitFor(() => expect(stored()?.commitments.length).toBeGreaterThan(0));
+    const before = stored();
+    const first = before.commitments.length;
+    await run();
+    await waitFor(() => expect(screen.getByText(/already in your list/)).toBeTruthy());
+    expect((stored() ?? before).commitments).toHaveLength(first);
+  });
+
+  it('refuses a huge paste with a plain message instead of freezing', async () => {
+    renderApp({ data: emptyData(), hash: '#/savings-import' });
+    fireEvent.change(screen.getByLabelText('Or paste statement text'), {
+      target: { value: '05/11/2026  UPI-AUTOPAY NETFLIX  649.00 Dr\n'.repeat(30_000) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Find repeat payments' }));
+    expect(await screen.findByText(/too long to read at once/)).toBeTruthy();
+  });
 });

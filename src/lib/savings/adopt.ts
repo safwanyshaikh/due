@@ -117,8 +117,19 @@ export function addCardBill(
     periodEnd: s.statementDate,
     confirmedFromLatest: true,
   };
-  return upsert(data, existing, built, ctx, `Card bill from statement: ${cardNickname}`, (st, id) =>
-    saveCardStatement(st, { ...s, obligationId: id }),
+  // An older statement imported after a newer one is kept as history only: it must not move the
+  // due date back or replace the newer total.
+  const newer =
+    existing?.statement?.periodEnd && s.statementDate
+      ? existing.statement.periodEnd > s.statementDate
+      : false;
+  return upsert(
+    data,
+    existing,
+    newer && existing ? existing : built,
+    ctx,
+    `Card bill from statement: ${cardNickname}`,
+    (st, id) => saveCardStatement(st, { ...s, obligationId: id }),
   );
 }
 
@@ -148,7 +159,11 @@ export function addLoanEmi(
         !c.deletedAt &&
         (c.type === 'emi' || c.type === 'other_loan') &&
         c.provider === lender &&
-        (c.loan?.loanType ?? '').toLowerCase() === product.toLowerCase(),
+        (c.loan?.loanType ?? '').toLowerCase() === product.toLowerCase() &&
+        // Two loans of the same kind from one lender have different original tenures.
+        (!c.loan?.originalTenureMonths ||
+          !s.loanTenureMonths ||
+          c.loan.originalTenureMonths === s.loanTenureMonths),
     ) ??
     null;
   const start = nextOnDay(ctx.today, s.emiDueDay ?? parseISO(ctx.today).d);

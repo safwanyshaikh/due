@@ -218,6 +218,46 @@ describe('Move sheet', () => {
   });
 });
 
+describe('Move sheet edge cases', () => {
+  const openEditable = async () => {
+    mockFetch();
+    renderApp({ data: sameer(), hash: '#/savings' });
+    const list = await screen.findByTestId('moves');
+    for (const r of within(list).getAllByRole('button')) {
+      fireEvent.click(r);
+      const d = screen.getByRole('dialog');
+      const ch = within(d).queryAllByRole('button', { name: /^Change:/ });
+      if (ch.length) {
+        fireEvent.click(ch[0]);
+        return d;
+      }
+      fireEvent.click(within(d).getByRole('button', { name: /^Close/ }));
+    }
+    throw new Error('no editable assumption');
+  };
+
+  it('rejects an absurdly large assumption instead of inflating the found total', async () => {
+    const d = await openEditable();
+    const input = d.querySelector('.sv-assume-edit input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '1000000000' } });
+    fireEvent.click(within(d).getByRole('button', { name: 'Save' }));
+    expect(d.textContent).toContain('Enter a smaller number.');
+    expect(Object.values(stored()?.savings.profile.overrides ?? {})).toEqual([]);
+  });
+
+  it('keeps focus on the page when marking a move done removes the row that opened the sheet', async () => {
+    const d = await openEditable();
+    fireEvent.click(within(d).getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(within(d).getByRole('button', { name: 'I did this' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', { name: 'Moves, best first' }),
+      ),
+    );
+  });
+});
+
 describe('Commute setup', () => {
   it('picks a city pack and home locality, adds and removes a leg', async () => {
     mockFetch();
