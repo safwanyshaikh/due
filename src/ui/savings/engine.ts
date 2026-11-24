@@ -3,6 +3,14 @@
  * engine signature changes, and makes every network call failure-tolerant.
  */
 import {
+  addGoldLoan,
+  addTelecomBill,
+  isUpiAppStatement,
+  parseTelecomBill,
+  parseUpiStatementSummary,
+  saveUpiStatement,
+  type TelecomBillSummary,
+  type UpiStatementSummary,
   parseBankStatementSummary,
   saveBankStatement,
   type BankStatementSummary,
@@ -198,3 +206,23 @@ export function readBankSummary(text: string): BankStatementSummary | null {
 }
 
 export { saveBankStatement };
+
+/** Jio Postpaid / JioFiber bill summary, or null. */
+export function readTelecomBill(text: string): TelecomBillSummary | null {
+  try {
+    return parseTelecomBill(text);
+  } catch {
+    return null;
+  }
+}
+
+/** UPI app (Google Pay) statement summary, or null when the text is not one. */
+export function readUpiSummary(text: string): UpiStatementSummary | null {
+  try {
+    return isUpiAppStatement(text) ? parseUpiStatementSummary(text) : null;
+  } catch {
+    return null;
+  }
+}
+
+export { addGoldLoan, addTelecomBill, saveUpiStatement };

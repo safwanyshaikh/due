@@ -59,7 +59,15 @@ export {
 } from './api';
 export { parseCardStatementSummary, cardKey } from './cardSummary';
 export { parseLoanStatement, loanKey } from './loanSummary';
-export { addCardBill, addLoanEmi, saveCardStatement, saveLoanStatement, nextOnDay } from './adopt';
+export {
+  addCardBill,
+  addLoanEmi,
+  saveCardStatement,
+  saveLoanStatement,
+  nextOnDay,
+  addTelecomBill,
+  addGoldLoan,
+} from './adopt';
 export { lineKindOf, statementPeriodOf } from './statement';
 export { statementAlias, STATEMENT_ALIASES, type StatementAlias } from './recurring';
 export { bouncesIn12Months, BOUNCE_TRANSFER_NOTE } from './engine';

@@ -9,7 +9,13 @@ import { buildObligation } from '../mutations';
 import { rules } from '../recurrence';
 import type { AppData, Commitment, Provenance } from '../types';
 import { defaultSavingsState } from './state';
-import type { CardStatementSummary, LoanStatementSummary, SavingsState } from './types';
+import { saveTelecomBill } from './state';
+import type {
+  CardStatementSummary,
+  LoanStatementSummary,
+  SavingsState,
+  TelecomBillSummary,
+} from './types';
 
 const paise = (inr: number | null) => (inr === null ? null : Math.round(inr * 100));
 
@@ -177,6 +183,100 @@ export function addLoanEmi(
     originalTenureMonths: s.loanTenureMonths,
   };
   return upsert(data, existing, built, ctx, `Loan EMI from statement: ${lender}`, (st, id) =>
+    saveLoanStatement(st, { ...s, obligationId: id }),
+  );
+}
+
+/** "Add this bill" for a Jio Postpaid / JioFiber bill: a monthly 'bill' obligation for the total payable. */
+export function addTelecomBill(
+  data: AppData,
+  b: TelecomBillSummary,
+  ctx: MutationContext & { today: string },
+): MutationResult & { obligationId: string } {
+  if (!b.dueDate) throw new Error('This bill has no due date.');
+  const nickname = b.service === 'fiber' ? 'JioFiber' : `${b.provider} Postpaid`;
+  const existing =
+    data.commitments.find((c) => !c.deletedAt && c.id === b.obligationId) ??
+    data.commitments.find(
+      (c) =>
+        !c.deletedAt && c.type === 'bill' && c.provider === b.provider && c.nickname === nickname,
+    ) ??
+    null;
+  const built = buildObligation(
+    {
+      type: 'bill',
+      provider: b.provider,
+      nickname,
+      amountPaise: paise(b.totalPayableInr),
+      rule: rules.monthly(b.dueDate),
+      amountConfidence: 'imported',
+      dateConfidence: 'imported',
+      source: statementSource(ctx, `${nickname} bill`),
+      rail: 'unknown',
+      importance: 'important',
+      notes: b.planName ? `Plan ${b.planName}.` : '',
+    },
+    ctx.now,
+  );
+  return upsert(data, existing, built, ctx, `${nickname} bill`, (st, id) =>
+    saveTelecomBill(st, { ...b, obligationId: id }),
+  );
+}
+
+/** Last day of the month on or after today. */
+function nextMonthEnd(today: string): string {
+  const { y, m } = parseISO(today);
+  return toISO(y, m, daysInMonth(y, m));
+}
+
+/**
+ * "Add this loan" for an overdraft-style gold loan: an other_loan obligation with the rate,
+ * limit and outstanding, due monthly on the last day for the latest month's interest.
+ */
+export function addGoldLoan(
+  data: AppData,
+  s: LoanStatementSummary,
+  ctx: MutationContext & { today: string },
+): MutationResult & { obligationId: string } {
+  const lender = s.lender ?? 'Bank';
+  const latest = (s.monthlyInterest ?? []).slice(-1)[0] ?? null;
+  const existing =
+    data.commitments.find((c) => !c.deletedAt && c.id === s.obligationId) ??
+    data.commitments.find(
+      (c) =>
+        !c.deletedAt &&
+        c.type === 'other_loan' &&
+        c.provider === lender &&
+        c.loan?.loanType === 'Gold Loan OD',
+    ) ??
+    null;
+  const fmt = (n: number | null | undefined) =>
+    n == null ? 'not shown' : `₹${n.toLocaleString('en-IN')}`;
+  const built = buildObligation(
+    {
+      type: 'other_loan',
+      provider: lender,
+      nickname: `${lender} gold loan OD`,
+      amountPaise: paise(latest ? latest.amountInr : null),
+      rule: rules.endOfMonth(nextMonthEnd(ctx.today)),
+      amountConfidence: 'imported',
+      dateConfidence: 'estimated',
+      source: statementSource(ctx, 'Gold loan statement'),
+      rail: 'unknown',
+      importance: 'essential',
+      notes: `Monthly interest is debited to the OD. Limit ${fmt(s.limitInr)}; outstanding ${fmt(s.outstandingInr)}.`,
+    },
+    ctx.now,
+  );
+  built.loan = {
+    lenderNickname: lender,
+    loanType: 'Gold Loan OD',
+    principalPaise: paise(s.outstandingInr ?? null),
+    interestRatePct: s.annualRatePct,
+    rateType: null,
+    originalTenureMonths: null,
+  };
+  return upsert(data, existing, built, ctx, `Gold loan from statement: ${lender}`, (st, id) =>
     saveLoanStatement(st, { ...s, obligationId: id }),
   );
 }

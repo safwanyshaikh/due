@@ -1,4 +1,5 @@
 /** UPI-app statement (Google Pay) summary: which payments went on credit cards. */
+import { detectRecurring } from './recurring';
 import { parseStatementText } from './statement';
 import { leadingDate } from './statement';
 import type { UpiStatementSummary } from './types';
@@ -38,5 +39,6 @@ export function parseUpiStatementSummary(text: string): UpiStatementSummary | nu
       totalInr: r2(total),
       months,
     })),
+    recurring: detectRecurring(lines),
   };
 }

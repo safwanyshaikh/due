@@ -1363,7 +1363,10 @@ export function computeMoves(data: AppData, catalog: SavingsCatalog, now: string
     ...goldLoanMoves(ctx, data.savings?.loans ?? [], data.savings?.statements ?? []),
     ...upiCreditMoves(data.savings?.statements ?? [], data.savings?.upi ?? []),
     ...telecomMoves(ctx, data.savings?.telecom ?? [], data.savings?.banks ?? []),
-    ...recurringMoves((data.savings?.banks ?? []).flatMap((b) => b.recurring ?? [])),
+    ...recurringMoves([
+      ...(data.savings?.banks ?? []).flatMap((b) => b.recurring ?? []),
+      ...(data.savings?.upi ?? []).flatMap((u) => u.recurring ?? []),
+    ]),
     ...overlapMoves(ctx),
     ...commuteMoves(ctx),
   ];

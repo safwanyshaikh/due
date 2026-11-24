@@ -339,7 +339,7 @@ describe('C. Google Pay statement', () => {
     expect(lines.filter((l) => l.lineKind === 'p2p').length).toBeGreaterThan(50);
   });
   it('summary: UPI spends on the credit card', () => {
-    expect(parseUpiStatementSummary(fx('gpay-statement.txt'))).toEqual({
+    expect(parseUpiStatementSummary(fx('gpay-statement.txt'))).toMatchObject({
       app: 'Google Pay',
       periodFrom: '2026-05-01',
       periodTo: '2026-10-31',

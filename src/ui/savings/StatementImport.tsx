@@ -1,5 +1,7 @@
 import { useState, type ChangeEvent } from 'react';
 import type {
+  TelecomBillSummary,
+  UpiStatementSummary,
   BankStatementSummary,
   CardStatementSummary,
   LoanStatementSummary,
@@ -17,6 +19,11 @@ import { Badge, Field, Notice } from '../components/ui';
 import { readDocumentText } from '../lib/documentText';
 import { nav } from '../lib/nav';
 import {
+  addGoldLoan,
+  addTelecomBill,
+  readTelecomBill,
+  readUpiSummary,
+  saveUpiStatement,
   addCardBill,
   addLoanEmi,
   findRecurring,
@@ -65,15 +72,31 @@ export function StatementImport() {
   const [loan, setLoan] = useState<LoanStatementSummary | null>(null);
   const [added, setAdded] = useState<string | null>(null);
   const [bank, setBank] = useState<BankStatementSummary | null>(null);
+  const [telecom, setTelecom] = useState<TelecomBillSummary | null>(null);
+  const [upi, setUpi] = useState<UpiStatementSummary | null>(null);
 
   const check = (t: string) => {
     setMsg(null);
     setAdded(null);
-    const l = readLoanSummary(t);
+    const tb = readTelecomBill(t);
+    setTelecom(tb);
+    if (tb) {
+      setLoan(null);
+      setBank(null);
+      setCard(null);
+      setUpi(null);
+      setFound(null);
+      return;
+    }
+    const u = readUpiSummary(t);
+    setUpi(u);
+    const l = u ? null : readLoanSummary(t);
     setLoan(l);
-    const b = !l && source === 'bank' ? readBankSummary(t) : null;
+    const b = !l && !u && source === 'bank' ? readBankSummary(t) : null;
     setBank(b && b.morningBalances.length ? b : null);
-    setCard(l ? null : source === 'card' || /credit\s+card/i.test(t) ? readCardSummary(t) : null);
+    setCard(
+      l || u ? null : source === 'card' || /credit\s+card/i.test(t) ? readCardSummary(t) : null,
+    );
     if (l) {
       setFound(null);
       return;
@@ -125,11 +148,27 @@ export function StatementImport() {
     if (r) setAdded('card');
   };
 
+  const gold = loan?.productKind === 'gold_loan_od';
   const addLoan = () => {
     if (!loan) return;
-    const r = mutate((d) => addLoanEmi(d, loan, ctx()), { message: "Added this loan's EMI" });
+    const r = gold
+      ? mutate((d) => addGoldLoan(d, loan, ctx()), { message: 'Added this loan' })
+      : mutate((d) => addLoanEmi(d, loan, ctx()), { message: "Added this loan's EMI" });
     if (r) setAdded('loan');
   };
+
+  const addTelecom = () => {
+    if (!telecom) return;
+    const r = mutate((d) => addTelecomBill(d, telecom, ctx()), { message: 'Added this bill' });
+    if (r) setAdded('telecom');
+  };
+
+  const useUpi = () => {
+    if (!upi) return;
+    update((d) => ({ ...d, savings: saveUpiStatement(d.savings, upi) }));
+    setAdded('upi');
+  };
+  const upiCard = upi ? upi.creditCardSpend.reduce((s2, c) => s2 + c.totalInr, 0) : 0;
 
   const useBank = () => {
     if (!bank) return;
@@ -341,7 +380,156 @@ export function StatementImport() {
             )}
           </section>
         )}
-        {loan && (
+        {telecom && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-tel-h"
+            data-testid="sv-telecom-summary"
+          >
+            <h2 id="sv-tel-h">
+              {telecom.service === 'fiber' ? 'JioFiber bill' : `${telecom.provider} Postpaid bill`}
+            </h2>
+            <dl className="sv-summary">
+              <div>
+                <dt>Plan</dt>
+                <dd>{telecom.planName ?? 'Not shown'}</dd>
+              </div>
+              <div>
+                <dt>Total payable</dt>
+                <dd>{money(telecom.totalPayableInr)}</dd>
+              </div>
+              <div>
+                <dt>Due date</dt>
+                <dd>{telecom.dueDate ? formatDate(telecom.dueDate) : 'Not shown'}</dd>
+              </div>
+              {telecom.periodFrom && telecom.periodTo && (
+                <div>
+                  <dt>Bill period</dt>
+                  <dd>
+                    {formatDate(telecom.periodFrom)} to {formatDate(telecom.periodTo)}
+                  </dd>
+                </div>
+              )}
+              {telecom.includes.map((x) => (
+                <div key={x}>
+                  <dt>Includes</dt>
+                  <dd>{x}</dd>
+                </div>
+              ))}
+              {telecom.addOns.map((a) => (
+                <div key={a.label}>
+                  <dt>{a.label}</dt>
+                  <dd>{rupees(a.amountInr)} a month</dd>
+                </div>
+              ))}
+              {telecom.dataUsedGb !== null && telecom.planDataGb !== null && (
+                <div>
+                  <dt>Data used</dt>
+                  <dd>
+                    {telecom.dataUsedGb} GB of {telecom.planDataGb} GB
+                  </dd>
+                </div>
+              )}
+            </dl>
+            {added === 'telecom' ? (
+              <Notice>Added. It will show on Home with its due date.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary press jelly align-start"
+                disabled={!telecom.dueDate}
+                onClick={addTelecom}
+              >
+                Add this bill
+              </button>
+            )}
+          </section>
+        )}
+        {upi && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-upi-h"
+            data-testid="sv-upi-summary"
+          >
+            <h2 id="sv-upi-h">{upi.app} statement</h2>
+            <dl className="sv-summary">
+              {upi.periodFrom && upi.periodTo && (
+                <div>
+                  <dt>Period</dt>
+                  <dd>
+                    {formatDate(upi.periodFrom)} to {formatDate(upi.periodTo)}
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt>UPI payments on credit cards</dt>
+                <dd>{upiCard > 0 ? rupees(upiCard) : 'None found'}</dd>
+              </div>
+              <div>
+                <dt>Repeat payments found</dt>
+                <dd>{(upi.recurring ?? []).length}</dd>
+              </div>
+            </dl>
+            {added === 'upi' ? (
+              <Notice>Saved. Savings now uses these payments.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-secondary press jelly align-start"
+                onClick={useUpi}
+              >
+                Use this statement for Savings
+              </button>
+            )}
+          </section>
+        )}
+        {loan && gold && (
+          <section
+            className="panel2 stack-16"
+            aria-labelledby="sv-gold-h"
+            data-testid="sv-gold-summary"
+          >
+            <h2 id="sv-gold-h">{loan.lender ?? 'Bank'} gold loan (overdraft)</h2>
+            <dl className="sv-summary">
+              <div>
+                <dt>Limit</dt>
+                <dd>{money(loan.limitInr ?? null)}</dd>
+              </div>
+              <div>
+                <dt>Outstanding</dt>
+                <dd>{money(loan.outstandingInr ?? null)}</dd>
+              </div>
+              <div>
+                <dt>Interest rate</dt>
+                <dd>
+                  {loan.annualRatePct !== null ? `${loan.annualRatePct}% a year` : 'Not shown'}
+                </dd>
+              </div>
+              <div>
+                <dt>Latest monthly interest</dt>
+                <dd>{money((loan.monthlyInterest ?? []).slice(-1)[0]?.amountInr ?? null)}</dd>
+              </div>
+              {(loan.irregularityCount ?? 0) > 0 && (
+                <div>
+                  <dt>Irregular or SMA recoveries</dt>
+                  <dd>{loan.irregularityCount}</dd>
+                </div>
+              )}
+            </dl>
+            {added === 'loan' ? (
+              <Notice>Added. It will show on Home at each month end.</Notice>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary press jelly align-start"
+                onClick={addLoan}
+              >
+                Add this loan
+              </button>
+            )}
+          </section>
+        )}
+        {loan && !gold && (
           <section
             className="panel2 stack-16"
             aria-labelledby="sv-loan-h"
@@ -395,7 +583,7 @@ export function StatementImport() {
             )}
           </section>
         )}
-        {found && found.length === 0 && !msg && !card && (
+        {found && found.length === 0 && !msg && !card && !upi && (
           <Notice>
             Read {lineCount} payment line{lineCount === 1 ? '' : 's'} but found nothing that
             repeats. A longer statement (two or three months) helps.

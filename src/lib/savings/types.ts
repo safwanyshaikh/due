@@ -281,6 +281,8 @@ export interface TelecomBillSummary {
   /** What the plan says it includes, as printed (e.g. "13 paid OTT apps (list not printed)"). */
   includes: string[];
   ottAppCount: number | null;
+  /** Set when the user added this bill as an obligation. */
+  obligationId?: string | null;
 }
 
 /** Additive: UPI-app (Google Pay) statement totals that matter to Savings. */
@@ -290,6 +292,8 @@ export interface UpiStatementSummary {
   periodTo: string | null;
   /** UPI payments charged to credit cards, per card. */
   creditCardSpend: { paidBy: string; last4: string | null; totalInr: number; months: number }[];
+  /** Recurring candidates found in the app statement (for statement-only overlap moves). */
+  recurring?: RecurringCandidate[];
 }
 
 /** Additive: a loan "Statement of Account" or welcome letter, read on the device. Rupees. */
