@@ -36,6 +36,33 @@ function integrationTone(s: string): 'ok' | 'review' | 'error' | 'neutral' {
   return s === 'ok' ? 'ok' : s === 'degraded' ? 'review' : s === 'error' ? 'error' : 'neutral';
 }
 
+/** Sends one test email to the signed-in admin (POST /api/admin/health/smtp-test). */
+export function SmtpTest() {
+  const canEdit = useCan('admin');
+  const action = useAction();
+  if (!canEdit) return null;
+  return (
+    <section className="card" aria-label="Send test email">
+      <h2>Send test email</h2>
+      <p className="muted small">Sends one message to your own admin email address to confirm sign-in links and reminders can be delivered. Limited to 5 per 10 minutes.</p>
+      <LiveStatus status={action.status} />
+      <button
+        className="btn"
+        type="button"
+        disabled={action.busy}
+        onClick={() =>
+          void action.run(async () => {
+            const r = await api.post<{ sentTo: string }>('/admin/health/smtp-test');
+            return r;
+          }, 'Test email accepted by the mail server. Check your inbox (and spam).')
+        }
+      >
+        Send test email to me
+      </button>
+    </section>
+  );
+}
+
 export function IntegrationsPage() {
   const res = useApi<{ integrations: Record<string, IntegrationEntry>; checkedAt: string }>('/admin/health/integrations');
   const entries = Object.entries(res.data?.integrations ?? {});
@@ -74,6 +101,7 @@ export function IntegrationsPage() {
         </TableWrap>
         <p className="muted small">Checked {formatIST(res.data?.checkedAt)}</p>
       </Loadable>
+      <SmtpTest />
     </>
   );
 }

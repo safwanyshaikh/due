@@ -1,5 +1,6 @@
 import type { Queryable } from '../db.js';
 import { many, one } from '../db.js';
+import { getSettings } from '../settings.js';
 
 export const PLAN_IDS = ['free', 'plus', 'household'] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
@@ -36,7 +37,7 @@ export interface PlanRow {
   price_inr_yearly: number | null;
   active: boolean;
   features: string[];
-  provider_plan_ids: { monthly?: string; yearly?: string };
+  provider_plan_ids: { monthly?: string; yearly?: string; cashfree?: { monthly?: string; yearly?: string } };
   sort_order: number;
   updated_at: Date;
 }
@@ -46,10 +47,31 @@ export interface Entitlement {
   status: 'active' | 'cancelled' | 'expired';
   billingPeriod: BillingPeriod | null;
   periodEnd: string | null;
-  channel: 'razorpay' | 'manual' | null;
+  channel: 'razorpay' | 'cashfree' | 'manual' | null;
   features: Feature[];
+  /** True when Plus features are granted by the free public beta rather than by a purchase. */
+  beta?: boolean;
   /** Set when features come from membership of someone else's household. */
   householdAccess: { householdId: string; role: 'owner' | 'member' } | null;
+}
+
+export interface BetaState {
+  /** True while the free beta is switched on and its end date (if any) has not passed. */
+  plusFree: boolean;
+  /** The announced last day of the beta (YYYY-MM-DD, IST), or null. */
+  endsOn: string | null;
+}
+
+/** The beta runs through the end of `endsOn` in IST; with no date it runs until the admin turns it off. */
+export function betaState(settings: { 'beta.plus_free': boolean; 'beta.ends_on': string | null }, now: Date): BetaState {
+  const endsOn = settings['beta.ends_on'];
+  const endMs = endsOn ? Date.parse(`${endsOn}T23:59:59.999+05:30`) : null;
+  const expired = endMs !== null && now.getTime() > endMs;
+  return { plusFree: settings['beta.plus_free'] === true && !expired, endsOn };
+}
+
+export async function getBetaState(q: Queryable, now: Date): Promise<BetaState> {
+  return betaState(await getSettings(q), now);
 }
 
 export async function listPlans(q: Queryable): Promise<PlanRow[]> {
@@ -78,7 +100,7 @@ export async function computeEntitlement(q: Queryable, accountId: string, now: D
     status: 'active' | 'cancelled' | 'expired';
     billing_period: BillingPeriod | null;
     current_period_end: Date | null;
-    channel: 'razorpay' | 'manual' | null;
+    channel: 'razorpay' | 'cashfree' | 'manual' | null;
   }>(q, 'SELECT plan, status, billing_period, current_period_end, channel FROM entitlements WHERE account_id = $1', [accountId]);
 
   let plan: PlanId = 'free';
@@ -92,6 +114,13 @@ export async function computeEntitlement(q: Queryable, accountId: string, now: D
     } else {
       status = 'expired';
     }
+  }
+  // Free public beta: accounts without paid access get Plus. Paid and household plans are never downgraded.
+  let beta = false;
+  if (plan === 'free' && (await getBetaState(q, now)).plusFree && byId.has('plus')) {
+    plan = 'plus';
+    status = 'active';
+    beta = true;
   }
   const features = new Set<Feature>(featuresOf(byId.get(plan)));
   const membership = await one<{ household_id: string; role: 'owner' | 'member'; owner_account_id: string }>(
@@ -117,10 +146,11 @@ export async function computeEntitlement(q: Queryable, accountId: string, now: D
   return {
     plan,
     status,
-    billingPeriod: plan === 'free' ? null : (row?.billing_period ?? null),
-    periodEnd: plan === 'free' ? null : (row?.current_period_end?.toISOString() ?? null),
-    channel: plan === 'free' ? null : (row?.channel ?? null),
+    billingPeriod: plan === 'free' || beta ? null : (row?.billing_period ?? null),
+    periodEnd: plan === 'free' || beta ? null : (row?.current_period_end?.toISOString() ?? null),
+    channel: plan === 'free' || beta ? null : (row?.channel ?? null),
     features: FEATURE_KEYS.filter((f) => features.has(f)),
+    ...(beta ? { beta: true } : {}),
     householdAccess,
   };
 }

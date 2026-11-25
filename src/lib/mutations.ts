@@ -106,6 +106,10 @@ export interface ObligationDraft {
   notes?: string;
   reminder?: Commitment['reminder'];
   status?: Status;
+  /** Profile the due belongs to (default Personal). */
+  profileId?: string;
+  /** For a separate entity's loan: the person signed it as guarantor or co-applicant. */
+  signedAs?: Commitment['signedAs'];
 }
 
 /** Builds a complete obligation record (not yet stored). */
@@ -146,6 +150,8 @@ export function buildObligation(draft: ObligationDraft, now: string): Commitment
     pendingChanges: [],
     deletedAt: null,
     mergedInto: null,
+    profileId: draft.profileId || 'personal',
+    ...(draft.signedAs ? { signedAs: draft.signedAs } : {}),
   };
   return withMirrors(c);
 }
@@ -178,6 +184,8 @@ export function updateObligation(
       | 'reminder'
       | 'accountNickname'
       | 'type'
+      | 'profileId'
+      | 'signedAs'
     >
   >,
   ctx: MutationContext,

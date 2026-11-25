@@ -12,7 +12,7 @@ export interface PlanRow {
   priceInrYearly: number | null;
   active: boolean;
   features: string[];
-  providerPlanIds: { monthly?: string; yearly?: string };
+  providerPlanIds: { monthly?: string; yearly?: string; cashfree?: { monthly?: string; yearly?: string } };
   sortOrder: number;
   updatedAt: string;
 }
@@ -21,8 +21,11 @@ interface PlansResponse {
   items: PlanRow[];
   total: number;
   paymentsConfigured: boolean;
+  billingProvider?: 'razorpay' | 'cashfree';
+  providers?: { razorpay: { configured: boolean }; cashfree: { configured: boolean; env: 'sandbox' | 'production' | null } };
 }
 
+const CASHFREE_PLAN_ID = /^[A-Za-z0-9_-]{3,40}$/;
 const RAZORPAY_PLAN_ID = /^plan_[A-Za-z0-9]{6,40}$/;
 
 /** Price text → number (rupees, 2 decimals) or null when blank. Returns undefined when invalid. */
@@ -36,7 +39,7 @@ export function parsePrice(text: string): number | null | undefined {
 /** Builds the PATCH body for /admin/plans/:id from the form, or returns an error message. */
 export function planPatch(
   plan: PlanRow,
-  form: { monthly: string; yearly: string; active: boolean; rzpMonthly: string; rzpYearly: string },
+  form: { monthly: string; yearly: string; active: boolean; rzpMonthly: string; rzpYearly: string; cfMonthly?: string; cfYearly?: string },
 ): { body: Record<string, unknown> } | { error: string } {
   const monthly = parsePrice(form.monthly);
   const yearly = parsePrice(form.yearly);
@@ -49,7 +52,19 @@ export function planPatch(
     if (v && !RAZORPAY_PLAN_ID.test(v)) return { error: `The ${k} Razorpay plan id should look like plan_XXXXXXXX.` };
     ids[k] = v || null;
   }
-  const body: Record<string, unknown> = { active: form.active, providerPlanIds: ids };
+  const providerPlanIds: Record<string, unknown> = { ...ids };
+  if (form.cfMonthly !== undefined || form.cfYearly !== undefined) {
+    const cf: Record<string, string | null> = {};
+    for (const [k, v] of [
+      ['monthly', (form.cfMonthly ?? '').trim()],
+      ['yearly', (form.cfYearly ?? '').trim()],
+    ] as const) {
+      if (v && !CASHFREE_PLAN_ID.test(v)) return { error: `The ${k} Cashfree plan id may use letters, digits, - and _ (3 to 40 characters).` };
+      cf[k] = v || null;
+    }
+    providerPlanIds.cashfree = cf;
+  }
+  const body: Record<string, unknown> = { active: form.active, providerPlanIds };
   if (plan.id !== 'free') {
     body.priceInrMonthly = monthly;
     body.priceInrYearly = yearly;
@@ -63,12 +78,22 @@ function PlanCard({ plan, canEdit, onSaved }: { plan: PlanRow; canEdit: boolean;
   const [active, setActive] = useState(plan.active);
   const [rzpMonthly, setRzpMonthly] = useState(plan.providerPlanIds?.monthly ?? '');
   const [rzpYearly, setRzpYearly] = useState(plan.providerPlanIds?.yearly ?? '');
+  const [cfMonthly, setCfMonthly] = useState(plan.providerPlanIds?.cashfree?.monthly ?? '');
+  const [cfYearly, setCfYearly] = useState(plan.providerPlanIds?.cashfree?.yearly ?? '');
   const action = useAction();
   const paid = plan.id !== 'free';
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const p = planPatch(plan, { monthly, yearly, active, rzpMonthly, rzpYearly });
+    const p = planPatch(plan, {
+      monthly,
+      yearly,
+      active,
+      rzpMonthly,
+      rzpYearly,
+      // Only send Cashfree ids when edited, so saving a Razorpay-era plan does not touch them.
+      ...(cfMonthly !== (plan.providerPlanIds?.cashfree?.monthly ?? '') || cfYearly !== (plan.providerPlanIds?.cashfree?.yearly ?? '') ? { cfMonthly, cfYearly } : {}),
+    });
     if ('error' in p) {
       action.setStatus({ kind: 'error', text: p.error });
       return;
@@ -100,6 +125,12 @@ function PlanCard({ plan, canEdit, onSaved }: { plan: PlanRow; canEdit: boolean;
               </Field>
               <Field label="Razorpay plan id (yearly)">
                 {(id) => <input id={id} value={rzpYearly} placeholder="plan_…" onChange={(e) => setRzpYearly(e.target.value)} />}
+              </Field>
+              <Field label="Cashfree plan id (monthly)" hint="The plan_id you created in Cashfree Dashboard → Subscriptions → Plans.">
+                {(id, h) => <input id={id} aria-describedby={h} value={cfMonthly} placeholder="due_plus_monthly" onChange={(e) => setCfMonthly(e.target.value)} />}
+              </Field>
+              <Field label="Cashfree plan id (yearly)">
+                {(id) => <input id={id} value={cfYearly} placeholder="due_plus_yearly" onChange={(e) => setCfYearly(e.target.value)} />}
               </Field>
             </>
           ) : null}
@@ -134,9 +165,16 @@ export function PlansPage() {
       <PageHeader title="Plans">
         {canEdit ? 'Prices, availability and Razorpay plan ids. The app reads these; nothing is hard-coded.' : 'Read-only. Admins can change plans.'}
       </PageHeader>
+      {res.data?.billingProvider ? (
+        <p className="msg" role="note" data-testid="active-provider">
+          Active payment provider: <strong>{res.data.billingProvider === 'cashfree' ? 'Cashfree' : 'Razorpay'}</strong>
+          {res.data.billingProvider === 'cashfree' && res.data.providers?.cashfree.env ? ` (${res.data.providers.cashfree.env})` : ''}. Set on the server with{' '}
+          <code>BILLING_PROVIDER</code>; each plan keeps one id per provider below.
+        </p>
+      ) : null}
       {res.data && !res.data.paymentsConfigured ? (
         <p className="msg msg-error" role="note">
-          Razorpay keys are not configured on the server, so checkout is unavailable whatever is set here.
+          {res.data.billingProvider === 'cashfree' ? 'Cashfree' : 'Razorpay'} keys are not configured on the server, so checkout is unavailable whatever is set here.
         </p>
       ) : null}
       <Loadable loading={res.loading} error={res.error} empty={items.length === 0}>

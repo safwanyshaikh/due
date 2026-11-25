@@ -58,7 +58,10 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await mockSavingsApi(page);
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('due:landing-opened', '1');
+    });
 
     await addItem(page, 'Uber One', '149');
     await addItem(page, 'Zomato Gold', '149');

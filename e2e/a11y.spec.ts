@@ -21,7 +21,10 @@ for (const [name, hash] of PAGES) {
   test(`${name} has no serious or critical axe violations`, async ({ page }) => {
     if (name === 'Empty home') {
       await page.goto('/');
-      await page.evaluate(() => localStorage.clear());
+      await page.evaluate(() => {
+        localStorage.clear();
+        localStorage.setItem('due:landing-opened', '1');
+      });
     } else await addGuestObligation(page);
     await page.goto(`/${hash}`);
     await page.reload();

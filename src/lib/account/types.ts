@@ -37,6 +37,8 @@ export interface Entitlements {
   periodEnd: string | null;
   channel: 'razorpay' | 'manual' | null;
   features: Feature[];
+  /** True when Plus is granted by the free public beta rather than bought. */
+  beta?: boolean;
   householdAccess: { householdId: string; role: 'owner' | 'member' } | null;
 }
 
@@ -141,6 +143,7 @@ export interface PublicPlan {
 
 export interface PublicPlansResponse {
   currency: 'INR';
+  beta?: { plusFree: boolean; endsOn: string | null };
   plans: PublicPlan[];
   terms: {
     renewal: string;
@@ -149,13 +152,19 @@ export interface PublicPlansResponse {
     legalReviewStatus: 'pending' | 'reviewed';
   };
   cancellationPath: string;
-  purchaseChannel: 'razorpay' | null;
+  purchaseChannel: 'razorpay' | 'cashfree' | null;
+  tax?: {
+    note: string | null;
+    pricesIncludeTax?: boolean;
+    gstRegistered?: boolean;
+    gstin?: string | null;
+  };
   paymentsAvailable: boolean;
 }
 
 export interface CheckoutResponse {
-  provider: 'razorpay';
-  keyId: string;
+  provider: 'razorpay' | 'cashfree';
+  keyId?: string;
   subscriptionId: string;
   shortUrl: string | null;
   plan: Exclude<PlanId, 'free'>;

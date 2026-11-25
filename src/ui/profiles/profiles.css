@@ -1,0 +1,163 @@
+/* Profiles: Due v2 tokens (8px spacing, 48px targets, light/dark). Touch first: no hover-only UI. */
+.pf-switch {
+  display: flex;
+  gap: var(--s-1);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* Room for the focus ring inside the scroller. */
+  padding: 4px 2px;
+  margin: 0 -2px;
+  scroll-padding-inline: max(16px, env(safe-area-inset-left));
+}
+.pf-switch::-webkit-scrollbar {
+  display: none;
+}
+.pf-switch .chip-btn {
+  flex: none;
+  max-width: 70vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-scope-note {
+  margin: 0;
+}
+
+.pf-question {
+  border-color: var(--accent);
+}
+.pf-question-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pf-answers,
+.pf-list,
+.pf-answered {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.pf-answer {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px var(--s-2);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pf-answer-main {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pf-answer:active,
+.pf-choice:active {
+  border-color: var(--accent);
+}
+
+.pf-choices {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.pf-choices > legend {
+  padding: 0;
+  margin-bottom: var(--s-1);
+  font-weight: 600;
+}
+.pf-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px var(--s-2);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+}
+.pf-choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pf-choice input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+.pf-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pf-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+.pf-seg:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pf-seg input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.pf-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+.pf-card p {
+  margin: 0;
+}
+.pf-merge {
+  align-items: flex-end;
+}
+.pf-answered li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-1);
+  min-height: 48px;
+  flex-wrap: wrap;
+}
+.pf-answered li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pf-loan-entity {
+  overflow-wrap: anywhere;
+}

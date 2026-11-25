@@ -1719,3 +1719,47 @@ h1.greet-hello {
     animation: none !important;
   }
 }
+
+/* ---------- Safe areas (notch, status bar, home indicator; the native apps use viewport-fit=cover) ---------- */
+.shell {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.toast-region {
+  top: calc(60px + env(safe-area-inset-top, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sheet {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .sheet {
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Footer links are tap targets too: 48px. */
+p.start-legal a {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0.75rem 0.5rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Touch targets: every button-like control and disclosure row is at least 48px tall. */
+.btn,
+button.btn,
+a.btn {
+  min-height: 48px;
+}
+summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}

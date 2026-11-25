@@ -1,3 +1,4 @@
+import { getPlatform, isNative } from '../lib/platform';
 import type { ReactNode } from 'react';
 import { formatDate } from '../lib/dates';
 import { formatINR } from '../lib/money';
@@ -77,6 +78,11 @@ export function CommitmentRow({
 }
 
 export function download(filename: string, text: string, mime: string) {
+  // A WebView cannot save a blob download; hand the file to the native share sheet (save to Files, send, etc.).
+  if (isNative()) {
+    void getPlatform().saveAndShareFile(filename, text, mime);
+    return;
+  }
   const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement('a');
   a.href = url;

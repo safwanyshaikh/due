@@ -1,4 +1,5 @@
-import { useEffect, useId, useState, type ChangeEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
+import { onPendingFile, takePendingFile } from '../lib/pendingFile';
 import { importItemFromText, type ImportItem } from '../../lib/imports';
 import { exportStructuredRecord, organiseSharedSms, type UserEvent } from '../../lib/intake';
 import { redactSensitive, type Redaction } from '../../lib/sensitive';
@@ -184,6 +185,10 @@ export function UploadScreen() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    await processFile(file);
+  };
+
+  const processFile = async (file: File) => {
     setProblem(null);
     if (!(await allowance.take())) {
       setProblem(UPLOAD_LIMIT_COPY);
@@ -212,6 +217,20 @@ export function UploadScreen() {
     );
     setPhase('review');
   };
+
+  // A PDF opened with Due / shared to Due (native app) arrives here and goes through the same path as a chosen file.
+  const processRef = useRef(processFile);
+  useEffect(() => {
+    processRef.current = processFile;
+  });
+  useEffect(() => {
+    const take = () => {
+      const f = takePendingFile();
+      if (f) void processRef.current(f);
+    };
+    take();
+    return onPendingFile(take);
+  }, []);
 
   const reset = (message: string) => {
     setDraft(null);

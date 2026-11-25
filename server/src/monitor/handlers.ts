@@ -1,6 +1,7 @@
 import { PermanentJobError, registerHandler, type JobContext } from '../queue/index.js';
 import { metrics } from '../observability/metrics.js';
 import { MonitorRuntime } from './runtime.js';
+import { parseOfferInboxJob } from '../offerinbox/service.js';
 import { recomputeAllStatuses, refreshOfferSource } from './offers.js';
 
 /**
@@ -56,4 +57,5 @@ export function registerOfferHandlers(): void {
   registered = true;
   registerHandler('offers.refresh', offersRefreshJob);
   registerHandler('offers.recompute', offersRecomputeJob);
+  registerHandler('offers.inbox_parse', parseOfferInboxJob);
 }

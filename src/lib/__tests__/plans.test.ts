@@ -40,7 +40,7 @@ describe('plans config', () => {
       'manual_obligations',
       'next_7_30_view',
     ]);
-    expect(PREMIUM_FEATURES).toHaveLength(9);
+    expect(PREMIUM_FEATURES).toHaveLength(10);
     expect(FEATURES.household_sharing.plans).toEqual(['household']);
   });
 });

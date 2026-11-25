@@ -220,7 +220,7 @@ svg.i {
 .seg button {
   border: 0;
   background: none;
-  min-height: 40px;
+  min-height: 48px;
   padding: 0 18px;
   border-radius: 99px;
   font-weight: 500;
@@ -239,8 +239,8 @@ svg.i {
   color: var(--muted);
 }
 .stepper button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border: 0;
   background: none;
   border-radius: 50%;
@@ -509,7 +509,7 @@ button.primary,
   font-weight: 600;
 }
 .btn.quiet {
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 18px;
 }
 .btn.warn,
@@ -650,7 +650,7 @@ button.item:hover {
 }
 details.panel summary {
   cursor: pointer;
-  min-height: 32px;
+  min-height: 48px;
 }
 .bignum {
   font-size: 1.6rem;

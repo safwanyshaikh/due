@@ -10,6 +10,7 @@ import { describeApiError } from '../account/useIntake';
 import { useToast } from '../components/Toast';
 import { Badge, ConfirmButton, Notice, Panel } from '../components/ui';
 import { modeLabel, usePublicStatus } from '../lib/platform';
+import { betaLabel } from '../components/BetaBadge';
 
 export const PAYMENTS_UNAVAILABLE_COPY =
   'Payments aren’t available yet. Due stays free to use and nothing will be charged.';
@@ -116,6 +117,7 @@ export function PlansScreen() {
   const [choice, setChoice] = useState<{ plan: PlanId; cadence: BillingPeriod } | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
   const [checkoutErr, setCheckoutErr] = useState<string | null>(null);
+  const [phone, setPhone] = useState('');
 
   useEffect(() => {
     client
@@ -138,7 +140,14 @@ export function PlansScreen() {
     const m = st.state === 'ok' ? st.value.integrations[needs] : 'unknown';
     return m === 'live' ? null : `Not included yet: ${modeLabel(m).toLowerCase()}`;
   };
-  const paymentsOn = !!live?.paymentsAvailable;
+  // Free public beta: Plus is free, nothing can be bought. Driven by /api/public/status (or the plans payload).
+  const beta =
+    st.state === 'ok' && st.value.beta.plusFree
+      ? st.value.beta
+      : live?.beta?.plusFree
+        ? live.beta
+        : null;
+  const paymentsOn = !!live?.paymentsAvailable && !beta;
   const current = entitlements?.plan ?? 'free';
   const chosen = choice ? plans.find((p) => p.id === choice.plan) : null;
   const chosenPrice =
@@ -146,10 +155,17 @@ export function PlansScreen() {
   const renewal = choice ? priceDisclosure(choice.plan, choice.cadence, today) : null;
 
   const buy = async () => {
+    if (beta) return;
     if (!choice || choice.plan === 'free') return;
     setCheckoutErr(null);
     try {
-      setCheckout(await client.checkout(choice.plan, choice.cadence));
+      setCheckout(
+        await client.checkout(
+          choice.plan,
+          choice.cadence,
+          live?.purchaseChannel === 'cashfree' ? phone.trim() : undefined,
+        ),
+      );
     } catch (e) {
       if (e instanceof AccountApiError && (e.code === 'payments_unavailable' || e.status === 503))
         setCheckoutErr(PAYMENTS_UNAVAILABLE_COPY);
@@ -167,6 +183,17 @@ export function PlansScreen() {
         </p>
       </header>
 
+      {beta && (
+        <Notice tone="ok" title={betaLabel(beta)}>
+          <span data-testid="beta-notice">
+            Plus is free for everyone who signs in while Due is in public beta. Nothing is charged
+            and there is nothing to buy.
+            {beta.endsOn
+              ? ` The beta runs until ${formatDate(beta.endsOn)}; we will tell you before anything changes.`
+              : ' We will tell you before anything changes.'}
+          </span>
+        </Notice>
+      )}
       {state.kind === 'loading' && <p className="muted">Loading plans…</p>}
       {state.kind === 'indicative' && (
         <Notice tone="warn" title="Indicative prices">
@@ -174,18 +201,21 @@ export function PlansScreen() {
           the server.
         </Notice>
       )}
-      {live && !paymentsOn && <Notice tone="warn">{PAYMENTS_UNAVAILABLE_COPY}</Notice>}
+      {live && !paymentsOn && !beta && <Notice tone="warn">{PAYMENTS_UNAVAILABLE_COPY}</Notice>}
       <p className="muted small" data-testid="tax-note">
         All prices in Indian rupees (INR).{' '}
         {taxNote ? taxNote : 'Any applicable tax is shown before you pay.'}
       </p>
-      {status === 'signed_in' && current !== 'free' && entitlements?.periodEnd && (
-        <Notice tone="info" title={`Your plan: ${current === 'plus' ? 'Plus' : current}`}>
-          {entitlements.status === 'cancelled'
-            ? `Cancelled. Access continues until ${formatDate(entitlements.periodEnd.slice(0, 10))}; no further charges.`
-            : `Renews on ${formatDate(entitlements.periodEnd.slice(0, 10))}${entitlements.billingPeriod ? ` (${entitlements.billingPeriod})` : ''}. Manage or cancel below.`}
-        </Notice>
-      )}
+      {status === 'signed_in' &&
+        current !== 'free' &&
+        !entitlements?.beta &&
+        entitlements?.periodEnd && (
+          <Notice tone="info" title={`Your plan: ${current === 'plus' ? 'Plus' : current}`}>
+            {entitlements.status === 'cancelled'
+              ? `Cancelled. Access continues until ${formatDate(entitlements.periodEnd.slice(0, 10))}; no further charges.`
+              : `Renews on ${formatDate(entitlements.periodEnd.slice(0, 10))}${entitlements.billingPeriod ? ` (${entitlements.billingPeriod})` : ''}. Manage or cancel below.`}
+          </Notice>
+        )}
 
       <ul className="plans">
         {plans.map((p) => (
@@ -197,15 +227,20 @@ export function PlansScreen() {
                 <Badge tone="warm">Indicative</Badge>
               )}
             </div>
-            <p className="amt plan-price">
-              {p.monthlyInr === null && p.yearlyInr === null
-                ? 'Free'
-                : [
-                    p.monthlyInr !== null ? `${formatINR(p.monthlyInr * 100)}/month` : null,
-                    p.yearlyInr !== null ? `${formatINR(p.yearlyInr * 100)}/year` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' or ')}
+            <p
+              className="amt plan-price"
+              data-testid={beta && p.id !== 'free' ? 'plan-beta-price' : undefined}
+            >
+              {beta && p.id !== 'free'
+                ? 'Free during beta'
+                : p.monthlyInr === null && p.yearlyInr === null
+                  ? 'Free'
+                  : [
+                      p.monthlyInr !== null ? `${formatINR(p.monthlyInr * 100)}/month` : null,
+                      p.yearlyInr !== null ? `${formatINR(p.yearlyInr * 100)}/year` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' or ')}
             </p>
             {p.id === 'plus' ? (
               <ul className="feat-list" data-testid="plus-features">
@@ -225,7 +260,7 @@ export function PlansScreen() {
                 ))}
               </ul>
             )}
-            {p.id !== 'free' && (
+            {p.id !== 'free' && !beta && (
               <div className="btn-row">
                 {p.monthlyInr !== null && (
                   <button
@@ -261,7 +296,7 @@ export function PlansScreen() {
         ))}
       </ul>
 
-      {choice && chosen && (
+      {!beta && choice && chosen && (
         <Panel title="Before you buy" id="pl-disc">
           <dl className="kv">
             <div>
@@ -290,7 +325,9 @@ export function PlansScreen() {
               <dd>
                 {live?.purchaseChannel === 'razorpay'
                   ? 'Razorpay (cards, UPI, net banking)'
-                  : 'Not available yet'}
+                  : live?.purchaseChannel === 'cashfree'
+                    ? 'Cashfree (UPI AutoPay or card)'
+                    : 'Not available yet'}
               </dd>
             </div>
             <div>
@@ -329,14 +366,34 @@ export function PlansScreen() {
               Sign in to continue
             </a>
           ) : (
-            <button
-              type="button"
-              className="btn btn-primary press"
-              disabled={!paymentsOn || !chosen.checkout[choice.cadence] || current !== 'free'}
-              onClick={() => void buy()}
-            >
-              Continue to secure payment
-            </button>
+            <>
+              {live?.purchaseChannel === 'cashfree' && (
+                <label className="field">
+                  <span>Mobile number for UPI AutoPay or card setup</span>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    maxLength={10}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    data-testid="checkout-phone"
+                  />
+                </label>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary press"
+                disabled={
+                  !paymentsOn ||
+                  !chosen.checkout[choice.cadence] ||
+                  current !== 'free' ||
+                  (live?.purchaseChannel === 'cashfree' && !/^[6-9]\d{9}$/.test(phone))
+                }
+                onClick={() => void buy()}
+              >
+                Continue to secure payment
+              </button>
+            </>
           )}
           {(!paymentsOn || !chosen.checkout[choice.cadence]) && (
             <p className="muted small">{PAYMENTS_UNAVAILABLE_COPY}</p>
@@ -347,7 +404,8 @@ export function PlansScreen() {
               {formatINR(checkout.amountInr * 100)} · {checkout.renewal}.{' '}
               {checkout.shortUrl ? (
                 <a href={checkout.shortUrl} rel="noopener noreferrer">
-                  Open Razorpay to complete payment
+                  Open {checkout.provider === 'cashfree' ? 'Cashfree' : 'Razorpay'} to complete
+                  payment
                 </a>
               ) : (
                 'The payment link wasn’t provided. Try again later.'

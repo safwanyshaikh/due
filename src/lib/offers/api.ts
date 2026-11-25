@@ -1,8 +1,9 @@
 /**
- * Client for Due's monitoring service: GET `${VITE_API_BASE}/api/public/catalog`.
+ * Client for Due's monitoring service: GET `${VITE_API_ORIGIN}/api/public/catalog`.
  * This is the only network call in the consumer app. It sends no user data: no cookies,
  * no query parameters, no request body.
  */
+import { apiOrigin } from '../platform/config';
 import { computeStatus } from './status';
 import { isSafeHttpUrl, kindForCategory } from './sources';
 import type {
@@ -25,8 +26,7 @@ export const CATALOG_CACHE_KEY = 'due:catalog-cache:v1';
 export const DEFAULT_TIMEOUT_MS = 10_000;
 
 export function apiBase(): string {
-  const raw = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
-  return raw.trim().replace(/\/+$/, '');
+  return apiOrigin();
 }
 
 export function catalogUrl(base: string = apiBase()): string {

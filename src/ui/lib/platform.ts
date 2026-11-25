@@ -25,6 +25,10 @@ export interface PublicStatus {
     gmail: IntegrationMode;
     billing: IntegrationMode;
   };
+  /** Free public beta: Plus features are free while plusFree is true. endsOn is YYYY-MM-DD or null. */
+  beta: { plusFree: boolean; endsOn: string | null };
+  /** Store links set by an admin; null hides the matching button. */
+  apps: { androidUrl: string | null; iosUrl: string | null };
 }
 
 export interface Subprocessor {
@@ -88,7 +92,15 @@ const asMode = (v: unknown): IntegrationMode =>
 
 /** Normalises a status payload; unknown values become 'not_configured' (never 'live'). */
 export function normaliseStatus(raw: unknown): PublicStatus {
-  const r = (raw ?? {}) as { incident?: unknown; integrations?: Record<string, unknown> };
+  const r = (raw ?? {}) as {
+    incident?: unknown;
+    integrations?: Record<string, unknown>;
+    beta?: { plusFree?: unknown; endsOn?: unknown };
+    apps?: { androidUrl?: unknown; iosUrl?: unknown };
+  };
+  const httpsUrl = (v: unknown): string | null =>
+    typeof v === 'string' && /^https:\/\/\S+$/.test(v) ? v : null;
+  const betaEnds = r.beta?.endsOn;
   const i = r.integrations ?? {};
   const inc = r.incident as PublicStatus['incident'] | undefined;
   return {
@@ -105,6 +117,12 @@ export function normaliseStatus(raw: unknown): PublicStatus {
       inbound: asMode(i.inbound),
       gmail: asMode(i.gmail),
       billing: asMode(i.billing),
+    },
+    apps: { androidUrl: httpsUrl(r.apps?.androidUrl), iosUrl: httpsUrl(r.apps?.iosUrl) },
+    beta: {
+      plusFree: r.beta?.plusFree === true,
+      endsOn:
+        typeof betaEnds === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(betaEnds) ? betaEnds : null,
     },
   };
 }

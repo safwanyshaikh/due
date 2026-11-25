@@ -1,3 +1,4 @@
+import { isMobileOrigin } from '../http/security.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { addMinutes } from '../clock.js';
@@ -198,7 +199,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   );
 
   /** Consumes a magic link (single use, 15 min) and opens a session; creates the account on first sign-in. */
-  async function verify(req: FastifyRequest, reply: FastifyReply, token: string, deviceLabel: string | null) {
+  async function verify(req: FastifyRequest, reply: FastifyReply, token: string, deviceLabel: string | null, transport: 'cookie' | 'bearer' = 'cookie') {
     const now = clock();
     const result = await withTransaction(pool, async (c) => {
       const link = await one<{ email: string }>(
@@ -231,7 +232,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       await consumerAudit(c, acct.id, 'session.created', 'session', s.publicId, null, { via: 'magic_link' }, now);
       return { acct, created, session: s };
     });
-    setAccountCookie(app, reply, result.session.token);
+    if (transport === 'cookie') setAccountCookie(app, reply, result.session.token);
     return result;
   }
 
@@ -255,12 +256,27 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/account/verify', async (req, reply) => {
     const body = parse(
-      z.object({ token: z.string().min(16).max(256), deviceLabel: z.string().trim().min(1).max(80).optional() }).strict(),
+      z
+        .object({
+          token: z.string().min(16).max(256),
+          deviceLabel: z.string().trim().min(1).max(80).optional(),
+          tokenTransport: z.enum(['cookie', 'bearer']).optional(),
+        })
+        .strict(),
       normaliseKeys(req.body),
     );
-    const r = await verify(req, reply, body.token, body.deviceLabel ?? null);
+    // Bearer transport is for the native app only: it must come from a configured Capacitor origin.
+    const bearer = body.tokenTransport === 'bearer';
+    if (bearer && !isMobileOrigin(req.headers.origin, config.mobileAppOrigins))
+      throw new AppError(400, 'bearer_not_allowed', 'Bearer sessions are only issued to the Due mobile app');
+    const r = await verify(req, reply, body.token, body.deviceLabel ?? null, bearer ? 'bearer' : 'cookie');
     const ent = await computeEntitlement(pool, r.acct.id, clock());
-    return { account: accountView(r.acct), created: r.created, entitlements: ent };
+    return {
+      account: accountView(r.acct),
+      created: r.created,
+      entitlements: ent,
+      ...(bearer ? { sessionToken: r.session.token, tokenType: 'Bearer' } : {}),
+    };
   });
 
   // ---- Profile, sessions/devices ---------------------------------------------------------------
@@ -437,7 +453,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       throw new AppError(400, 'invalid_confirmation', 'The confirmation token is invalid or expired. Request a new one.');
     }
     const ent = await entitlementOf(req);
-    if (ent.channel === 'razorpay' && ent.status === 'active') {
+    if ((ent.channel === 'razorpay' || ent.channel === 'cashfree') && ent.status === 'active') {
       throw new AppError(409, 'active_subscription', 'Cancel your subscription first (it stays active until the period ends), then delete your account.');
     }
     // Asynchronous: the account and its sessions are disabled now; the account.delete job removes the data and

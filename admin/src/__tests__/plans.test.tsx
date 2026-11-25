@@ -56,3 +56,21 @@ describe('plans page', () => {
     expect(screen.getByText(/Razorpay keys are not configured/)).toBeTruthy();
   });
 });
+
+describe('plans: payment provider', () => {
+  it('shows the active provider, and builds per-provider plan ids', () => {
+    const plus = { id: 'plus', name: 'Plus' } as PlanRow;
+    const p = planPatch(plus, { monthly: '179', yearly: '', active: true, rzpMonthly: '', rzpYearly: '', cfMonthly: 'due_plus_monthly', cfYearly: '' });
+    expect(p).toEqual({
+      body: { active: true, providerPlanIds: { monthly: null, yearly: null, cashfree: { monthly: 'due_plus_monthly', yearly: null } }, priceInrMonthly: 179, priceInrYearly: null },
+    });
+    expect(planPatch(plus, { monthly: '1', yearly: '', active: true, rzpMonthly: '', rzpYearly: '', cfMonthly: 'bad id!' })).toHaveProperty('error');
+  });
+
+  it('names the active provider on the page', async () => {
+    mockFetch((url) => (url === '/api/admin/plans' ? { body: { items: rows, total: 3, paymentsConfigured: false, billingProvider: 'cashfree', providers: { razorpay: { configured: false }, cashfree: { configured: false, env: null } } } } : undefined));
+    renderAs('admin', <PlansPage />, '/plans');
+    expect((await screen.findByTestId('active-provider')).textContent).toContain('Cashfree');
+    expect(screen.getAllByLabelText('Cashfree plan id (monthly)').length).toBeGreaterThan(0);
+  });
+});

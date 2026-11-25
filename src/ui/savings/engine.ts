@@ -51,6 +51,7 @@ import {
   type StatementLine,
 } from '../../lib/savings';
 import type { AppData } from '../../lib/types';
+import { withMoveProfiles } from '../../lib/profiles';
 
 export type CommunityRow = CommunityItem;
 
@@ -79,7 +80,8 @@ export function computeMovesFor(
 ): { moves: Move[]; research: ResearchNeed[] } {
   try {
     const r = computeMoves(data, catalog, now);
-    return { moves: r.moves, research: r.research };
+    // Each move carries the profile (Personal or a business) of the due it is about.
+    return { moves: withMoveProfiles(r.moves, data), research: r.research };
   } catch {
     return { moves: [], research: [] };
   }

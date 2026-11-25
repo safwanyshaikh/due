@@ -11,6 +11,7 @@ import { camel, camelAll, normaliseKeys } from '../../util.js';
 import { count } from './helpers.js';
 
 const price = z.number().min(0).max(1_000_000).multipleOf(0.01).nullable();
+const cashfreePlanId = z.string().trim().regex(/^[A-Za-z0-9_-]{3,40}$/, 'Cashfree plan ids use letters, digits, - and _ (3 to 40 characters)');
 const providerId = z.string().trim().regex(/^plan_[A-Za-z0-9]{6,40}$/, 'Razorpay plan ids look like plan_XXXXXXXX');
 
 /** Plans (prices are editable here, never hard-coded in the UI) and consumer counts. */
@@ -19,7 +20,18 @@ export async function consumerAdminRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/plans', async () => {
     const rows = await listPlans(pool);
-    return { items: camelAll(rows), total: rows.length, paymentsConfigured: Boolean(app.deps.config.razorpay) };
+    const cfg = app.deps.config;
+    const active = cfg.billingProvider;
+    return {
+      items: camelAll(rows),
+      total: rows.length,
+      paymentsConfigured: active === 'cashfree' ? Boolean(cfg.cashfree) : Boolean(cfg.razorpay),
+      billingProvider: active,
+      providers: {
+        razorpay: { configured: Boolean(cfg.razorpay) },
+        cashfree: { configured: Boolean(cfg.cashfree), env: cfg.cashfree?.env ?? null },
+      },
+    };
   });
 
   app.patch('/plans/:id', { preHandler: requireRole('admin') }, async (req) => {
@@ -32,7 +44,14 @@ export async function consumerAdminRoutes(app: FastifyInstance): Promise<void> {
           priceInrYearly: price.optional(),
           active: z.boolean().optional(),
           features: z.array(z.enum(FEATURE_KEYS)).max(FEATURE_KEYS.length).optional(),
-          providerPlanIds: z.object({ monthly: providerId.nullable().optional(), yearly: providerId.nullable().optional() }).strict().optional(),
+          providerPlanIds: z
+            .object({
+              monthly: providerId.nullable().optional(),
+              yearly: providerId.nullable().optional(),
+              cashfree: z.object({ monthly: cashfreePlanId.nullable().optional(), yearly: cashfreePlanId.nullable().optional() }).strict().optional(),
+            })
+            .strict()
+            .optional(),
         })
         .strict(),
       normaliseKeys(req.body),
@@ -40,7 +59,16 @@ export async function consumerAdminRoutes(app: FastifyInstance): Promise<void> {
     const row = await withTransaction(pool, async (c) => {
       const before = await one<Record<string, unknown> & { provider_plan_ids: Record<string, string> }>(c, 'SELECT * FROM plans WHERE id = $1 FOR UPDATE', [id]);
       if (!before) throw notFound('Plan not found');
-      let providerIds = before.provider_plan_ids ?? {};
+      let providerIds: Record<string, unknown> = { ...(before.provider_plan_ids ?? {}) };
+      if (body.providerPlanIds?.cashfree) {
+        const cf = { ...((providerIds.cashfree as Record<string, string> | undefined) ?? {}) };
+        for (const k of ['monthly', 'yearly'] as const) {
+          const v = body.providerPlanIds.cashfree[k];
+          if (v === null) delete cf[k];
+          else if (v !== undefined) cf[k] = v;
+        }
+        providerIds.cashfree = cf;
+      }
       if (body.providerPlanIds) {
         providerIds = { ...providerIds };
         for (const k of ['monthly', 'yearly'] as const) {

@@ -3,7 +3,7 @@
  * Every identity carries its own consent, status, last scan, disconnect and delete controls; the server links
  * identities only to the signed-in Due account and never merges them by sender address.
  *
- * Requests send `credentials: 'include'` and `X-Requested-With: due-app` (CSRF guard). Errors are
+ * Requests send `credentials: 'include'` (web; native uses a bearer token and `omit`) and `X-Requested-With: due-app` (CSRF guard). Errors are
  * `AccountApiError` with the server's `{ error: { code, message, details } }` payload.
  */
 import {
@@ -14,6 +14,7 @@ import {
   type AccountClientOptions,
   type FetchLike,
 } from './client';
+import { authInit } from '../platform/session';
 
 export type IdentityKind = 'gmail' | 'work' | 'family' | 'forwarding';
 export type IdentityStatus = 'active' | 'paused' | 'disconnected' | 'error';
@@ -77,9 +78,11 @@ export function createRequester(opts: AccountClientOptions = {}): Requester {
   const doFetch: FetchLike = opts.fetch ?? ((input, init) => globalThis.fetch(input, init));
   const timeoutMs = opts.timeoutMs ?? 15_000;
   return async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+    const auth = await authInit();
     const headers: Record<string, string> = {
       Accept: 'application/json',
       [CSRF_HEADER]: CSRF_VALUE,
+      ...auth.headers,
     };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const controller = new AbortController();
@@ -89,7 +92,7 @@ export function createRequester(opts: AccountClientOptions = {}): Requester {
       res = await doFetch(`${base}${path}`, {
         method,
         headers,
-        credentials: 'include',
+        credentials: auth.credentials,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });

@@ -17,6 +17,8 @@ export interface AppDeps {
   mailer: Mailer | null;
   runtime: MonitorRuntime;
   monitor: MonitorContext;
+  /** Network access for payment-provider calls; tests inject a mock. Defaults to global fetch (resolved per call). */
+  fetchImpl?: typeof fetch;
 }
 
 declare module 'fastify' {

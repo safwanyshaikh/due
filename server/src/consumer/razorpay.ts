@@ -125,6 +125,7 @@ export async function applySubscriptionState(
   sub: RazorpaySubscription,
   now: Date,
   source: string,
+  channel: 'razorpay' | 'cashfree' = 'razorpay',
 ): Promise<{ applied: boolean; accountId: string | null }> {
   const known = await one<{ account_id: string | null; plan: PlanId; billing_period: BillingPeriod; status: string }>(
     q,
@@ -180,14 +181,14 @@ export async function applySubscriptionState(
   const effective: EntStatus =
     status === 'active' && before?.status === 'cancelled' && before.provider_ref === sub.id ? 'cancelled' : status;
   const periodEnd = sub.current_end ? new Date(sub.current_end * 1000) : (before?.current_period_end ?? null);
-  const after = { plan, billing_period: period, status: effective, current_period_end: periodEnd, channel: 'razorpay', provider_ref: sub.id };
+  const after = { plan, billing_period: period, status: effective, current_period_end: periodEnd, channel, provider_ref: sub.id };
   await q.query(
     `INSERT INTO entitlements (account_id, plan, billing_period, status, current_period_end, channel, provider_ref, updated_at)
-     VALUES ($1,$2,$3,$4,$5,'razorpay',$6,$7)
+     VALUES ($1,$2,$3,$4,$5,$8,$6,$7)
      ON CONFLICT (account_id) DO UPDATE SET plan = EXCLUDED.plan, billing_period = EXCLUDED.billing_period,
        status = EXCLUDED.status, current_period_end = EXCLUDED.current_period_end, channel = EXCLUDED.channel,
        provider_ref = EXCLUDED.provider_ref, updated_at = EXCLUDED.updated_at`,
-    [accountId, plan, period, effective, periodEnd, sub.id, now],
+    [accountId, plan, period, effective, periodEnd, sub.id, now, channel],
   );
   await consumerAudit(q, accountId, `entitlement.${source}`, 'entitlement', accountId, before, after, now);
   return { applied: true, accountId };

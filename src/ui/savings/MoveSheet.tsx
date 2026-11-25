@@ -124,12 +124,15 @@ export function MoveSheet({
   onClose,
   onMark,
   onOverride,
+  profileNote,
 }: {
   move: Move;
   status: MoveStatus;
   onClose: () => void;
   onMark: (status: MoveStatus) => void;
   onOverride: (key: string, value: number | null) => void;
+  /** Information line for a business profile's move (GST input tax credit), or null. */
+  profileNote?: string | null;
 }) {
   const settled = status === 'done' || status === 'dismissed';
   return (
@@ -231,6 +234,11 @@ export function MoveSheet({
         )}
 
         {move.legalNote && <p className="muted small sv-legal">{move.legalNote}</p>}
+        {profileNote && (
+          <p className="muted small sv-legal" data-testid="move-profile-note">
+            {profileNote}
+          </p>
+        )}
         <p className="muted small">
           Due never switches, cancels or pays anything. You decide on the provider’s own page.
         </p>

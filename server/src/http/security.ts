@@ -34,6 +34,70 @@ export function cspFor(path: string): string {
   return APP_CSP;
 }
 
+/** API areas the native app may call cross-origin (all others stay same-origin only). */
+const MOBILE_CREDENTIALED_PREFIXES = ['/api/account', '/api/intake', '/api/telemetry'];
+const MOBILE_PUBLIC_PREFIXES = ['/api/public', '/api/health'];
+const MOBILE_ALLOWED_HEADERS = 'Authorization, Content-Type, X-Requested-With, Accept';
+
+const underPrefix = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
+
+/** True when the request's Origin is one of the configured native-app origins. */
+export function isMobileOrigin(origin: string | undefined, mobileOrigins: readonly string[]): boolean {
+  return origin !== undefined && mobileOrigins.includes(origin);
+}
+
+/** The bearer token in `Authorization: Bearer <token>`, or null. */
+export function bearerToken(req: FastifyRequest): string | null {
+  const h = req.headers.authorization;
+  if (typeof h !== 'string') return null;
+  const m = /^Bearer ([A-Za-z0-9_-]{16,200})$/.exec(h);
+  return m ? m[1]! : null;
+}
+
+/**
+ * CORS for the native app, deliberately narrow: only the configured Capacitor origins, only the consumer
+ * API (GET-only for /api/public and /api/health), and never `Access-Control-Allow-Credentials`. The native
+ * app authenticates with a bearer token, so no cookie is ever sent or accepted cross-origin. Admin, auth,
+ * billing and inbound routes get no CORS headers for any origin.
+ */
+export function registerMobileCors(app: FastifyInstance, mobileOrigins: readonly string[]): void {
+  if (mobileOrigins.length === 0) return;
+  const methodsFor = (path: string): string | null =>
+    MOBILE_CREDENTIALED_PREFIXES.some((p) => underPrefix(path, p))
+      ? 'GET, POST, PUT, PATCH, DELETE'
+      : MOBILE_PUBLIC_PREFIXES.some((p) => underPrefix(path, p))
+        ? 'GET'
+        : null;
+
+  app.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (req.method !== 'OPTIONS') return;
+    const origin = req.headers.origin;
+    if (!isMobileOrigin(origin, mobileOrigins)) return;
+    const methods = methodsFor(req.url.split('?')[0]!);
+    const asked = req.headers['access-control-request-method'];
+    if (!methods || typeof asked !== 'string' || !methods.split(', ').includes(asked.toUpperCase())) return;
+    return reply
+      .code(204)
+      .header('Access-Control-Allow-Origin', origin!)
+      .header('Access-Control-Allow-Methods', methods)
+      .header('Access-Control-Allow-Headers', MOBILE_ALLOWED_HEADERS)
+      .header('Access-Control-Max-Age', '600')
+      .header('Vary', 'Origin')
+      .send();
+  });
+
+  app.addHook('onSend', async (req: FastifyRequest, reply: FastifyReply, payload) => {
+    const origin = req.headers.origin;
+    if (!isMobileOrigin(origin, mobileOrigins) || reply.hasHeader('Access-Control-Allow-Origin')) return payload;
+    const methods = methodsFor(req.url.split('?')[0]!);
+    if (!methods) return payload;
+    if (req.method === 'OPTIONS') return payload;
+    reply.header('Access-Control-Allow-Origin', origin!);
+    reply.header('Vary', 'Origin');
+    return payload;
+  });
+}
+
 function requestOrigin(req: FastifyRequest): string {
   return `${req.protocol}://${req.host}`;
 }
@@ -52,7 +116,11 @@ const CSRF_PREFIXES: [string, string][] = [
  * (cannot be sent cross-site without a CORS preflight, which we never grant) and, when the
  * browser sends Origin, it must be this server's own origin.
  */
-export function registerCsrfGuard(app: FastifyInstance, publicBaseUrl: string | null): void {
+export function registerCsrfGuard(
+  app: FastifyInstance,
+  publicBaseUrl: string | null,
+  mobileOrigins: readonly string[] = [],
+): void {
   const allowed = new Set<string>();
   if (publicBaseUrl) allowed.add(new URL(publicBaseUrl).origin);
   app.addHook('onRequest', async (req: FastifyRequest) => {
@@ -65,7 +133,10 @@ export function registerCsrfGuard(app: FastifyInstance, publicBaseUrl: string | 
     }
     const origin = req.headers.origin;
     if (origin !== undefined) {
-      const ok = allowed.has(origin) || origin === requestOrigin(req);
+      // Native-app origins are accepted only on the consumer API (never admin) and are bearer-only: the auth
+      // hook ignores cookies for them, so there is no ambient credential for a forged request to ride on.
+      const mobileOk = rule[1] === 'due-app' && isMobileOrigin(origin, mobileOrigins);
+      const ok = allowed.has(origin) || origin === requestOrigin(req) || mobileOk;
       if (!ok) throw new AppError(403, 'csrf_rejected', 'Cross-origin request rejected');
     }
   });

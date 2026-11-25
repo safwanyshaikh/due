@@ -4,6 +4,7 @@ import { metrics } from '../observability/metrics.js';
 import type { JobContext } from '../queue/index.js';
 import { consumerAudit } from './context.js';
 import { applySubscriptionState, RazorpayClient } from './razorpay.js';
+import { CashfreeClient, toNeutralSubscription } from './cashfree.js';
 
 /**
  * Daily `billing.reconcile`: re-reads every non-terminal Razorpay subscription from the provider and applies its
@@ -12,25 +13,34 @@ import { applySubscriptionState, RazorpayClient } from './razorpay.js';
  */
 export async function reconcileBilling(job: JobContext): Promise<void> {
   const { pool, clock, config, log, fetchImpl } = job.deps;
-  if (!config.razorpay) {
-    log.info({ outcome: 'not_configured' }, 'billing reconcile skipped: Razorpay not configured');
+  if (!config.razorpay && !config.cashfree) {
+    log.info({ outcome: 'not_configured' }, 'billing reconcile skipped: no payment provider configured');
     metrics.inc('billing.reconcile', { outcome: 'not_configured' });
     return;
   }
-  const rp = new RazorpayClient(config.razorpay, fetchImpl ?? globalThis.fetch);
-  const subs = await many<{ id: string }>(
+  const rp = config.razorpay ? new RazorpayClient(config.razorpay, fetchImpl ?? globalThis.fetch) : null;
+  const cf = config.cashfree ? new CashfreeClient(config.cashfree, fetchImpl ?? globalThis.fetch) : null;
+  const subs = await many<{ id: string; provider: string }>(
     pool,
-    `SELECT DISTINCT id FROM (
-       SELECT id FROM billing_subscriptions WHERE status NOT IN ('cancelled','completed','expired')
-       UNION SELECT provider_ref AS id FROM entitlements WHERE channel = 'razorpay' AND provider_ref IS NOT NULL AND status <> 'expired'
+    `SELECT DISTINCT ON (id) id, provider FROM (
+       SELECT id, provider FROM billing_subscriptions WHERE status NOT IN ('cancelled','completed','expired')
+       UNION SELECT provider_ref AS id, channel AS provider FROM entitlements WHERE channel IN ('razorpay','cashfree') AND provider_ref IS NOT NULL AND status <> 'expired'
      ) s WHERE id IS NOT NULL ORDER BY id LIMIT 5000`,
   );
   let applied = 0;
   let errors = 0;
-  for (const { id } of subs) {
+  for (const { id, provider } of subs) {
     try {
-      const sub = await rp.fetchSubscription(id);
-      const r = await withTransaction(pool, (c) => applySubscriptionState(c, sub, clock(), 'reconcile'));
+      let r: { applied: boolean };
+      if (provider === 'cashfree') {
+        if (!cf) continue;
+        const sub = toNeutralSubscription(await cf.fetchSubscription(id));
+        r = await withTransaction(pool, (c) => applySubscriptionState(c, sub, clock(), 'reconcile', 'cashfree'));
+      } else {
+        if (!rp) continue;
+        const sub = await rp.fetchSubscription(id);
+        r = await withTransaction(pool, (c) => applySubscriptionState(c, sub, clock(), 'reconcile'));
+      }
       if (r.applied) applied++;
     } catch (err) {
       errors++;

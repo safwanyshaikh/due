@@ -239,3 +239,48 @@
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
+
+.hero-beta {
+  margin: 0.5rem 0 0;
+}
+.hero-benefits {
+  margin: 0.75rem 0 0;
+  padding: 0 0 0 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  line-height: 1.4;
+}
+.start-legal {
+  text-align: center;
+  padding: 0.5rem 0 1rem;
+}
+.start-legal a {
+  padding: 0.5rem 0.25rem;
+  display: inline-block;
+  min-height: 48px;
+}
+
+.landing-cta {
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.landing-cta .btn {
+  min-height: 48px;
+}
+.how-steps {
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+  line-height: 1.4;
+}
+@media (min-width: 720px) {
+  .landing {
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+  .start-hero h1 {
+    font-size: 2.1rem;
+  }
+}

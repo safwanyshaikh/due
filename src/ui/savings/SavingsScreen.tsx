@@ -13,6 +13,10 @@ import { MoveSheet } from './MoveSheet';
 import { CommuteSetup } from './CommuteSetup';
 import { loadCommunity, profileEdits, sendResearch, unsent, type CommunityRow } from './engine';
 import { CONFIDENCE_LABEL, CONFIDENCE_TONE, perMonth, rupees } from './format';
+import { useApp } from '../store';
+import { findProfile, gstNoteFor, profilesOf, PERSONAL_PROFILE_ID } from '../../lib/profiles';
+import { ProfileSwitcher } from '../profiles/ProfileSwitcher';
+import { useProfileSelection } from '../profiles/useProfileSelection';
 import './savings.css';
 
 function MoveRow({
@@ -21,12 +25,15 @@ function MoveRow({
   onOpen,
   done,
   tag = 'Marked done',
+  profileName,
 }: {
   m: Move;
   rank: number;
   onOpen: () => void;
   done?: boolean;
   tag?: string;
+  /** Shown in the "All" view for a business profile's move. */
+  profileName?: string | null;
 }) {
   return (
     <li>
@@ -48,6 +55,7 @@ function MoveRow({
             <Badge tone={CONFIDENCE_TONE[m.confidence]}>{CONFIDENCE_LABEL[m.confidence]}</Badge>
             {m.unverifiedPrice && <Badge tone="warm">{UNVERIFIED_PRICE}</Badge>}
             {done && <Badge tone="calm">{tag}</Badge>}
+            {profileName && <Badge>{profileName}</Badge>}
           </span>
         </span>
         {m.severity === 'urgent' ? (
@@ -115,8 +123,28 @@ function Community() {
 
 export function SavingsScreen() {
   const s = useSavings();
+  const { data } = useApp();
+  const [sel, setSel] = useProfileSelection(data);
   const [openId, setOpenId] = useState<string | null>(null);
   useResearchSender();
+  const multi = profilesOf(data).length > 1;
+  const inScope = (m: Move) => sel === 'all' || (m.profileId ?? PERSONAL_PROFILE_ID) === sel;
+  const open = s.open.filter(inScope);
+  const done = s.done.filter(inScope);
+  const hidden = s.hidden.filter(inScope);
+  const foundMonthlyInr = open.reduce((n, m) => n + m.monthlySavingInr, 0);
+  const scopedMoveIds = new Set(s.all.filter(inScope).map((m) => m.id));
+  const savedMonthlyInr =
+    sel === 'all'
+      ? s.savedMonthlyInr
+      : s.ledger
+          .filter((l) => scopedMoveIds.has(l.moveId))
+          .reduce((n, l) => n + (l.savedMonthlyInr ?? 0), 0);
+  const badge = (m: Move) => {
+    if (!multi || sel !== 'all') return null;
+    const p = findProfile(data, m.profileId ?? PERSONAL_PROFILE_ID);
+    return p && p.kind === 'business' ? p.name : null;
+  };
   const current = s.all.find((m) => m.id === openId) ?? null;
   // The open move can disappear (an edited assumption removes the saving): close the sheet for good
   // so it does not pop open again later, and keep keyboard focus on the page.
@@ -145,20 +173,22 @@ export function SavingsScreen() {
         </p>
       </header>
 
+      <ProfileSwitcher data={data} value={sel} onChange={setSel} />
+
       <section className="sv-totals" aria-label="Savings totals" data-testid="savings-totals">
         <div className="sv-total">
           <h2 className="eyebrow">Found</h2>
           <p className="sv-big amt" data-testid="found-total">
-            {perMonth(s.foundMonthlyInr)}
+            {perMonth(foundMonthlyInr)}
           </p>
           <p className="muted small">
-            {s.open.length} move{s.open.length === 1 ? '' : 's'} to look at
+            {open.length} move{open.length === 1 ? '' : 's'} to look at
           </p>
         </div>
         <div className="sv-total">
           <h2 className="eyebrow">Saved</h2>
           <p className="sv-big amt" data-testid="saved-total">
-            {perMonth(s.savedMonthlyInr)}
+            {perMonth(savedMonthlyInr)}
           </p>
           <p className="muted small">Counted once your bills show the change</p>
         </div>
@@ -183,10 +213,16 @@ export function SavingsScreen() {
           <p className="muted" role="status">
             Price information isn’t available right now, so no moves can be worked out yet.
           </p>
-        ) : s.open.length ? (
+        ) : open.length ? (
           <ol className="sv-moves" data-testid="moves">
-            {s.open.map((m, i) => (
-              <MoveRow key={m.id} m={m} rank={i + 1} onOpen={() => setOpenId(m.id)} />
+            {open.map((m, i) => (
+              <MoveRow
+                key={m.id}
+                m={m}
+                rank={i + 1}
+                onOpen={() => setOpenId(m.id)}
+                profileName={badge(m)}
+              />
             ))}
           </ol>
         ) : (
@@ -225,22 +261,22 @@ export function SavingsScreen() {
         </section>
       </div>
 
-      {s.done.length > 0 && (
+      {done.length > 0 && (
         <section className="stack-12" aria-labelledby="sv-done-h">
           <h2 id="sv-done-h">You did these</h2>
           <ul className="sv-moves">
-            {s.done.map((m, i) => (
+            {done.map((m, i) => (
               <MoveRow key={m.id} m={m} rank={i + 1} done onOpen={() => setOpenId(m.id)} />
             ))}
           </ul>
         </section>
       )}
 
-      {s.hidden.length > 0 && (
+      {hidden.length > 0 && (
         <details className="panel2" data-testid="hidden-moves">
-          <summary>Hidden moves ({s.hidden.length})</summary>
+          <summary>Hidden moves ({hidden.length})</summary>
           <ul className="sv-moves">
-            {s.hidden.map((m, i) => (
+            {hidden.map((m, i) => (
               <MoveRow
                 key={m.id}
                 m={m}
@@ -281,6 +317,7 @@ export function SavingsScreen() {
             setOpenId(null);
           }}
           onOverride={(key, value) => s.edit((st) => profileEdits.setOverride(st, key, value))}
+          profileNote={gstNoteFor(current, data)}
         />
       )}
     </div>

@@ -15,6 +15,9 @@ import { Field, Notice } from '../components/ui';
 import { OfferMatches } from '../components/OfferMatches';
 import { defaultDraft, type RuleDraft } from '../lib/ruleDraft';
 import { nav } from '../lib/nav';
+import { profilesOf, PERSONAL_PROFILE_ID, type SignedAs } from '../../lib/profiles';
+import { BelongsToField } from '../profiles/BelongsToField';
+import { useProfileSelection } from '../profiles/useProfileSelection';
 
 export const AMOUNT_CONFIDENCE_CHOICES: [ValueConfidence, string][] = [
   ['user_entered', 'Entered by me'],
@@ -37,6 +40,11 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
   const [draft, setDraft] = useState<RuleDraft>(() => defaultDraft(addDays(today, 7)));
   const [errors, setErrors] = useState<string[]>([]);
   const members = data.settings.householdMembers ?? [];
+  // A new due starts in the profile shown on Home ("All" → Personal). The person can change it.
+  const [homeSel] = useProfileSelection(data);
+  const [profileId, setProfileId] = useState(homeSel === 'all' ? PERSONAL_PROFILE_ID : homeSel);
+  const [signedAs, setSignedAs] = useState<SignedAs | null>(null);
+  const multi = profilesOf(data).length > 1;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -69,6 +77,8 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
           ownerLabel: owner,
           rail,
           importance,
+          profileId,
+          signedAs: profileId === PERSONAL_PROFILE_ID ? null : signedAs,
         },
         ctx(),
       ),
@@ -121,6 +131,20 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
           ))}
         </div>
       </div>
+
+      {multi && (
+        <BelongsToField
+          data={data}
+          profileId={profileId}
+          signedAs={signedAs}
+          type={type}
+          idPrefix="add"
+          onChange={(p, s) => {
+            setProfileId(p);
+            setSignedAs(s);
+          }}
+        />
+      )}
 
       <Field
         label="Who is it with?"
@@ -183,6 +207,12 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
       <details className="more">
         <summary className="press">More (owner, payment method, importance)</summary>
         <div className="stack-16">
+          {!multi && (
+            <p className="muted small">
+              Is this a business due? <a href="#/profiles">Add a business profile</a> to keep it
+              apart from your own.
+            </p>
+          )}
           <Field label="Whose is it?" htmlFor="add-owner">
             <input
               id="add-owner"

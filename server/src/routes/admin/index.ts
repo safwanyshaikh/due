@@ -10,6 +10,7 @@ import { offerRoutes } from './offers.js';
 import { privacyRoutes } from './privacy.js';
 import { reviewRoutes } from './review.js';
 import { recordRoutes } from './records.js';
+import { offerInboxAdminRoutes } from './offerInbox.js';
 import { savingsAdminRoutes } from './savings.js';
 import { sourceRoutes } from './sources.js';
 import { userRoutes } from './users.js';
@@ -39,4 +40,5 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   await app.register(healthAdminRoutes);
   await app.register(notificationAdminRoutes);
   await app.register(savingsAdminRoutes);
+  await app.register(offerInboxAdminRoutes);
 }

@@ -6,6 +6,7 @@ import type { DuplicateDecision } from './duplicates';
 import type { ReminderState, ReminderSeverity, DeliveryChannel } from './reminderPlan';
 import type { UserEvent } from './intake';
 import type { SavingsState } from './savings/types';
+import type { Profile, ProfileDecision, SignedAs } from './profiles/types';
 
 export type { RecurrenceRule };
 
@@ -204,6 +205,15 @@ export interface Commitment {
   deletedAt?: string | null;
   /** Set when merged into another obligation via a duplicate suggestion. */
   mergedInto?: string | null;
+
+  /* ---------- profiles (additive) ---------- */
+  /** The profile this due belongs to (AppData.profiles). Missing = Personal. */
+  profileId?: string;
+  /**
+   * For a separate entity's loan: the person told Due they signed it as guarantor or co-applicant,
+   * so it can also come to them. null/missing = not said.
+   */
+  signedAs?: SignedAs | null;
 }
 
 /** v2 name for a commitment. */
@@ -303,6 +313,11 @@ export interface AppData {
   reminderStates: ReminderState[];
   /** Savings engine state (profile + ledger). On the device only. */
   savings: SavingsState;
+  /* ---------- profiles (additive) ---------- */
+  /** Personal and business profiles. Always holds the Personal profile. */
+  profiles: Profile[];
+  /** Answers to "Is this your business?" questions (names only), so Due does not ask twice. */
+  profileDecisions: ProfileDecision[];
 }
 
 /** Shape of a v1 dataset (before the v2 migration). */
@@ -315,6 +330,8 @@ export type AppDataV1 = Omit<
   | 'duplicateDecisions'
   | 'reminderStates'
   | 'commitments'
+  | 'profiles'
+  | 'profileDecisions'
 > & {
   version: 1;
   commitments: CommitmentV1[];
@@ -331,6 +348,8 @@ export type CommitmentV1 = Omit<
   | 'pendingChanges'
   | 'deletedAt'
   | 'mergedInto'
+  | 'profileId'
+  | 'signedAs'
 >;
 
 export interface Period {

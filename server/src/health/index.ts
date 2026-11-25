@@ -5,10 +5,24 @@ import type { AppConfig } from '../config.js';
 import type { Queryable } from '../db.js';
 import { one } from '../db.js';
 import { actorOf, currentUser, requireRole } from '../http/context.js';
-import { parse } from '../http/errors.js';
+import { AppError, parse } from '../http/errors.js';
+import { betaState } from '../consumer/entitlements.js';
+import { getSettings } from '../settings.js';
 import { errorReporter } from '../observability/errorReporter.js';
 import { metrics } from '../observability/metrics.js';
 import { queueStats } from '../queue/index.js';
+
+/** Removes the SMTP URL, its password and its user from an error message before it is shown or stored. */
+export function redactSecrets(message: string, smtpUrl: string): string {
+  let out = message.split(smtpUrl).join('[smtp-url]');
+  try {
+    const u = new URL(smtpUrl);
+    for (const secret of [u.password, decodeURIComponent(u.password)]) if (secret) out = out.split(secret).join('[redacted]');
+  } catch {
+    /* not a parseable URL: nothing more to redact */
+  }
+  return out;
+}
 
 export type IntegrationState = 'ok' | 'not_configured' | 'degraded' | 'error';
 export interface IntegrationEntry {
@@ -44,7 +58,18 @@ export function publicModes(config: AppConfig, hasMailer: boolean): { smtp: Publ
   const smtp: PublicMode = !hasMailer || !config.smtpUrl ? 'not_configured' : TEST_SMTP.test(config.smtpUrl) ? 'test_mode' : 'live';
   const inbound: PublicMode = config.inboundEmailDomain && config.inboundWebhookSecret ? 'live' : 'not_configured';
   const gmail: PublicMode = config.gmail?.mode ?? 'not_configured';
-  const billing: PublicMode = !config.razorpay ? 'not_configured' : config.razorpay.keyId.startsWith('rzp_test_') ? 'test_mode' : 'live';
+  const billing: PublicMode =
+    config.billingProvider === 'cashfree'
+      ? !config.cashfree
+        ? 'not_configured'
+        : config.cashfree.env === 'sandbox'
+          ? 'test_mode'
+          : 'live'
+      : !config.razorpay
+        ? 'not_configured'
+        : config.razorpay.keyId.startsWith('rzp_test_')
+          ? 'test_mode'
+          : 'live';
   return { smtp, inbound, gmail, billing };
 }
 
@@ -125,13 +150,17 @@ export async function checkIntegrations(app: FastifyInstance): Promise<Record<st
     detail: `No OCR provider configured: documents are read from extracted/pasted text only. Raw content storage: ${config.dataEncryptionKey ? 'encrypted' : 'disabled'}`,
   };
 
-  if (!config.razorpay) {
-    out.billing = { status: 'not_configured', detail: 'Razorpay keys not set: checkout returns payments_unavailable' };
+  const providerLabel = config.billingProvider === 'cashfree' ? 'Cashfree' : 'Razorpay';
+  if (modes.billing === 'not_configured') {
+    out.billing = {
+      status: 'not_configured',
+      detail: `${providerLabel} keys not set (BILLING_PROVIDER=${config.billingProvider}): checkout returns payments_unavailable`,
+    };
   } else {
     const failures = metrics.counter('billing.webhook', { outcome: 'invalid_signature' }) + metrics.counter('billing.webhook', { outcome: 'error' });
     out.billing = failures
-      ? { status: 'degraded', detail: `${failures} rejected/failed webhook(s) since start (${modes.billing})` }
-      : { status: 'ok', detail: `Razorpay ${modes.billing === 'test_mode' ? 'test mode' : 'live'}` };
+      ? { status: 'degraded', detail: `${failures} rejected/failed webhook(s) since start (${providerLabel}, ${modes.billing})` }
+      : { status: 'ok', detail: `${providerLabel} ${modes.billing === 'test_mode' ? 'test/sandbox mode' : 'live'}` };
   }
 
   const rep = errorReporter();
@@ -172,7 +201,14 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/public/status', async (_req, reply) => {
     reply.header('Cache-Control', 'public, max-age=30');
     const incident: Incident | null = await getIncident(pool).catch(() => null);
-    return { incident, integrations: publicModes(config, Boolean(mailer)) };
+    const settings = await getSettings(pool).catch(() => null);
+    const beta = settings ? betaState(settings, clock()) : { plusFree: false, endsOn: null };
+    return {
+      incident,
+      integrations: publicModes(config, Boolean(mailer)),
+      beta: { plusFree: beta.plusFree, endsOn: beta.endsOn },
+      apps: { androidUrl: settings?.['app.android_url'] ?? null, iosUrl: settings?.['app.ios_url'] ?? null },
+    };
   });
 }
 
@@ -186,6 +222,37 @@ export async function healthAdminRoutes(app: FastifyInstance): Promise<void> {
     // Each integration is a top-level entry (contract); `integrations` repeats them as one map for UIs.
     return { ...integrations, integrations, checkedAt: clock().toISOString(), queueStats: queueDetail, metrics: metrics.snapshot() };
   });
+
+  /**
+   * Sends one test email to the signed-in admin's own address so the founder can confirm SMTP works.
+   * Admin-only, rate-limited, audit-logged. Never echoes SMTP credentials back.
+   */
+  app.post(
+    '/health/smtp-test',
+    { preHandler: requireRole('admin'), config: { rateLimit: { max: 5, timeWindow: '10 minutes' } } },
+    async (req, reply) => {
+      const user = currentUser(req);
+      const { mailer, config } = app.deps;
+      reply.header('Cache-Control', 'no-store');
+      if (!mailer || !config.smtpUrl) {
+        throw new AppError(503, 'smtp_not_configured', 'SMTP_URL is not set on the server, so no email can be sent. See docs/production/EMAIL_SETUP.md.');
+      }
+      const sentAt = clock();
+      try {
+        const info = await mailer.send(
+          [user.email],
+          'Due test email',
+          `This is a test email from Due, requested by ${user.email} at ${sentAt.toISOString()}.\n\nIf you can read this, sign-in links, invites and reminders can be delivered.`,
+        );
+        await writeAudit(pool, actorOf(req), 'health.smtp_test', 'integration', 'smtp', null, { to: user.email, ok: true, messageId: info?.messageId ?? null });
+        return { ok: true, sentTo: user.email, messageId: info?.messageId ?? null, sentAt: sentAt.toISOString() };
+      } catch (err) {
+        const detail = redactSecrets(err instanceof Error ? err.message : String(err), config.smtpUrl).slice(0, 300);
+        await writeAudit(pool, actorOf(req), 'health.smtp_test', 'integration', 'smtp', null, { to: user.email, ok: false, error: detail });
+        throw new AppError(502, 'smtp_send_failed', `The mail server did not accept the test email: ${detail}`);
+      }
+    },
+  );
 
   app.get('/incident', async () => ({ incident: await getIncident(pool) }));
 

@@ -5,8 +5,8 @@ import { AccountProvider } from './account/AccountContext';
 import { CatalogProvider } from './offers/catalogStore';
 import { TopBar } from './components/TopBar';
 import { AccountReturn } from './account/AccountReturn';
-import { Home } from './screens/Home';
-import { StartPaths } from './screens/Landing';
+import { HomeOrLanding, StartPaths } from './screens/Landing';
+import { CompareScreen } from './screens/CompareScreen';
 import { AllPage } from './screens/AllPage';
 import { LegalScreen } from './screens/LegalScreen';
 import { GmailReturnBanner, IncidentBanner } from './components/ShellBanners';
@@ -37,9 +37,13 @@ import { RelayInbox } from './offers/RelayInbox';
 import { SavingsProvider } from './savings/SavingsProvider';
 import { SavingsScreen } from './savings/SavingsScreen';
 import { StatementImport } from './savings/StatementImport';
+import { ProfilesScreen } from './profiles/ProfilesScreen';
 import type { AccountClient } from '../lib/account/client';
 import type { AppData } from '../lib/types';
 import { nav, parseRoute, toHash, type Route } from './lib/nav';
+import { AppLockGate } from './components/AppLockGate';
+import { useNativeShell } from './lib/nativeShell';
+import { useLocalReminders } from './lib/localReminders';
 import { useMotionPreference, useTheme, type ThemeChoice } from './lib/motion';
 import { download } from './common';
 import { ConfirmButton } from './components/ui';
@@ -73,11 +77,13 @@ function UiPrefsProvider({ children }: { children: ReactNode }) {
 function View({ route }: { route: Route }) {
   switch (route.name) {
     case 'home':
-      return <Home />;
+      return <HomeOrLanding />;
     case 'legal':
       return <LegalScreen doc={route.doc} />;
     case 'start':
       return <StartPaths />;
+    case 'compare':
+      return <CompareScreen />;
     case 'all':
     case 'category':
       return <AllPage type={route.type} />;
@@ -135,6 +141,8 @@ function View({ route }: { route: Route }) {
       return <SavingsScreen />;
     case 'savings-import':
       return <StatementImport />;
+    case 'profiles':
+      return <ProfilesScreen />;
   }
 }
 
@@ -191,6 +199,8 @@ function CorruptDataBanner() {
 }
 
 function Shell() {
+  useNativeShell();
+  useLocalReminders();
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash));
   const { persisted } = useApp();
   const mainRef = useRef<HTMLElement>(null);
@@ -258,7 +268,9 @@ export function App({
           <AccountProvider client={client}>
             <CatalogProvider>
               <SavingsProvider>
-                <Shell />
+                <AppLockGate>
+                  <Shell />
+                </AppLockGate>
               </SavingsProvider>
             </CatalogProvider>
           </AccountProvider>

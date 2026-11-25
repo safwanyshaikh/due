@@ -9,6 +9,8 @@ import { metrics } from '../observability/metrics.js';
 import { enqueue } from '../queue/index.js';
 import { sealInbound } from '../queue/handlers.js';
 import { safeEqual } from '../util.js';
+import { getSettings } from '../settings.js';
+import { ingestResearchMail } from '../offerinbox/service.js';
 
 export interface InboundMessage {
   provider: 'postmark' | 'mailgun';
@@ -17,6 +19,10 @@ export interface InboundMessage {
   subject: string | null;
   messageId: string | null;
   text: string;
+  /** Extras used only by the research (offer inbox) path. */
+  html?: string | null;
+  headers?: Record<string, string>;
+  attachments?: { name: string; contentType: string; size: number; contentBase64: string }[];
 }
 
 /** Largest message text accepted for parsing (attachments are never stored). */
@@ -85,7 +91,26 @@ export function fromPostmark(b: Record<string, unknown>): InboundMessage {
     subject: typeof b.Subject === 'string' ? b.Subject : null,
     messageId: mid,
     text,
+    html: typeof b.HtmlBody === 'string' ? b.HtmlBody : null,
+    headers: Object.fromEntries(headers.filter((h) => h.Name && typeof h.Value === 'string').map((h) => [h.Name!.toLowerCase(), h.Value!])),
+    attachments: Array.isArray(b.Attachments)
+      ? (b.Attachments as { Name?: string; ContentType?: string; ContentLength?: number; Content?: string }[])
+          .filter((a) => typeof a.Content === 'string')
+          .map((a) => ({ name: String(a.Name ?? 'attachment').slice(0, 120), contentType: String(a.ContentType ?? '').toLowerCase(), size: Number(a.ContentLength ?? 0), contentBase64: a.Content! }))
+      : [],
   };
+}
+
+function mailgunHeaders(f: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  try {
+    const list = JSON.parse(f['message-headers'] ?? '[]') as unknown;
+    if (Array.isArray(list)) for (const h of list) if (Array.isArray(h) && typeof h[0] === 'string' && typeof h[1] === 'string') out[h[0].toLowerCase()] ??= h[1];
+  } catch {
+    // headers are optional
+  }
+  for (const k of ['X-Mailgun-Spf', 'X-Mailgun-Dkim-Check-Result']) if (f[k]) out[k.toLowerCase()] = f[k];
+  return out;
 }
 
 /** Mailgun routes (form fields) -> InboundMessage. */
@@ -98,6 +123,9 @@ export function fromMailgun(f: Record<string, string>): InboundMessage {
     subject: f.subject ?? f.Subject ?? null,
     messageId: f['Message-Id'] ?? f['message-id'] ?? null,
     text,
+    html: f['body-html'] ?? null,
+    headers: mailgunHeaders(f),
+    attachments: [],
   };
 }
 
@@ -171,6 +199,18 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
     // Mailgun stops retrying on 406; Postmark on 403.
     const rejectCode = msg.provider === 'mailgun' ? 406 : 403;
     const reject = (code: string, message: string) => reply.code(rejectCode).send({ error: { code, message } });
+
+    // Company research mailboxes (newsletter subscriptions) are not user data: they bypass user intake entirely.
+    const research = new Set((await getSettings(pool))['offers.research_addresses']);
+    const researchHit = msg.recipients.find((r) => research.has(r));
+    if (researchHit) {
+      if (Buffer.byteLength(msg.text, 'utf8') > MAX_INBOUND_TEXT_BYTES || Buffer.byteLength(msg.html ?? '', 'utf8') > 2 * MAX_INBOUND_TEXT_BYTES) {
+        return reject('message_too_large', 'Message text is too large');
+      }
+      const r = await ingestResearchMail(pool, config.dataEncryptionKey, msg, researchHit, clock(), req.id);
+      metrics.inc('inbound.received', { duplicate: String(r.duplicate), route: 'research' });
+      return reply.code(200).send({ ok: true, queued: !r.duplicate, research: true, ...r });
+    }
 
     const domain = config.inboundEmailDomain;
     const local = msg.recipients

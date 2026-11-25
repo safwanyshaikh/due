@@ -7,6 +7,7 @@ import { QueueWorker } from './queue/index.js';
 import { workerDepsOf } from './app.js';
 import { resolve } from 'node:path';
 import { SERVER_ROOT } from './paths.js';
+import { seedProviderWatch } from './offerinbox/service.js';
 import { seedSavings } from './savings/repo.js';
 
 async function main(): Promise<void> {
@@ -25,6 +26,13 @@ async function main(): Promise<void> {
     for (const w of seeded.skipped) app.log.warn(w);
   } catch (err) {
     app.log.error({ err }, 'savings seed failed');
+  }
+  try {
+    const w = await seedProviderWatch(pool, resolve(SERVER_ROOT, 'src/seed/provider-watchlist.json'), new Date());
+    if (w.inserted) app.log.info({ providers: w.inserted }, 'provider watchlist seeded');
+    for (const m of w.skipped) app.log.warn(m);
+  } catch (err) {
+    app.log.error({ err }, 'provider watchlist seed failed');
   }
   const scheduler = config.runScheduler ? new Scheduler(app.deps.monitor, config.schedulerTickMs) : null;
   // Normally the separate due-worker service processes the queue; RUN_QUEUE_WORKER=true runs it here instead.

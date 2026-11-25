@@ -191,6 +191,8 @@ export interface Move {
   /** Additive: 'urgent' moves (e.g. an overdue loan in SMA) rank first regardless of saving. */
   /** 'info' moves carry no money claim and rank last. */
   severity?: 'urgent' | 'info';
+  /** Additive: the profile (Personal or a business) the move belongs to. Set by the UI layer. */
+  profileId?: string;
 }
 
 export interface LedgerEntry {
@@ -338,6 +340,11 @@ export interface LoanStatementSummary {
   /** "Irregularity Recovery" / "SMA REC" credits. */
   irregularities?: { date: string; amountInr: number; label: string }[];
   irregularityCount?: number;
+  /**
+   * Additive: co-applicants printed on the loan that are organisations (an LLP, a company, a firm).
+   * People's names are not kept.
+   */
+  coApplicantEntities?: string[];
 }
 
 /**

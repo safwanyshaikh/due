@@ -3,6 +3,7 @@ import type { ImportCandidate } from './csv';
 import { DEFAULT_OFFSETS } from './reminders';
 import { emptyRelay } from './offers/relay';
 import { defaultSavingsState } from './savings/state';
+import { defaultProfiles } from './profiles/profiles';
 
 /** Migrations a freshly created dataset never needs. Keep in sync with migrate.ts. */
 export const CURRENT_MIGRATIONS = ['drop-bundled-examples-v1'] as const;
@@ -42,6 +43,8 @@ export function emptyData(): AppData {
     duplicateDecisions: [],
     reminderStates: [],
     savings: defaultSavingsState(),
+    profiles: defaultProfiles(),
+    profileDecisions: [],
   };
 }
 

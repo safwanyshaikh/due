@@ -3,7 +3,10 @@ import { expect, type Page } from '@playwright/test';
 /** Guest path: Home → Add manually → save one obligation → back on Home with the summary card. */
 export async function addGuestObligation(page: Page, name = 'Netflix', amount = '649') {
   await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('due:landing-opened', '1');
+  });
   await page.goto('/#/add');
   await page.getByLabel('Who is it with?').fill(name);
   await page.getByLabel('Amount (₹)').fill(amount);

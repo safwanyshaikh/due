@@ -17,7 +17,7 @@ This page records what the server enforces today, where in the code, and how to 
 
 ## CORS
 
-Only `GET /api/public/*` (catalog, plans, status, legal) is cross-origin readable. It is restricted to the `PUBLIC_APP_ORIGIN` allowlist, with no credentials. Every other route is same-origin only, because the server never grants CORS for it.
+Only `GET /api/public/*` (catalog, plans, status, legal) is cross-origin readable. It is restricted to the `PUBLIC_APP_ORIGIN` allowlist, with no credentials. Every other route is same-origin only, because the server never grants CORS for it, with one exception: the native mobile app origins (`capacitor://localhost`, `https://localhost`, env `MOBILE_APP_ORIGINS`) may call the consumer API (`/api/account`, `/api/intake`, `/api/telemetry`; GET-only `/api/public`, `/api/health`) with a bearer token, never with credentials/cookies, and never admin/auth/billing/inbound. See `MOBILE.md`.
 
 ## CSRF
 

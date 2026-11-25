@@ -6,7 +6,7 @@ import { dismissDuplicate, mergeDuplicates } from '../../lib/duplicates';
 import { addDays, formatDate, parseISO } from '../../lib/dates';
 import { TYPE_LABELS, TYPES } from '../../lib/status';
 import { CONFIDENCE_LABELS } from '../../lib/provenance';
-import type { Importance, Rail, ValueConfidence } from '../../lib/types';
+import type { AppData, Importance, Rail, ValueConfidence } from '../../lib/types';
 import { useApp } from '../store';
 import { ObligationRow } from './obligation';
 import { Badge } from './ui';
@@ -73,8 +73,9 @@ export function AttentionList({ items }: { items: AttentionItem[] }) {
 const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 /** 30-day cash-flow calendar: unpaid occurrences per day from today. */
-export function CashCalendar() {
-  const { data, today } = useApp();
+export function CashCalendar({ data: scoped }: { data?: AppData } = {}) {
+  const { data: all, today } = useApp();
+  const data = scoped ?? all;
   const end = addDays(today, 29);
   const byDay = useMemo(() => {
     const m = new Map<string, { names: string[]; total: number; unknown: number }>();

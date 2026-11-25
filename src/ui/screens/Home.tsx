@@ -17,6 +17,11 @@ import { greeting, homeTiles, type HomeTile } from '../lib/homeTiles';
 import { inr, weekdayDate } from '../lib/format';
 import { readJsonPref, writeJsonPref } from '../lib/prefs';
 import { HomeSavingsEntry } from '../savings/HomeSavingsEntry';
+import { activeObligations } from '../../lib/obligations';
+import { findProfile, scopeData } from '../../lib/profiles';
+import { ENTITY_EXPLAIN, ENTITY_LABEL } from '../../content/profiles';
+import { ProfileSwitcher } from '../profiles/ProfileSwitcher';
+import { useProfileSelection } from '../profiles/useProfileSelection';
 
 /** Compact summary card: planned this month, next due item with its confidence and source, actions. */
 function SummaryCard({
@@ -163,8 +168,12 @@ function useTileSuccess(tiles: HomeTile[]): Set<string> {
 }
 
 export function Home() {
-  const { data, today } = useApp();
+  const { data: all, today } = useApp();
   const { offers } = useCatalog();
+  const [sel, setSel] = useProfileSelection(all);
+  // Everything below reads the chosen profile's dues only ("All" is the whole dataset).
+  const data = useMemo(() => scopeData(all, sel), [all, sel]);
+  const scopeProfile = sel === 'all' ? null : findProfile(all, sel);
   const tz = data.settings.timezone;
   const s = useMemo(() => homeSummary(data, today, tz), [data, today, tz]);
   const views = useMemo(() => obligationViews(data, today, tz), [data, today, tz]);
@@ -178,7 +187,9 @@ export function Home() {
   const success = useTileSuccess(tiles);
   const [why, setWhy] = useState(false);
   const hi = greeting(new Date(), tz || 'Asia/Kolkata');
-  const empty = views.length === 0 && pendingImports(data).length === 0;
+  const empty =
+    (sel === 'all' ? views.length === 0 : activeObligations(all).length === 0) &&
+    pendingImports(all).length === 0;
   const week = useMemo(() => {
     const end = addDays(today, 6);
     return views.filter((v) => v.date && v.date <= end && v.id !== s.next?.id).slice(0, 6);
@@ -192,6 +203,14 @@ export function Home() {
           {hi.date} · <span title="India Standard Time">IST</span>
         </p>
       </header>
+
+      <ProfileSwitcher data={all} value={sel} onChange={setSel} />
+      {scopeProfile && scopeProfile.kind === 'business' && (
+        <p className="muted small pf-scope-note" data-testid="profile-scope-note">
+          {scopeProfile.name} · {ENTITY_LABEL[scopeProfile.entityType]}.{' '}
+          {ENTITY_EXPLAIN[scopeProfile.entityType]}
+        </p>
+      )}
 
       <SummaryCard
         monthTotal={month.totalPaise}
@@ -261,7 +280,7 @@ export function Home() {
                 estimated={s.next30.estimatedCount}
               />
             </p>
-            <CashCalendar />
+            <CashCalendar data={data} />
           </section>
 
           <nav className="more-links" aria-label="More">

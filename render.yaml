@@ -31,6 +31,16 @@ envVarGroups:
       # the web service only, so set it explicitly: the worker builds reminder links too.
       - key: PUBLIC_BASE_URL
         sync: false
+      # Mobile apps (docs/production/MOBILE.md). Optional; the endpoints return 404 until set.
+      # Android App Links: comma-separated SHA-256 fingerprints of the Play app-signing key (and upload key for sideloads).
+      - key: ANDROID_SHA256_CERT_FINGERPRINTS
+        sync: false
+      # iOS Universal Links: 10-character Apple Developer Team ID.
+      - key: APPLE_TEAM_ID
+        sync: false
+      # Origins the native app runs from; defaults to capacitor://localhost,https://localhost. Leave unset.
+      - key: MOBILE_APP_ORIGINS
+        sync: false
       # Optional: Razorpay Subscriptions (Due's own SaaS billing only).
       - key: RAZORPAY_KEY_ID
         sync: false
@@ -38,6 +48,19 @@ envVarGroups:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+      # Payment gateway for Due's own subscriptions: razorpay (default) or cashfree. See docs/production/PAYMENTS.md.
+      - key: BILLING_PROVIDER
+        value: razorpay
+      - key: CASHFREE_APP_ID
+        sync: false
+      - key: CASHFREE_SECRET_KEY
+        sync: false
+      # Only if Cashfree gives a webhook secret separate from the API secret key.
+      - key: CASHFREE_WEBHOOK_SECRET
+        sync: false
+      # sandbox | production
+      - key: CASHFREE_ENV
+        value: sandbox
       # Optional: email forwarding intake (Plus).
       - key: INBOUND_EMAIL_DOMAIN
         sync: false

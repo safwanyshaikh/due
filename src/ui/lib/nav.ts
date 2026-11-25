@@ -24,6 +24,8 @@ const SIMPLE = [
   'reminders-ics',
   'savings',
   'savings-import',
+  'profiles',
+  'compare',
 ] as const;
 type SimpleName = (typeof SIMPLE)[number];
 
@@ -44,6 +46,13 @@ export interface Nav {
 }
 
 export function parseRoute(hash: string): Route {
+  // The public comparison page is also reachable at /compare (the server serves the app for it).
+  if (
+    !hash.replace(/^#\/?/, '') &&
+    typeof window !== 'undefined' &&
+    window.location.pathname.replace(/\/+$/, '') === '/compare'
+  )
+    return { name: 'compare' };
   const [name, a] = hash.replace(/^#\/?/, '').split('/');
   switch (name) {
     case 'legal':

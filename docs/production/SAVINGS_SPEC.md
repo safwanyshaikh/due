@@ -48,6 +48,30 @@ Admin (`/api/admin/savings/...`, admin auth, audit-logged):
 
 Admin UI page "Savings" with tabs: Modules (the 8-field plug-in form, grouped as Detect / Identify / Rules / Value / Proof / Nudge / Legal / Sources), City packs, Research queue.
 
+## Offer inbox and "what's new" (S)
+
+Provider newsletters reach Due first, and the app tells a person only about changes that match their own data. The server never learns who has which provider.
+
+**Research mailboxes.** Admin setting `offers.research_addresses` (list of full addresses, e.g. `offers@<inbound domain>`). The inbound webhook checks recipients against this list before user aliases. A match is NOT user data: it is stored in `offer_inbox_messages` (raw mail sealed with `DATA_ENCRYPTION_KEY`, wiped after 90 days; only PDF/image attachments under 5 MB are kept) and job `offers.inbox_parse` is queued. User intake tables are never touched. (The job type is `offers.inbox_parse` because queue job types are `area.action`.)
+
+**Parser.** The sender is trusted only when the receiving provider's verdict headers show DKIM `pass` with a signing domain aligned to the From domain (`Authentication-Results`, `DKIM-Signature`, `X-Mailgun-Dkim-Check-Result`). Otherwise, or when no `provider_watch` row owns the domain, the mail is quarantined (`dkim_failed`, `dkim_missing`, `dkim_domain_not_aligned`, `unmatched_sender`), shown in the admin Inbox, and never parsed or published. Verified mail: tracking pixels and click-wrapper links are dropped, landing URLs are canonicalised (https, tracking and identity params stripped, never fetched), and candidates are extracted per line: price (₹), plan name, validity days / expiry date, "free", "cashback", "% off", promo codes (always marked `possiblyPersonal`, kept in admin evidence only, never in the catalog). Personalised mail (name greeting, "your account/plan/coupon", masked card or phone numbers) is stored for research without excerpts and never queued.
+
+**Review.** Each candidate becomes an `offer_review_queue` item with evidence `{sourceKind: 'newsletter', subject, excerpt, link}`: a `new_offer` for unknown offers, or an `offer_observations` row (origin `newsletter`) plus price/expiry/eligibility changes for a known offer. Approving it (existing Change review page) also creates or updates a savings module with status `research` (source kind `official`, `lastVerifiedAt: null`); `POST /api/admin/savings/modules/:id/verify` still needs an official source checked within 30 days. A price learned from mail sets a verified module back to `research`.
+
+**Provider directory.** Table `provider_watch` (slug, display name, sender domains, category, signup URL, research address, status `subscribed|pending|unsubscribed`, last email). Seeded once from `server/src/seed/provider-watchlist.json` (all `pending`; empty-table only). Admin page "Offer inbox": Watchlist (CRUD, mark subscribed, Stale = subscribed with no email in 30 days) and Inbox (parsed mail, candidates, "Unmatched senders" with one-click attach of a domain to a provider, which re-processes the stored mail).
+
+**Change feed (public).** Every module or city-pack write appends to `savings_changes` with the catalog version before and after. `GET /api/public/savings/catalog/changes?since=<catalog version>` returns:
+
+```json
+{ "version": "<current>", "since": "<given>", "reset": false,
+  "changes": [{ "entity": "module", "id": "uber-one-in", "kind": "new|updated|verified|retired", "summary": "Uber: Uber One ₹149 until 2026-12-15", "changedAt": "..." }],
+  "moduleIds": ["uber-one-in"] }
+```
+
+`since` equal to the current version returns no changes. An unknown `since` returns the last 14 days with `reset: true` (the client should refresh the catalog and not notify for old items). Summaries are built from structured fields only, never raw mail text.
+
+**Client flow (U/E, on device).** Keep the last seen catalog `version`. On app open (and in the background when allowed): `GET catalog/changes?since=<version>`; if `changes` is non-empty, refetch the catalog, recompute moves locally, and show (or local-notify) only changes whose module id appears in the person's own moves, obligations or research list, using the `summary` line. Then store the new `version`. Nothing about the person is sent.
+
 ## Engine (E) — pure functions, exported from `src/lib/savings/index.ts`
 
 - `parseStatementText(text, source): StatementLine[]` — pasted or extracted bank/card statement text and CSV (date, narration, debit/credit columns; Indian formats like `05/11/2026`, `05-Nov-26`, `₹1,299.00`, `Dr/Cr`).
@@ -84,6 +108,13 @@ Admin UI page "Savings" with tabs: Modules (the 8-field plug-in form, grouped as
 - Statement import: paste text or upload PDF/CSV (reuse on-device pdf.js and the existing CSV path) → recurring candidates → review → add as obligations with the detected rail.
 - Copy: no guarantee, no minimum-saving claims. Landing hero uses the chosen tagline.
 - Tests: unit + e2e for the main flow at 360 px and 1280 px, axe clean.
+
+## Profiles (Personal and Business, additive)
+
+- `src/lib/profiles/**`: `AppData.profiles` (always holds Personal, id `personal`), `AppData.profileDecisions` (answers, names only), `Commitment.profileId` (missing = Personal) and `Commitment.signedAs` (guarantor / co-applicant on a separate entity's loan). Migration `ensureProfiles` is idempotent and leaves existing records untouched.
+- Contract additions: `Move.profileId?` (set by the UI layer from the move's first due; statement-only moves are Personal) and `LoanStatementSummary.coApplicantEntities?` (organisation co-applicants only; people's names are not kept).
+- `entityCandidates(lines, loans)` returns questions, never decisions. Business moves on spending (not loan or card-debt rates) show one information line about GST input tax credit; no other tax wording.
+- More than one business profile is the `business_profiles` feature (Plus for now; a Business tier is planned; prices unchanged).
 
 ## Done when
 

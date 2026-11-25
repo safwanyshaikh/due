@@ -11,7 +11,8 @@ import type { AppConfig } from './config.js';
 import type { Pool } from './db.js';
 import type { AppDeps } from './http/context.js';
 import { AppError } from './http/errors.js';
-import { registerCsrfGuard, registerSecurityHeaders } from './http/security.js';
+import { wellKnownRoutes } from './routes/wellKnown.js';
+import { bearerToken, isMobileOrigin, registerCsrfGuard, registerMobileCors, registerSecurityHeaders } from './http/security.js';
 import type { MonitorContext } from './monitor/engine.js';
 import { MonitorRuntime } from './monitor/runtime.js';
 import { SERVER_ROOT } from './paths.js';
@@ -48,6 +49,8 @@ export interface BuildAppOptions {
   clock?: Clock;
   mailer?: Mailer | null;
   runtime?: MonitorRuntime;
+  /** Test hook: network access for payment-provider calls. */
+  fetchImpl?: typeof fetch;
   logger?: FastifyServerOptions['logger'];
   /** Test hook: receives every registered route. */
   onRoute?: (route: { method: string | string[]; url: string }) => void;
@@ -109,7 +112,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   const runtime = opts.runtime ?? new MonitorRuntime(config.monitor);
   const monitor: MonitorContext = { pool, clock, mailer: opts.mailer ?? null, runtime, log: app.log };
-  const deps: AppDeps = { pool, config, clock, mailer: opts.mailer ?? null, runtime, monitor };
+  const deps: AppDeps = { pool, config, clock, mailer: opts.mailer ?? null, runtime, monitor, fetchImpl: opts.fetchImpl };
   app.decorate('deps', deps);
   if (opts.onRoute) {
     const cb = opts.onRoute;
@@ -143,7 +146,8 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(rateLimit, { global: true, max: 600, timeWindow: '1 minute' });
 
   registerSecurityHeaders(app, config.isProduction);
-  registerCsrfGuard(app, config.publicBaseUrl);
+  registerMobileCors(app, config.mobileAppOrigins);
+  registerCsrfGuard(app, config.publicBaseUrl, config.mobileAppOrigins);
 
   app.addHook('onRequest', async (req) => {
     const path = req.url.split('?')[0]!;
@@ -166,11 +170,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   app.addHook('onRequest', async (req) => {
     const path = req.url.split('?')[0]!;
     if (!path.startsWith('/api/account') && !path.startsWith('/api/intake') && !path.startsWith('/api/telemetry')) return;
-    const intakeToken = req.cookies[INTAKE_COOKIE];
+    // The native app (Capacitor origin) authenticates with a bearer token only: cookies are never read for it.
+    const mobile = isMobileOrigin(req.headers.origin, config.mobileAppOrigins);
+    const intakeToken = mobile ? undefined : req.cookies[INTAKE_COOKIE];
     if (intakeToken && intakeToken.length <= 200 && !path.startsWith('/api/telemetry')) {
       req.intakeSession = await resolveTempSession(pool, config.sessionSecret, intakeToken, clock());
     }
-    const token = req.cookies[ACCOUNT_COOKIE];
+    const token = mobile ? bearerToken(req) : req.cookies[ACCOUNT_COOKIE];
     if (!token || token.length > 200) return;
     const s = await resolveAccountSession(
       pool,
@@ -201,6 +207,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     return reply.code(status).send({ error: { code, message: status >= 500 ? 'Internal server error' : e.message } });
   });
 
+  await app.register(wellKnownRoutes);
   await app.register(healthRoutes);
   await app.register(legalRoutes);
   await app.register(authRoutes);

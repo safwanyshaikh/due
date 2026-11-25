@@ -14,6 +14,7 @@ const PATHS = {
   shield: 'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zM9 12l2 2 4-4',
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   sms: 'M4 5h16v11H9l-5 4zM8 10h8',
+  briefcase: 'M4 8h16v11H4zM9 8V5h6v3M4 13h16',
   link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
 } as const;
 

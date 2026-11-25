@@ -26,6 +26,7 @@ import {
   type ReminderConsent,
 } from '../lib/reminderConsent';
 import { download } from '../common';
+import { DeviceNotificationsPanel } from '../components/DeviceNotificationsPanel';
 import { localDateTime } from '../lib/format';
 
 const TIMEZONES = [
@@ -108,6 +109,8 @@ export function RemindersScreen() {
           <p>{summary.text}</p>
         </Panel>
       )}
+
+      <DeviceNotificationsPanel />
 
       <ChannelsPanel
         server={server}

@@ -3,6 +3,7 @@
  * Reads printed values only; anything not printed stays null. Account numbers are never kept.
  */
 import { leadingDate, parseAmountCell } from './statement';
+import { looksLikeOrganisation } from '../profiles/detect';
 import type { LoanStatementSummary } from './types';
 
 const NUM = '(\\d{1,3}(?:,\\d{2,3})+(?:\\.\\d{1,2})?|\\d+(?:\\.\\d{1,2})?)';
@@ -71,6 +72,22 @@ function underHeader(lines: string[], header: RegExp, column: number): number | 
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Organisation co-applicants ("Co-Applicant Name(s): ACME ENTERPRISES LLP, RAVI KUMAR" → the LLP).
+ * People's names are dropped: only an entity's name is useful for the "Is this your business?" question.
+ */
+export function coApplicantEntities(text: string): string[] {
+  const out: string[] = [];
+  const re = /Co[-\s]?Applicant(?:'s)?\s+Names?(?:\(s\))?\s*:?[ \t]*([^\n]*)/gi;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    for (const part of m[1].split(/\s*[,;/]\s*|\s{3,}/)) {
+      const name = part.replace(/\s+/g, ' ').trim();
+      if (name && looksLikeOrganisation(name) && !out.includes(name)) out.push(name.slice(0, 60));
+    }
+  }
+  return out;
+}
 
 /** A loan statement or welcome-letter summary, or null when the text is neither. */
 /**
@@ -162,6 +179,7 @@ function parseGoldLoanOd(text: string): LoanStatementSummary {
     penalChargesInr: penal.length ? r2(penal.reduce((s, r) => s + (r.debit as number), 0)) : null,
     irregularities: irregular,
     irregularityCount: irregular.length,
+    ...withEntities(text),
   };
 }
 
@@ -243,7 +261,13 @@ export function parseLoanStatement(text: string): LoanStatementSummary | null {
     disbursementDate: date(text, 'Disbursement\\s+Date'),
     instalmentEndDate: date(text, '(?:Instalment|EMI)\\s+End\\s+date'),
     statementDate: statementDate ? (leadingDate(statementDate)?.iso ?? null) : null,
+    ...withEntities(text),
   };
+}
+
+function withEntities(text: string): Pick<LoanStatementSummary, 'coApplicantEntities'> {
+  const list = coApplicantEntities(text);
+  return list.length ? { coApplicantEntities: list } : {};
 }
 
 /** Key for one loan across statements. */

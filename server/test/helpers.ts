@@ -58,6 +58,7 @@ export async function makeApp(
     env?: Record<string, string>;
     routes?: { method: string | string[]; url: string }[];
     mailer?: Mailer | null;
+    fetchImpl?: typeof fetch;
   } = {},
 ): Promise<FastifyInstance> {
   const app = await buildApp({
@@ -65,6 +66,7 @@ export async function makeApp(
     config: testConfig(opts.env),
     clock: opts.clock?.fn,
     mailer: opts.mailer ?? null,
+    fetchImpl: opts.fetchImpl,
     logger: false,
     onRoute: opts.routes ? (r) => opts.routes!.push(r) : undefined,
   });

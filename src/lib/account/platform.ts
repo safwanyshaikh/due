@@ -20,6 +20,10 @@ export interface PublicStatus {
     gmail: IntegrationMode;
     billing: IntegrationMode;
   };
+  /** Free public beta: Plus features are free while plusFree is true. endsOn is YYYY-MM-DD or null. */
+  beta: { plusFree: boolean; endsOn: string | null };
+  /** Store links set by an admin; null hides the matching button. */
+  apps: { androidUrl: string | null; iosUrl: string | null };
 }
 
 export interface LegalContent {

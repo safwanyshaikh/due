@@ -1,0 +1,105 @@
+name: Mobile
+
+# Android debug APK (+ signed release AAB when the keystore secrets exist) on ubuntu,
+# iOS simulator build on macOS (no signing). Secrets are documented in docs/production/MOBILE.md.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'android/**'
+      - 'ios/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.env.native'
+      - '.github/workflows/mobile.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'ios/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android (debug APK, release AAB when signed)
+    runs-on: ubuntu-latest
+    env:
+      DUE_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      # Builds dist/ in native mode (VITE_API_ORIGIN from .env.native) and copies it into android/ and ios/.
+      - run: npm run build:native
+      - name: Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: due-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+      - name: Decode upload keystore
+        if: env.DUE_KEYSTORE_B64 != ''
+        run: echo "$DUE_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/due-upload.jks"
+      - name: Release AAB (signed)
+        if: env.DUE_KEYSTORE_B64 != ''
+        working-directory: android
+        env:
+          DUE_KEYSTORE_FILE: ${{ runner.temp }}/due-upload.jks
+          DUE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          DUE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          DUE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon -PdueVersionCode=${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        if: env.DUE_KEYSTORE_B64 != ''
+        with:
+          name: due-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+
+  ios:
+    name: iOS (simulator build, unsigned)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:native
+      - name: Build for the iOS simulator
+        working-directory: ios/App
+        run: |
+          xcodebuild build \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - uses: actions/upload-artifact@v4
+        with:
+          name: due-ios-simulator-app
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/App.app

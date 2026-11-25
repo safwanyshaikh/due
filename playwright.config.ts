@@ -17,6 +17,16 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     baseURL: 'http://localhost:4173',
+    // Existing specs exercise Home; the landing has its own spec (landing.spec.ts) that clears this.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: 'http://localhost:4173',
+          localStorage: [{ name: 'due:landing-opened', value: '1' }],
+        },
+      ],
+    },
     launchOptions: executablePath && existsSync(executablePath) ? { executablePath } : {},
   },
   webServer: {

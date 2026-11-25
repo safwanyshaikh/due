@@ -1,492 +1,461 @@
 {
- "version": "e2e-fixture-1",
- "generatedAt": "2026-11-24T00:00:00.000Z",
- "modules": [
-  {
-   "version": 1,
-   "status": "research",
-   "country": "IN",
-   "cityPack": null,
-   "legalRole": "information",
-   "updatedAt": "2026-11-24T00:00:00.000Z",
-   "id": "uber-one-in",
-   "detect": {
-    "merchantAliases": [
-     "uber"
-    ],
-    "senderDomains": [
-     "uber.com"
-    ],
-    "keywords": [
-     "uber one"
-    ]
-   },
-   "provider": "Uber",
-   "product": "Uber One",
-   "category": "mobility",
-   "valueKind": "membership_breakeven",
-   "rules": {
-    "prices": [
-     {
-      "label": "Monthly",
-      "priceInr": 149,
-      "periodDays": 30
-     },
-     {
-      "label": "3 months",
-      "priceInr": 349,
-      "periodDays": 90
-     },
-     {
-      "label": "Yearly",
-      "priceInr": 1499,
-      "periodDays": 365
-     }
-    ],
-    "creditPct": 10,
-    "creditCapPerUnitInr": 150,
-    "creditExpiryDays": 60,
-    "includes": [
-     {
-      "key": "zomato_gold",
-      "label": "Zomato Gold",
-      "months": 3
-     }
-    ],
-    "conditions": [
-     "Credits up to 10% on cab, auto and bike rides; up to 150 rides on monthly and quarterly plans, 600 on yearly (launch coverage).",
-     "Zomato Gold 3 months via voucher code (launch coverage; may have been a limited-time offer).",
-     "Prices are from 2024 launch coverage; check the Uber app."
-    ]
-   },
-   "proof": {
-    "signal": "charge_stopped",
-    "description": "The Uber One charge stops, or the user confirms pausing it."
-   },
-   "nudge": {
-    "trigger": "before_renewal",
-    "leadDays": 7
-   },
-   "sources": [
+  "version": "e2e-fixture-1",
+  "generatedAt": "2026-11-24T00:00:00.000Z",
+  "modules": [
     {
-     "url": "https://www.outlookbusiness.com/ampstories/corporate/uber-launches-uber-one-membership-program-check-details-on-monthly-plans-here",
-     "label": "Outlook Business: Uber One launch",
-     "kind": "press",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.gizbot.com/apps/news/uber-one-subscription-service-launched-in-india-earn-cashbacks-on-trips-free-zomato-gold-membershi-106265.html",
-     "label": "Gizbot: Uber One launch",
-     "kind": "press",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.uber.com/in/en/legal/renewable-passes-terms/",
-     "label": "Uber India renewable passes terms",
-     "kind": "official",
-     "lastVerifiedAt": null
-    }
-   ],
-   "actionUrl": "https://www.uber.com/in/en/",
-   "actionLabel": "Open Uber India"
-  },
-  {
-   "version": 1,
-   "status": "research",
-   "country": "IN",
-   "cityPack": null,
-   "legalRole": "information",
-   "updatedAt": "2026-11-24T00:00:00.000Z",
-   "id": "zomato-gold-in",
-   "detect": {
-    "merchantAliases": [
-     "zomato"
-    ],
-    "senderDomains": [
-     "zomato.com"
-    ],
-    "keywords": [
-     "zomato gold"
-    ]
-   },
-   "provider": "Zomato",
-   "product": "Zomato Gold",
-   "category": "food",
-   "valueKind": "membership_breakeven",
-   "rules": {
-    "prices": [
-     {
-      "label": "3 months",
-      "priceInr": 149,
-      "periodDays": 90
-     },
-     {
-      "label": "12 months",
-      "priceInr": null,
-      "periodDays": 365
-     }
-    ],
-    "freeDeliveryMinOrderInr": 199,
-    "deliveryFeeSavedPerOrderInr": null,
-    "conditions": [
-     "₹149 for 3 months is from the January 2023 relaunch coverage; not re-confirmed for 2026.",
-     "Free delivery above ₹199 within 7 km (per Uber One launch coverage)."
-    ]
-   },
-   "proof": {
-    "signal": "charge_stopped",
-    "description": "The Zomato Gold charge stops."
-   },
-   "nudge": {
-    "trigger": "before_renewal",
-    "leadDays": 3
-   },
-   "sources": [
-    {
-     "url": "https://www.businesstoday.in/technology/story/zomato-gold-relaunched-in-india-price-benefits-and-other-details-you-need-to-know-367316-2023-01-24",
-     "label": "Business Today: Zomato Gold relaunch",
-     "kind": "press",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.grabon.in/indulge/food/zomato-gold-membership-plan/",
-     "label": "GrabOn: Zomato Gold plan",
-     "kind": "aggregator",
-     "lastVerifiedAt": null
-    }
-   ],
-   "actionUrl": "https://www.zomato.com/",
-   "actionLabel": "Open Zomato"
-  },
-  {
-   "version": 1,
-   "status": "research",
-   "country": "IN",
-   "cityPack": null,
-   "legalRole": "information",
-   "updatedAt": "2026-11-24T00:00:00.000Z",
-   "id": "jio-prepaid-in",
-   "detect": {
-    "merchantAliases": [
-     "jio"
-    ],
-    "senderDomains": [],
-    "keywords": [
-     "jio recharge"
-    ]
-   },
-   "provider": "Jio",
-   "product": "Jio prepaid",
-   "category": "telecom",
-   "valueKind": "period_switch",
-   "rules": {
-    "prices": [
-     {
-      "label": "Monthly ₹349 (28 days)",
-      "priceInr": 349,
-      "periodDays": 28
-     },
-     {
-      "label": "Yearly ₹3,599",
-      "priceInr": 3599,
-      "periodDays": 365
-     }
-    ],
-    "includes": [
-     {
-      "key": "jiohotstar",
-      "label": "JioHotstar (Mobile)",
-      "months": 3
-     },
-     {
-      "key": "google_gemini_pro",
-      "label": "Google Gemini Pro (yearly plan)",
-      "months": 18
-     }
-    ],
-    "conditions": [
-     "Both plans reported with 3 months JioHotstar Mobile, JioTV and 50 GB JioAICloud; 349 plan 2 GB/day, 3,599 plan 2.5 GB/day.",
-     "Benefits changed around the Sept 2026 anniversary offer; check MyJio."
-    ]
-   },
-   "proof": {
-    "signal": "new_plan_charge",
-    "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
-   },
-   "nudge": {
-    "trigger": "before_renewal",
-    "leadDays": 2
-   },
-   "sources": [
-    {
-     "url": "https://www.digit.in/news/telecom/jio-rs-349-vs-airtel-rs-349-prepaid-plan-validity-data-benefits-and-more.html",
-     "label": "Digit: Jio 349 plan",
-     "kind": "press",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.gizbot.com/telecom/features/best-annual-recharge-plans-2026-122000.html",
-     "label": "Gizbot: best annual plans 2026",
-     "kind": "press",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.businesstoday.in/technology/news/story/jios-rs3599-anniversary-plan-vs-airtel-and-vi-which-annual-recharge-offers-the-most-value-553579-2026-09-07",
-     "label": "Business Today: Jio 3,599 vs Airtel vs Vi, Sep 2026",
-     "kind": "press",
-     "lastVerifiedAt": null
-    }
-   ],
-   "actionUrl": "https://www.jio.com/selfcare/recharge/mobility/",
-   "actionLabel": "Open Jio recharge"
-  },
-  {
-   "version": 1,
-   "status": "research",
-   "country": "IN",
-   "cityPack": null,
-   "legalRole": "information",
-   "updatedAt": "2026-11-24T00:00:00.000Z",
-   "id": "jiohotstar-in",
-   "detect": {
-    "merchantAliases": [
-     "jiohotstar"
-    ],
-    "senderDomains": [],
-    "keywords": [
-     "jiohotstar"
-    ]
-   },
-   "provider": "JioHotstar",
-   "product": "JioHotstar",
-   "category": "ott",
-   "valueKind": "period_switch",
-   "rules": {
-    "prices": [
-     {
-      "label": "Mobile monthly",
-      "priceInr": 79,
-      "periodDays": 30
-     },
-     {
-      "label": "Mobile quarterly",
-      "priceInr": 149,
-      "periodDays": 90
-     },
-     {
-      "label": "Mobile yearly",
-      "priceInr": 499,
-      "periodDays": 365
-     },
-     {
-      "label": "Super monthly",
-      "priceInr": 149,
-      "periodDays": 30
-     },
-     {
-      "label": "Super quarterly",
-      "priceInr": 349,
-      "periodDays": 90
-     },
-     {
-      "label": "Super yearly",
-      "priceInr": 1099,
-      "periodDays": 365
-     },
-     {
-      "label": "Premium monthly",
-      "priceInr": 299,
-      "periodDays": 30
-     },
-     {
-      "label": "Premium quarterly",
-      "priceInr": 699,
-      "periodDays": 90
-     },
-     {
-      "label": "Premium yearly",
-      "priceInr": 2199,
-      "periodDays": 365
-     }
-    ],
-    "includes": [
-     {
-      "key": "jiohotstar",
-      "label": "JioHotstar",
-      "months": null
-     }
-    ],
-    "conditions": [
-     "Prices for new subscribers from 28 Jan 2026; existing subscribers may be on older plans.",
-     "Free via some Jio and Airtel plans; check overlap."
-    ]
-   },
-   "proof": {
-    "signal": "new_plan_charge",
-    "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
-   },
-   "nudge": {
-    "trigger": "before_renewal",
-    "leadDays": 3
-   },
-   "sources": [
-    {
-     "url": "https://www.jiostar.com/news/jiohotstar-introduces-monthly-plans-across-tiers-giving-viewers-more-choice-in-how-they-watch/",
-     "label": "JioStar: monthly plans across tiers",
-     "kind": "official",
-     "lastVerifiedAt": null
-    },
-    {
-     "url": "https://www.businesstoday.in/technology/news/story/jiohotstar-adds-rs-79-monthly-plan-raises-quarterly-and-annual-prices-511647-2026-01-20",
-     "label": "Business Today: JioHotstar price change",
-     "kind": "press",
-     "lastVerifiedAt": null
-    }
-   ],
-   "actionUrl": "https://www.hotstar.com/in",
-   "actionLabel": "Open JioHotstar"
-  }
- ],
- "cityPacks": [
-  {
-   "id": "in-mmr",
-   "name": "Mumbai, Navi Mumbai, Thane",
-   "country": "IN",
-   "localities": [
-    "Kharghar",
-    "Vashi",
-    "Nerul",
-    "Belapur",
-    "Airoli",
-    "Ghansoli",
-    "Panvel",
-    "Thane",
-    "Thane West",
-    "Wagle Estate",
-    "Majiwada",
-    "Ghodbunder Road",
-    "Kalyan",
-    "Dombivli",
-    "Mulund",
-    "BKC",
-    "Andheri East",
-    "Powai",
-    "Lower Parel",
-    "Worli",
-    "Nariman Point",
-    "Goregaon",
-    "Malad",
-    "Borivali",
-    "Dadar",
-    "Sion",
-    "Chembur",
-    "Kurla",
-    "Ghatkopar",
-    "Vikhroli",
-    "Bhandup",
-    "Kanjurmarg",
-    "Seawoods",
-    "Turbhe",
-    "Rabale",
-    "Juinagar",
-    "Sanpada",
-    "Ulwe",
-    "Taloja",
-    "Mumbai",
-    "Navi Mumbai"
-   ],
-   "passes": [
-    {
-     "id": "best-chalo-60-slab25",
-     "operator": "BEST (Chalo)",
-     "mode": "bus",
-     "name": "Super Saver 60 trips / 28 days (₹25 fare slab)",
-     "priceInr": 1350,
-     "periodDays": 28,
-     "trips": 60,
-     "coverage": [],
-     "status": "research",
-     "sources": [
-      {
-       "url": "https://chalo.com/mumbai/super-saver",
-       "label": "Chalo: BEST Super Saver (Mumbai)",
-       "kind": "official",
-       "lastVerifiedAt": null
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "uber-one-in",
+      "detect": {
+        "merchantAliases": ["uber"],
+        "senderDomains": ["uber.com"],
+        "keywords": ["uber one"]
       },
-      {
-       "url": "https://www.freepressjournal.in/mumbai/mumbai-best-annonces-super-saver-plans-for-chalo-app-and-chalo-card-consumers",
-       "label": "FPJ: BEST Super Saver plans",
-       "kind": "press",
-       "lastVerifiedAt": null
-      }
-     ],
-     "actionUrl": "https://chalo.com/mumbai/super-saver"
-    },
-    {
-     "id": "nmmt-bus",
-     "operator": "NMMT",
-     "mode": "bus",
-     "name": "NMMT bus pass (price not found)",
-     "priceInr": null,
-     "periodDays": null,
-     "trips": null,
-     "coverage": [
-      "Vashi",
-      "Nerul",
-      "Belapur",
-      "Kharghar",
-      "Panvel",
-      "Airoli",
-      "Ghansoli"
-     ],
-     "status": "research",
-     "sources": [
-      {
-       "url": "https://apps.apple.com/us/app/id1235574124",
-       "label": "NMMT BusTracker app",
-       "kind": "official",
-       "lastVerifiedAt": null
+      "provider": "Uber",
+      "product": "Uber One",
+      "category": "mobility",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "3 months",
+            "priceInr": 349,
+            "periodDays": 90
+          },
+          {
+            "label": "Yearly",
+            "priceInr": 1499,
+            "periodDays": 365
+          }
+        ],
+        "creditPct": 10,
+        "creditCapPerUnitInr": 150,
+        "creditExpiryDays": 60,
+        "includes": [
+          {
+            "key": "zomato_gold",
+            "label": "Zomato Gold",
+            "months": 3
+          }
+        ],
+        "conditions": [
+          "Credits up to 10% on cab, auto and bike rides; up to 150 rides on monthly and quarterly plans, 600 on yearly (launch coverage).",
+          "Zomato Gold 3 months via voucher code (launch coverage; may have been a limited-time offer).",
+          "Prices are from 2024 launch coverage; check the Uber app."
+        ]
       },
-      {
-       "url": "https://www.freepressjournal.in/mumbai/navi-mumbai-municipal-transport-joins-mumbai-one-app-for-seamless-integrated-public-transport",
-       "label": "FPJ: NMMT joins Mumbai One app",
-       "kind": "press",
-       "lastVerifiedAt": null
-      }
-     ],
-     "actionUrl": "https://apps.apple.com/us/app/id1235574124"
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Uber One charge stops, or the user confirms pausing it."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 7
+      },
+      "sources": [
+        {
+          "url": "https://www.outlookbusiness.com/ampstories/corporate/uber-launches-uber-one-membership-program-check-details-on-monthly-plans-here",
+          "label": "Outlook Business: Uber One launch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.gizbot.com/apps/news/uber-one-subscription-service-launched-in-india-earn-cashbacks-on-trips-free-zomato-gold-membershi-106265.html",
+          "label": "Gizbot: Uber One launch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.uber.com/in/en/legal/renewable-passes-terms/",
+          "label": "Uber India renewable passes terms",
+          "kind": "official",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.uber.com/in/en/",
+      "actionLabel": "Open Uber India"
     },
     {
-     "id": "fixture-kharghar-thane-shuttle",
-     "operator": "Test Shuttle",
-     "mode": "shuttle",
-     "name": "Kharghar to Thane monthly shuttle pass (test fixture)",
-     "priceInr": 3500,
-     "periodDays": 30,
-     "trips": null,
-     "coverage": [
-      "Kharghar",
-      "Thane"
-     ],
-     "status": "verified",
-     "sources": [
-      {
-       "url": "https://example.com/shuttle",
-       "label": "Test Shuttle fares (fixture)",
-       "kind": "official",
-       "lastVerifiedAt": "2026-11-20T00:00:00.000Z"
-      }
-     ],
-     "actionUrl": "https://example.com/shuttle"
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "zomato-gold-in",
+      "detect": {
+        "merchantAliases": ["zomato"],
+        "senderDomains": ["zomato.com"],
+        "keywords": ["zomato gold"]
+      },
+      "provider": "Zomato",
+      "product": "Zomato Gold",
+      "category": "food",
+      "valueKind": "membership_breakeven",
+      "rules": {
+        "prices": [
+          {
+            "label": "3 months",
+            "priceInr": 149,
+            "periodDays": 90
+          },
+          {
+            "label": "12 months",
+            "priceInr": null,
+            "periodDays": 365
+          }
+        ],
+        "freeDeliveryMinOrderInr": 199,
+        "deliveryFeeSavedPerOrderInr": null,
+        "conditions": [
+          "₹149 for 3 months is from the January 2023 relaunch coverage; not re-confirmed for 2026.",
+          "Free delivery above ₹199 within 7 km (per Uber One launch coverage)."
+        ]
+      },
+      "proof": {
+        "signal": "charge_stopped",
+        "description": "The Zomato Gold charge stops."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.businesstoday.in/technology/story/zomato-gold-relaunched-in-india-price-benefits-and-other-details-you-need-to-know-367316-2023-01-24",
+          "label": "Business Today: Zomato Gold relaunch",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.grabon.in/indulge/food/zomato-gold-membership-plan/",
+          "label": "GrabOn: Zomato Gold plan",
+          "kind": "aggregator",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.zomato.com/",
+      "actionLabel": "Open Zomato"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jio-prepaid-in",
+      "detect": {
+        "merchantAliases": ["jio"],
+        "senderDomains": [],
+        "keywords": ["jio recharge"]
+      },
+      "provider": "Jio",
+      "product": "Jio prepaid",
+      "category": "telecom",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Monthly ₹349 (28 days)",
+            "priceInr": 349,
+            "periodDays": 28
+          },
+          {
+            "label": "Yearly ₹3,599",
+            "priceInr": 3599,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar (Mobile)",
+            "months": 3
+          },
+          {
+            "key": "google_gemini_pro",
+            "label": "Google Gemini Pro (yearly plan)",
+            "months": 18
+          }
+        ],
+        "conditions": [
+          "Both plans reported with 3 months JioHotstar Mobile, JioTV and 50 GB JioAICloud; 349 plan 2 GB/day, 3,599 plan 2.5 GB/day.",
+          "Benefits changed around the Sept 2026 anniversary offer; check MyJio."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 2
+      },
+      "sources": [
+        {
+          "url": "https://www.digit.in/news/telecom/jio-rs-349-vs-airtel-rs-349-prepaid-plan-validity-data-benefits-and-more.html",
+          "label": "Digit: Jio 349 plan",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.gizbot.com/telecom/features/best-annual-recharge-plans-2026-122000.html",
+          "label": "Gizbot: best annual plans 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/jios-rs3599-anniversary-plan-vs-airtel-and-vi-which-annual-recharge-offers-the-most-value-553579-2026-09-07",
+          "label": "Business Today: Jio 3,599 vs Airtel vs Vi, Sep 2026",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.jio.com/selfcare/recharge/mobility/",
+      "actionLabel": "Open Jio recharge"
+    },
+    {
+      "version": 1,
+      "status": "research",
+      "country": "IN",
+      "cityPack": null,
+      "legalRole": "information",
+      "updatedAt": "2026-11-24T00:00:00.000Z",
+      "id": "jiohotstar-in",
+      "detect": {
+        "merchantAliases": ["jiohotstar"],
+        "senderDomains": [],
+        "keywords": ["jiohotstar"]
+      },
+      "provider": "JioHotstar",
+      "product": "JioHotstar",
+      "category": "ott",
+      "valueKind": "period_switch",
+      "rules": {
+        "prices": [
+          {
+            "label": "Mobile monthly",
+            "priceInr": 79,
+            "periodDays": 30
+          },
+          {
+            "label": "Mobile quarterly",
+            "priceInr": 149,
+            "periodDays": 90
+          },
+          {
+            "label": "Mobile yearly",
+            "priceInr": 499,
+            "periodDays": 365
+          },
+          {
+            "label": "Super monthly",
+            "priceInr": 149,
+            "periodDays": 30
+          },
+          {
+            "label": "Super quarterly",
+            "priceInr": 349,
+            "periodDays": 90
+          },
+          {
+            "label": "Super yearly",
+            "priceInr": 1099,
+            "periodDays": 365
+          },
+          {
+            "label": "Premium monthly",
+            "priceInr": 299,
+            "periodDays": 30
+          },
+          {
+            "label": "Premium quarterly",
+            "priceInr": 699,
+            "periodDays": 90
+          },
+          {
+            "label": "Premium yearly",
+            "priceInr": 2199,
+            "periodDays": 365
+          }
+        ],
+        "includes": [
+          {
+            "key": "jiohotstar",
+            "label": "JioHotstar",
+            "months": null
+          }
+        ],
+        "conditions": [
+          "Prices for new subscribers from 28 Jan 2026; existing subscribers may be on older plans.",
+          "Free via some Jio and Airtel plans; check overlap."
+        ]
+      },
+      "proof": {
+        "signal": "new_plan_charge",
+        "description": "A new charge at the cheaper yearly or lower plan replaces the monthly charges."
+      },
+      "nudge": {
+        "trigger": "before_renewal",
+        "leadDays": 3
+      },
+      "sources": [
+        {
+          "url": "https://www.jiostar.com/news/jiohotstar-introduces-monthly-plans-across-tiers-giving-viewers-more-choice-in-how-they-watch/",
+          "label": "JioStar: monthly plans across tiers",
+          "kind": "official",
+          "lastVerifiedAt": null
+        },
+        {
+          "url": "https://www.businesstoday.in/technology/news/story/jiohotstar-adds-rs-79-monthly-plan-raises-quarterly-and-annual-prices-511647-2026-01-20",
+          "label": "Business Today: JioHotstar price change",
+          "kind": "press",
+          "lastVerifiedAt": null
+        }
+      ],
+      "actionUrl": "https://www.hotstar.com/in",
+      "actionLabel": "Open JioHotstar"
     }
-   ],
-   "typicalFareInr": {
-    "cab": 450,
-    "auto": 150,
-    "bike_taxi": 120
-   },
-   "status": "research",
-   "updatedAt": "2026-11-24T00:00:00.000Z"
-  }
- ]
+  ],
+  "cityPacks": [
+    {
+      "id": "in-mmr",
+      "name": "Mumbai, Navi Mumbai, Thane",
+      "country": "IN",
+      "localities": [
+        "Kharghar",
+        "Vashi",
+        "Nerul",
+        "Belapur",
+        "Airoli",
+        "Ghansoli",
+        "Panvel",
+        "Thane",
+        "Thane West",
+        "Wagle Estate",
+        "Majiwada",
+        "Ghodbunder Road",
+        "Kalyan",
+        "Dombivli",
+        "Mulund",
+        "BKC",
+        "Andheri East",
+        "Powai",
+        "Lower Parel",
+        "Worli",
+        "Nariman Point",
+        "Goregaon",
+        "Malad",
+        "Borivali",
+        "Dadar",
+        "Sion",
+        "Chembur",
+        "Kurla",
+        "Ghatkopar",
+        "Vikhroli",
+        "Bhandup",
+        "Kanjurmarg",
+        "Seawoods",
+        "Turbhe",
+        "Rabale",
+        "Juinagar",
+        "Sanpada",
+        "Ulwe",
+        "Taloja",
+        "Mumbai",
+        "Navi Mumbai"
+      ],
+      "passes": [
+        {
+          "id": "best-chalo-60-slab25",
+          "operator": "BEST (Chalo)",
+          "mode": "bus",
+          "name": "Super Saver 60 trips / 28 days (₹25 fare slab)",
+          "priceInr": 1350,
+          "periodDays": 28,
+          "trips": 60,
+          "coverage": [],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://chalo.com/mumbai/super-saver",
+              "label": "Chalo: BEST Super Saver (Mumbai)",
+              "kind": "official",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.freepressjournal.in/mumbai/mumbai-best-annonces-super-saver-plans-for-chalo-app-and-chalo-card-consumers",
+              "label": "FPJ: BEST Super Saver plans",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://chalo.com/mumbai/super-saver"
+        },
+        {
+          "id": "nmmt-bus",
+          "operator": "NMMT",
+          "mode": "bus",
+          "name": "NMMT bus pass (price not found)",
+          "priceInr": null,
+          "periodDays": null,
+          "trips": null,
+          "coverage": ["Vashi", "Nerul", "Belapur", "Kharghar", "Panvel", "Airoli", "Ghansoli"],
+          "status": "research",
+          "sources": [
+            {
+              "url": "https://apps.apple.com/us/app/id1235574124",
+              "label": "NMMT BusTracker app",
+              "kind": "official",
+              "lastVerifiedAt": null
+            },
+            {
+              "url": "https://www.freepressjournal.in/mumbai/navi-mumbai-municipal-transport-joins-mumbai-one-app-for-seamless-integrated-public-transport",
+              "label": "FPJ: NMMT joins Mumbai One app",
+              "kind": "press",
+              "lastVerifiedAt": null
+            }
+          ],
+          "actionUrl": "https://apps.apple.com/us/app/id1235574124"
+        },
+        {
+          "id": "fixture-kharghar-thane-shuttle",
+          "operator": "Test Shuttle",
+          "mode": "shuttle",
+          "name": "Kharghar to Thane monthly shuttle pass (test fixture)",
+          "priceInr": 3500,
+          "periodDays": 30,
+          "trips": null,
+          "coverage": ["Kharghar", "Thane"],
+          "status": "verified",
+          "sources": [
+            {
+              "url": "https://example.com/shuttle",
+              "label": "Test Shuttle fares (fixture)",
+              "kind": "official",
+              "lastVerifiedAt": "2026-11-20T00:00:00.000Z"
+            }
+          ],
+          "actionUrl": "https://example.com/shuttle"
+        }
+      ],
+      "typicalFareInr": {
+        "cab": 450,
+        "auto": 150,
+        "bike_taxi": 120
+      },
+      "status": "research",
+      "updatedAt": "2026-11-24T00:00:00.000Z"
+    }
+  ]
 }

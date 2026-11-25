@@ -2,6 +2,7 @@ import { CURRENT_MIGRATIONS, deleteCommitment, emptyData } from './data';
 import { emptyRelay } from './offers/relay';
 import { upgradeCommitment } from './provenance';
 import { normaliseSavingsState } from './savings/state';
+import { ensureProfiles } from './profiles/profiles';
 import type { AppData, AppDataV1, Commitment, CommitmentV1 } from './types';
 
 export const DROP_BUNDLED_EXAMPLES = CURRENT_MIGRATIONS[0];
@@ -55,6 +56,8 @@ const V2_KEYS = [
   'pendingChanges',
   'deletedAt',
   'mergedInto',
+  'profileId',
+  'signedAs',
 ] as const;
 
 /**
@@ -63,10 +66,12 @@ const V2_KEYS = [
  * override/history lists. v1 'confirmed' → 'confirmed'; 'estimate'/'unknown' → 'estimated'
  * ('imported' for CSV-imported records). Source 'manual'/'csv_import' → provenance kind
  * 'manual'/'csv'. The dataset gains empty audit / import queue / decision / reminder-state lists.
+ * Profiles (additive, idempotent): the dataset gains the Personal profile and every due without a
+ * profile belongs to Personal (`ensureProfiles`). A downgrade strips them again.
  */
 export function migrateV1toV2(input: AppDataV1 | AppData): AppData {
   const base = input as AppData;
-  return {
+  return ensureProfiles({
     ...base,
     version: 2,
     commitments: (input.commitments as (CommitmentV1 | Commitment)[]).map(upgradeCommitment),
@@ -76,7 +81,9 @@ export function migrateV1toV2(input: AppDataV1 | AppData): AppData {
     duplicateDecisions: base.duplicateDecisions ?? [],
     reminderStates: base.reminderStates ?? [],
     savings: normaliseSavingsState(base.savings),
-  };
+    profiles: base.profiles,
+    profileDecisions: base.profileDecisions,
+  });
 }
 
 /** Inverse of `migrateV1toV2` for export to older builds: strips v2 fields (v1 fields were never changed). */
@@ -87,6 +94,8 @@ export function downgradeToV1(data: AppData): AppDataV1 {
     userEvents: _u,
     duplicateDecisions: _d,
     reminderStates: _r,
+    profiles: _p,
+    profileDecisions: _pd,
     ...rest
   } = data;
   void _a;
@@ -94,6 +103,8 @@ export function downgradeToV1(data: AppData): AppDataV1 {
   void _u;
   void _d;
   void _r;
+  void _p;
+  void _pd;
   return {
     ...rest,
     version: 1,

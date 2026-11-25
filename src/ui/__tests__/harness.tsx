@@ -27,9 +27,13 @@ export function dataWithOne(name = 'Netflix', amountPaise = 64_900): AppData {
   ).data;
 }
 
-export function renderApp(opts: { data?: AppData; client?: AccountClient; hash?: string } = {}) {
+export function renderApp(
+  opts: { data?: AppData; client?: AccountClient; hash?: string; landing?: boolean } = {},
+) {
   window.location.hash = opts.hash ?? '#/';
   localStorage.clear();
+  // Existing tests exercise Home; the landing has its own tests (pass landing: true).
+  if (!opts.landing) localStorage.setItem('due:landing-opened', '1');
   return render(
     <App client={opts.client ?? fakeClient()} initialData={opts.data ?? emptyData()} />,
   );

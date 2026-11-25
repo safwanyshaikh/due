@@ -7,6 +7,7 @@ import { one, withTransaction } from '../db.js';
 import { decryptText, encryptText } from '../intake/crypto.js';
 import { ingest, MAX_EVENTS_PER_DAY, ownerWhere, runIntakePurge, type Owner } from '../intake/service.js';
 import { metrics } from '../observability/metrics.js';
+import { purgeOfferInbox } from '../offerinbox/service.js';
 import { PermanentJobError, registerHandler, type JobContext } from './index.js';
 
 /** Minimal forwarded message kept until `inbound.parse` runs (sealed when DATA_ENCRYPTION_KEY is set). */
@@ -90,6 +91,7 @@ export async function retentionPurge(job: JobContext): Promise<void> {
     [addMinutes(now, -1440)],
   );
   const inboundRows = await pool.query('DELETE FROM inbound_messages WHERE received_at < $1', [addMinutes(now, -30 * 1440)]);
+  const offerInbox = await purgeOfferInbox(pool, now);
   const jobs = await pool.query(`DELETE FROM jobs_queue WHERE status = 'succeeded' AND finished_at < $1`, [addMinutes(now, -30 * 1440)]);
   const deadJobs = await pool.query(`DELETE FROM jobs_queue WHERE status = 'dead' AND finished_at < $1`, [addMinutes(now, -90 * 1440)]);
   const beats = await pool.query('DELETE FROM queue_heartbeats WHERE beat_at < $1', [addMinutes(now, -1440)]);
@@ -100,6 +102,7 @@ export async function retentionPurge(job: JobContext): Promise<void> {
       ...intake,
       inbound_bodies_expired: inbound.rowCount ?? 0,
       inbound_rows_deleted: inboundRows.rowCount ?? 0,
+      offer_inbox_raw_wiped: offerInbox.rawWiped,
       queue_rows_deleted: (jobs.rowCount ?? 0) + (deadJobs.rowCount ?? 0),
       heartbeats_deleted: beats.rowCount ?? 0,
       reconcile_runs_deleted: reconcile.rowCount ?? 0,

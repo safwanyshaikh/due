@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Queryable } from './db.js';
+import { isValidGstin } from './consumer/gstin.js';
 import { LEGAL_DEFAULTS, LEGAL_SCHEMAS } from './legal/index.js';
 
 export const SETTING_SCHEMAS = {
@@ -48,6 +49,28 @@ export const SETTING_SCHEMAS = {
   /** Tax wording shown next to prices (GET /api/public/plans), e.g. "Prices include 18% GST". */
   'billing.tax_note': z.string().trim().max(300).nullable(),
   'billing.prices_include_tax': z.boolean(),
+  /** Whether the company is registered under GST. When false no GST is charged or shown and invoices say so. */
+  'billing.gst_registered': z.boolean(),
+  /** 15-character GSTIN printed on invoices and receipts; only used when registered. */
+  'billing.gstin': z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine(isValidGstin, 'Not a valid GSTIN: 15 characters, state code, PAN pattern and check character')
+    .nullable(),
+  /** Free public beta: while true (and not past `beta.ends_on`), every signed-in account gets Plus features and checkout is refused. */
+  'beta.plus_free': z.boolean(),
+  /** Optional last day (inclusive, IST) of the free beta, as YYYY-MM-DD. Null means no end date announced. */
+  'beta.ends_on': z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-12-31')
+    .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().startsWith(v), 'Not a real calendar date')
+    .nullable(),
+  /** Store links shown on the landing page only when set (https URLs). */
+  'app.android_url': z.string().trim().url().max(500).regex(/^https:\/\//, 'Use an https:// link').nullable(),
+  'app.ios_url': z.string().trim().url().max(500).regex(/^https:\/\//, 'Use an https:// link').nullable(),
+  /** Company research mailboxes subscribed to provider newsletters. Mail to these is not user data: it goes to the offer inbox. */
+  'offers.research_addresses': z.array(z.string().trim().toLowerCase().email().max(200)).max(50),
   ...LEGAL_SCHEMAS,
 } as const;
 
@@ -71,6 +94,13 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   'billing.tax_note': null,
   'billing.prices_include_tax': true,
+  'billing.gst_registered': false,
+  'billing.gstin': null,
+  'beta.plus_free': false,
+  'beta.ends_on': null,
+  'app.android_url': null,
+  'app.ios_url': null,
+  'offers.research_addresses': [],
   ...LEGAL_DEFAULTS,
 };
 

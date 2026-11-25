@@ -150,11 +150,13 @@ function SignedIn() {
           <Badge tone={entitlements?.plan === 'free' ? 'plain' : 'premium'}>
             {entitlements?.plan ?? 'free'}
           </Badge>{' '}
-          {entitlements?.status === 'cancelled' && entitlements.periodEnd
-            ? `Cancelled — access until ${localDateTime(entitlements.periodEnd)}`
-            : entitlements?.periodEnd
-              ? `Renews or ends ${localDateTime(entitlements.periodEnd)}`
-              : ''}
+          {entitlements?.beta
+            ? 'Free during beta'
+            : entitlements?.status === 'cancelled' && entitlements.periodEnd
+              ? `Cancelled — access until ${localDateTime(entitlements.periodEnd)}`
+              : entitlements?.periodEnd
+                ? `Renews or ends ${localDateTime(entitlements.periodEnd)}`
+                : ''}
         </p>
         <a className="btn btn-secondary press" href="#/plans">
           Plans and purchases

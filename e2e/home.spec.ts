@@ -60,7 +60,10 @@ test.describe('Home first viewport at 390×844', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('due:landing-opened', '1');
+    });
     await page.reload();
     const first = await box(page, '[data-tile="subscription"]');
     expect(first.y + first.height).toBeLessThanOrEqual(844);
@@ -205,7 +208,10 @@ test.describe('document intake', () => {
         foreign.push(r.url());
     });
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('due:landing-opened', '1');
+    });
     await page.goto('/#/upload');
     await expect(page.getByTestId('upload-remaining')).toContainText('5 of 5');
     await page

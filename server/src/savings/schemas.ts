@@ -150,3 +150,5 @@ export const researchPatch = z
   .partial()
   .strict()
   .refine((v) => v.status !== undefined || v.moduleId !== undefined, 'Nothing to update');
+
+export const changesQuery = z.object({ since: z.string().regex(/^[0-9a-f]{8,64}$/).optional() });

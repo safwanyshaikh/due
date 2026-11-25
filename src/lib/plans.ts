@@ -86,7 +86,8 @@ export type Feature =
   | 'reconciliation_history'
   | 'multi_channel_delivery'
   | 'cancellation_guidance'
-  | 'verified_action_evidence';
+  | 'verified_action_evidence'
+  | 'business_profiles';
 
 export const FEATURES: Record<Feature, { label: string; plans: PlanId[] }> = {
   manual_obligations: { label: 'Manual due items', plans: ['free', 'plus', 'household'] },
@@ -109,6 +110,11 @@ export const FEATURES: Record<Feature, { label: string; plans: PlanId[] }> = {
   multi_channel_delivery: { label: 'Email and push reminders', plans: ['plus', 'household'] },
   cancellation_guidance: { label: 'Cancellation guidance', plans: ['plus', 'household'] },
   verified_action_evidence: { label: 'Verified action evidence', plans: ['plus', 'household'] },
+  /**
+   * Profiles beyond Personal and one business. In Plus for now: a separate Business tier is planned
+   * (its price is not set; prices here are unchanged).
+   */
+  business_profiles: { label: 'More than one business profile', plans: ['plus', 'household'] },
 };
 
 export const FREE_FEATURES = (Object.keys(FEATURES) as Feature[]).filter((f) =>

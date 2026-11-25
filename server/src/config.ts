@@ -17,6 +17,16 @@ const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   ADMIN_SETUP_TOKEN: z.string().optional(),
   PUBLIC_APP_ORIGIN: z.string().optional(),
+  /**
+   * Origins the native (Capacitor) app is served from. Default: capacitor://localhost (iOS) and
+   * https://localhost (Android). They get CORS (without credentials) on the consumer API only, and a
+   * bearer-token session instead of cookies. Set to an empty string to turn the native API off.
+   */
+  MOBILE_APP_ORIGINS: z.string().optional(),
+  /** Android App Links: comma-separated SHA-256 signing-cert fingerprints (AA:BB:...). Unset: assetlinks.json is 404. */
+  ANDROID_SHA256_CERT_FINGERPRINTS: z.string().optional(),
+  /** iOS Universal Links: 10-character Apple Developer Team ID. Unset: apple-app-site-association is 404. */
+  APPLE_TEAM_ID: z.string().optional(),
   PUBLIC_BASE_URL: optionalUrl,
   /** Set automatically by Render; used when PUBLIC_BASE_URL is not given. */
   RENDER_EXTERNAL_URL: optionalUrl,
@@ -29,6 +39,13 @@ const EnvSchema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  /** Which gateway sells subscriptions. Default razorpay keeps current behaviour. */
+  BILLING_PROVIDER: z.enum(['razorpay', 'cashfree']).optional(),
+  CASHFREE_APP_ID: z.string().optional(),
+  CASHFREE_SECRET_KEY: z.string().optional(),
+  /** Only if Cashfree gives a webhook secret separate from the API secret; otherwise the secret key signs webhooks. */
+  CASHFREE_WEBHOOK_SECRET: z.string().optional(),
+  CASHFREE_ENV: z.enum(['sandbox', 'production']).optional(),
   INBOUND_EMAIL_DOMAIN: z.string().optional(),
   INBOUND_WEBHOOK_SECRET: z.string().optional(),
   /** 32 random bytes, base64. Without it raw intake text is never stored (structured fields only). */
@@ -134,6 +151,10 @@ export interface AppConfig {
   sessionSecret: string;
   adminSetupToken: string | null;
   publicAppOrigins: string[];
+  /** Native app origins (bearer-token sessions, CORS without credentials, consumer API only). */
+  mobileAppOrigins: string[];
+  androidCertFingerprints: string[];
+  appleTeamId: string | null;
   publicBaseUrl: string | null;
   runScheduler: boolean;
   smtpUrl: string | null;
@@ -148,6 +169,10 @@ export interface AppConfig {
   accountSessionMaxMs: number;
   /** Razorpay credentials; null when any of the three is missing (checkout is then unavailable). */
   razorpay: { keyId: string; keySecret: string; webhookSecret: string } | null;
+  /** Active payment gateway (BILLING_PROVIDER, default razorpay). */
+  billingProvider: 'razorpay' | 'cashfree';
+  /** Cashfree credentials; null unless CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set. */
+  cashfree: { appId: string; secretKey: string; webhookSecret: string; env: 'sandbox' | 'production' } | null;
   /** Forwarding-alias domain (e.g. inbox.example.com); intake is "live" only with this and the webhook secret. */
   inboundEmailDomain: string | null;
   inboundWebhookSecret: string | null;
@@ -171,6 +196,16 @@ function parseEncryptionKey(v: string | undefined): Buffer | null {
   return key;
 }
 
+export const DEFAULT_MOBILE_APP_ORIGINS = ['capacitor://localhost', 'https://localhost'];
+
+function parseMobileOrigins(v: string | undefined): string[] {
+  if (v === undefined) return DEFAULT_MOBILE_APP_ORIGINS;
+  return v
+    .split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = EnvSchema.safeParse(env);
   if (!parsed.success) {
@@ -191,6 +226,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       .split(',')
       .map((s) => s.trim().replace(/\/$/, ''))
       .filter(Boolean),
+    mobileAppOrigins: parseMobileOrigins(e.MOBILE_APP_ORIGINS),
+    androidCertFingerprints: (e.ANDROID_SHA256_CERT_FINGERPRINTS ?? '')
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s)),
+    appleTeamId: /^[A-Z0-9]{10}$/.test((e.APPLE_TEAM_ID ?? '').trim().toUpperCase()) ? e.APPLE_TEAM_ID!.trim().toUpperCase() : null,
     publicBaseUrl: (e.PUBLIC_BASE_URL ?? e.RENDER_EXTERNAL_URL)?.replace(/\/$/, '') ?? null,
     runScheduler: e.RUN_SCHEDULER ?? false,
     smtpUrl: e.SMTP_URL?.trim() ? e.SMTP_URL.trim() : null,
@@ -205,6 +246,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     razorpay:
       e.RAZORPAY_KEY_ID?.trim() && e.RAZORPAY_KEY_SECRET?.trim() && e.RAZORPAY_WEBHOOK_SECRET?.trim()
         ? { keyId: e.RAZORPAY_KEY_ID.trim(), keySecret: e.RAZORPAY_KEY_SECRET.trim(), webhookSecret: e.RAZORPAY_WEBHOOK_SECRET.trim() }
+        : null,
+    billingProvider: e.BILLING_PROVIDER ?? 'razorpay',
+    cashfree:
+      e.CASHFREE_APP_ID?.trim() && e.CASHFREE_SECRET_KEY?.trim()
+        ? {
+            appId: e.CASHFREE_APP_ID.trim(),
+            secretKey: e.CASHFREE_SECRET_KEY.trim(),
+            webhookSecret: e.CASHFREE_WEBHOOK_SECRET?.trim() || e.CASHFREE_SECRET_KEY.trim(),
+            env: e.CASHFREE_ENV ?? 'sandbox',
+          }
         : null,
     inboundEmailDomain: e.INBOUND_EMAIL_DOMAIN?.trim() ? e.INBOUND_EMAIL_DOMAIN.trim().toLowerCase() : null,
     inboundWebhookSecret: e.INBOUND_WEBHOOK_SECRET?.trim() ? e.INBOUND_WEBHOOK_SECRET.trim() : null,

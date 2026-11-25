@@ -15,6 +15,7 @@ const PAGES = [
   '#/legal/privacy',
   '#/account',
   '#/settings',
+  '#/profiles',
 ];
 
 for (const [width, height] of [
@@ -26,7 +27,10 @@ for (const [width, height] of [
   test(`no horizontal overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('due:landing-opened', '1');
+    });
     await page.goto('/');
     const noOverflow = () =>
       page.evaluate(

@@ -7,12 +7,14 @@ import { useUiPrefs } from '../App';
 import { ConfirmButton, Field, Panel } from '../components/ui';
 import { Glyph, type GlyphName } from '../components/Glyph';
 import { download } from '../common';
+import { AppLockPanel } from '../components/AppLockPanel';
 import { setTelemetryOptOut, telemetryOptedOut } from '../lib/telemetrySink';
 import type { ThemeChoice } from '../lib/motion';
 
 const LINKS: { href: string; icon: GlyphName; label: string }[] = [
   { href: '#/account', icon: 'user', label: 'Account, sync and devices' },
   { href: '#/plans', icon: 'shield', label: 'Plans and purchases' },
+  { href: '#/profiles', icon: 'briefcase', label: 'Profiles: personal and business' },
   { href: '#/reminders', icon: 'clock', label: 'Reminders' },
   { href: '#/connections', icon: 'link', label: 'Connections and email identities' },
   { href: '#/import', icon: 'upload', label: 'Import' },
@@ -86,6 +88,8 @@ export function SettingsScreen() {
           </span>
         </label>
       </Panel>
+
+      <AppLockPanel />
 
       <Panel title="Privacy" id="st-privacy">
         <label className="switch-row">

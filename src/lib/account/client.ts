@@ -38,6 +38,9 @@ import type {
   EmailDeliveryState,
 } from './types';
 
+import { apiOrigin } from '../platform/config';
+import { authInit, clearSessionToken, setSessionToken } from '../platform/session';
+
 export * from './types';
 
 export const CSRF_HEADER = 'X-Requested-With';
@@ -91,20 +94,14 @@ export function serverCopyFromConflict<T = Record<string, unknown>>(
 export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
 export interface AccountClientOptions {
-  /** API origin; defaults to import.meta.env.VITE_API_BASE ?? '' (same origin). */
+  /** API origin; defaults to VITE_API_ORIGIN (or legacy VITE_API_BASE), else '' (same origin). */
   base?: string;
   fetch?: FetchLike;
   timeoutMs?: number;
 }
 
 export function defaultApiBase(): string {
-  let raw: string | undefined;
-  try {
-    raw = import.meta.env?.VITE_API_BASE as string | undefined;
-  } catch {
-    raw = undefined;
-  }
-  return (raw ?? '').trim().replace(/\/+$/, '');
+  return apiOrigin();
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -115,9 +112,11 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
   const timeoutMs = opts.timeoutMs ?? 15_000;
 
   async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+    const auth = await authInit();
     const headers: Record<string, string> = {
       Accept: 'application/json',
       [CSRF_HEADER]: CSRF_VALUE,
+      ...auth.headers,
     };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const controller = new AbortController();
@@ -127,7 +126,7 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
       res = await doFetch(`${base}${path}`, {
         method,
         headers,
-        credentials: 'include',
+        credentials: auth.credentials,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });
@@ -151,6 +150,9 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
       }
     }
     if (!res.ok) {
+      // A rejected bearer token is dead (revoked, expired or from a deleted account): forget it.
+      if (res.status === 401 && auth.bearer && auth.headers.Authorization)
+        await clearSessionToken();
       const e = (
         json as { error?: { code?: unknown; message?: unknown; details?: unknown } } | undefined
       )?.error;
@@ -176,25 +178,49 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
     // ---- Sign-in, profile, devices ---------------------------------------------------------------
     requestMagicLink: (email: string) =>
       request<MagicLinkResponse>('POST', '/api/account/magic-link', { email }),
-    verifyMagicLink: (token: string, deviceLabel?: string) =>
-      request<VerifyResponse>(
+    verifyMagicLink: async (token: string, deviceLabel?: string) => {
+      // Native builds ask for a bearer session token (no cookies cross-origin); the web build gets the cookie.
+      const native = (await authInit()).bearer;
+      const res = await request<VerifyResponse & { sessionToken?: string }>(
         'POST',
         '/api/account/verify',
-        deviceLabel ? { token, deviceLabel } : { token },
-      ),
+        {
+          token,
+          ...(deviceLabel ? { deviceLabel } : {}),
+          ...(native ? { tokenTransport: 'bearer' } : {}),
+        },
+      );
+      if (native && typeof res.sessionToken === 'string') await setSessionToken(res.sessionToken);
+      const rest: Record<string, unknown> = { ...res };
+      delete rest.sessionToken;
+      return rest as unknown as VerifyResponse;
+    },
     me: () => request<MeResponse>('GET', '/api/account/me'),
     updateProfile: (displayName: string | null) =>
       request<{ account: Account }>('PATCH', '/api/account/me', { displayName }),
-    logout: () => request<{ ok: true }>('POST', '/api/account/logout', {}),
+    logout: async () => {
+      try {
+        return await request<{ ok: true }>('POST', '/api/account/logout', {});
+      } finally {
+        await clearSessionToken();
+      }
+    },
     listSessions: async () =>
       (await request<{ items: DeviceSession[] }>('GET', '/api/account/sessions')).items,
-    revokeSession: (sessionId: string) =>
-      request<{ ok: true; current: boolean }>(
+    revokeSession: async (sessionId: string) => {
+      const r = await request<{ ok: true; current: boolean }>(
         'POST',
         `/api/account/sessions/${id(sessionId)}/revoke`,
         {},
-      ),
-    logoutAll: () => request<{ ok: true; revoked: number }>('POST', '/api/account/logout-all', {}),
+      );
+      if (r.current) await clearSessionToken();
+      return r;
+    },
+    logoutAll: async () => {
+      const r = await request<{ ok: true; revoked: number }>('POST', '/api/account/logout-all', {});
+      await clearSessionToken();
+      return r;
+    },
     requestAccountDeletion: () => request<DeleteRequest>('POST', '/api/account/delete-request', {}),
     deleteAccount: (confirmationToken: string) =>
       // Asynchronous (202): poll createPlatformClient().deletionStatus({ requestId, token: statusToken }).
@@ -229,8 +255,17 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
     getEntitlements: () => request<Entitlements>('GET', '/api/account/entitlements'),
     getPublicPlans: () => request<PublicPlansResponse>('GET', '/api/public/plans'),
     /** billingPeriod is required: the server never defaults to yearly. */
-    checkout: (plan: Exclude<PlanId, 'free'>, billingPeriod: BillingPeriod) =>
-      request<CheckoutResponse>('POST', '/api/account/checkout', { plan, billingPeriod }),
+    /** The server decides price and entitlement; the phone is only sent when the active gateway needs a mandate. */
+    checkout: (
+      plan: Exclude<PlanId, 'free'>,
+      billingPeriod: BillingPeriod,
+      customerPhone?: string,
+    ) =>
+      request<CheckoutResponse>(
+        'POST',
+        '/api/account/checkout',
+        customerPhone ? { plan, billingPeriod, customerPhone } : { plan, billingPeriod },
+      ),
     restorePurchase: () =>
       request<{ source: 'provider' | 'database'; entitlements: Entitlements }>(
         'POST',

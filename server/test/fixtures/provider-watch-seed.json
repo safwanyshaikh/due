@@ -1,0 +1,6 @@
+[
+  { "slug": "jio", "name": "Jio", "category": "telecom", "country": "IN", "senderDomains": ["jio.example.test"], "signupUrl": "https://www.jio.example.test/signup", "appOnly": false, "notes": "fixture" },
+  { "slug": "uber", "name": "Uber", "category": "mobility", "senderDomains": ["uber.example.test"], "signupUrl": null },
+  { "slug": "samplecard", "name": "Sample Card", "category": "card", "senderDomains": [], "signupUrl": null },
+  { "slug": "Bad Slug", "name": "Broken" }
+]

@@ -21,6 +21,8 @@ import { OfferMatches } from '../components/OfferMatches';
 import { Field, Notice, Panel } from '../components/ui';
 import { draftFromRule } from '../lib/ruleDraft';
 import { AMOUNT_CONFIDENCE_CHOICES } from './AddScreen';
+import { profileIdOf, profilesOf, PERSONAL_PROFILE_ID, type SignedAs } from '../../lib/profiles';
+import { BelongsToField } from '../profiles/BelongsToField';
 
 export function EditScreen({ id }: { id: string }) {
   const { data } = useApp();
@@ -98,6 +100,9 @@ function EditForms({ ob }: { ob: Commitment }) {
   const [rail, setRail] = useState<Rail>(ob.rail);
   const [importance, setImportance] = useState<Importance>(ob.importance);
   const [type, setType] = useState<CommitmentType>(ob.type);
+  const [profileId, setProfileId] = useState(() => profileIdOf(ob, data));
+  const [signedAs, setSignedAs] = useState<SignedAs | null>(ob.signedAs ?? null);
+  const multi = profilesOf(data).length > 1;
   const saveDetails = (e: FormEvent) => {
     e.preventDefault();
     mutate((d) =>
@@ -111,6 +116,9 @@ function EditForms({ ob }: { ob: Commitment }) {
           rail,
           importance,
           type,
+          ...(multi
+            ? { profileId, signedAs: profileId === PERSONAL_PROFILE_ID ? null : signedAs }
+            : {}),
         },
         ctx(),
       ),
@@ -249,6 +257,19 @@ function EditForms({ ob }: { ob: Commitment }) {
 
       <Panel title="Details" id="ed-details">
         <form className="stack-16" onSubmit={saveDetails}>
+          {multi && (
+            <BelongsToField
+              data={data}
+              profileId={profileId}
+              signedAs={signedAs}
+              type={type}
+              idPrefix="ed"
+              onChange={(p, s) => {
+                setProfileId(p);
+                setSignedAs(s);
+              }}
+            />
+          )}
           <Field label="Nickname" htmlFor="ed-nick">
             <input id="ed-nick" value={nickname} onChange={(e) => setNickname(e.target.value)} />
           </Field>

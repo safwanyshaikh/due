@@ -202,7 +202,7 @@ describe('health and status', () => {
 
   it('public status shows integration modes honestly and the admin-set incident', async () => {
     const s = (await app.inject({ method: 'GET', url: '/api/public/status' })).json();
-    expect(s).toEqual({ incident: null, integrations: { smtp: 'not_configured', inbound: 'not_configured', gmail: 'not_configured', billing: 'not_configured' } });
+    expect(s).toMatchObject({ incident: null, integrations: { smtp: 'not_configured', inbound: 'not_configured', gmail: 'not_configured', billing: 'not_configured' } });
     const app2 = await makeApp(pool, {
       clock,
       mailer,
@@ -280,11 +280,25 @@ describe('legal', () => {
 describe('billing', () => {
   const RZP = { RAZORPAY_KEY_ID: 'rzp_test_key', RAZORPAY_KEY_SECRET: 'rzp_test_secret', RAZORPAY_WEBHOOK_SECRET: 'whsec_test_0123456789' };
 
-  it('public plans expose the admin-set tax note', async () => {
-    expect((await app.inject({ method: 'GET', url: '/api/public/plans' })).json().tax).toEqual({ note: null, pricesIncludeTax: true });
+  it('public plans expose GST wording: none charged until registered, then the admin note and GSTIN', async () => {
+    expect((await app.inject({ method: 'GET', url: '/api/public/plans' })).json().tax).toEqual({
+      note: 'No GST is charged.',
+      pricesIncludeTax: false,
+      gstRegistered: false,
+      gstin: null,
+    });
     const admin = await loggedIn(app, pool, 'a@example.com', 'admin');
     await admin.patch('/api/admin/settings', { key: 'billing.tax_note', value: 'Prices include 18% GST' });
-    expect((await app.inject({ method: 'GET', url: '/api/public/plans' })).json().tax).toEqual({ note: 'Prices include 18% GST', pricesIncludeTax: true });
+    await admin.patch('/api/admin/settings', { key: 'billing.gst_registered', value: true });
+    // Registered without a GSTIN is not enough to claim GST: still the unregistered wording.
+    expect((await app.inject({ method: 'GET', url: '/api/public/plans' })).json().tax.gstRegistered).toBe(false);
+    await admin.patch('/api/admin/settings', { key: 'billing.gstin', value: '27aaaaa0000a1z2' });
+    expect((await app.inject({ method: 'GET', url: '/api/public/plans' })).json().tax).toEqual({
+      note: 'Prices include 18% GST',
+      pricesIncludeTax: true,
+      gstRegistered: true,
+      gstin: '27AAAAA0000A1Z2',
+    });
   });
 
   it('a full refund webhook ends paid access; partial refunds and replays change nothing', async () => {

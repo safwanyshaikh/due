@@ -35,6 +35,15 @@ import {
   saveBankStatement,
 } from './engine';
 import { CADENCE_TEXT, CONFIDENCE_LABEL, CONFIDENCE_TONE, RAIL_TEXT, rupees } from './format';
+import {
+  entityCandidates,
+  findProfile,
+  nameKey,
+  profilesOf,
+  PERSONAL_PROFILE_ID,
+  type EntityQuestion,
+} from '../../lib/profiles';
+import { EntityQuestionCard } from '../profiles/EntityQuestionCard';
 
 const MAX_BYTES = 15 * 1024 * 1024;
 /** Far more than any real statement (a year of rows is ~0.3 MB); beyond it the page would freeze. */
@@ -70,6 +79,15 @@ export function alreadyTracked(data: AppData, c: RecurringCandidate): boolean {
   });
 }
 
+/** Detector errors must never break an import: no questions is always safe. */
+function safeCandidates(lines: StatementLine[], loans: LoanStatementSummary[]): EntityQuestion[] {
+  try {
+    return entityCandidates(lines, loans);
+  } catch {
+    return [];
+  }
+}
+
 function guessType(c: RecurringCandidate): CommitmentType {
   return c.rail === 'bank_mandate' && c.averageInr >= 3000 ? 'emi' : 'subscription';
 }
@@ -90,10 +108,16 @@ export function StatementImport() {
   const [bank, setBank] = useState<BankStatementSummary | null>(null);
   const [telecom, setTelecom] = useState<TelecomBillSummary | null>(null);
   const [upi, setUpi] = useState<UpiStatementSummary | null>(null);
+  /** "Is this your business?" questions from this statement (asked one at a time, never decided). */
+  const [questions, setQuestions] = useState<EntityQuestion[]>([]);
+  const [belongsTo, setBelongsTo] = useState<string>(PERSONAL_PROFILE_ID);
+  const profiles = profilesOf(data);
+  const belongs = findProfile(data, belongsTo)?.id ?? PERSONAL_PROFILE_ID;
 
   const check = (t: string) => {
     setMsg(null);
     setAdded(null);
+    setQuestions([]);
     if (t.length > MAX_TEXT_CHARS) {
       setFound(null);
       setCard(null);
@@ -125,10 +149,12 @@ export function StatementImport() {
     );
     if (l) {
       setFound(null);
+      setQuestions(safeCandidates([], [l]));
       return;
     }
     const lines = parseStatement(t, source);
     setLineCount(lines.length);
+    setQuestions(safeCandidates(lines, []));
     if (!lines.length) {
       setFound([]);
       if (readCardSummary(t)) return;
@@ -244,6 +270,7 @@ export function StatementImport() {
               source: { kind: 'statement', label: 'Statement import', importedAt: ctx().now },
               rail: c.rail as Rail,
               notes: `Found ${c.occurrences} times in a statement, last on ${formatDate(c.lastDate)}.`,
+              profileId: belongs,
             },
             ctx(),
           );
@@ -333,6 +360,7 @@ export function StatementImport() {
 
       <div aria-live="polite" className="stack-16">
         {msg && <Notice tone="warn">{msg}</Notice>}
+        {questions.length > 0 && <EntityQuestionCard questions={questions} />}
         {card && (
           <section
             className="panel2 stack-16"
@@ -598,6 +626,18 @@ export function StatementImport() {
                   <dd>{loan.balanceTenureMonths}</dd>
                 </div>
               )}
+              {(loan.coApplicantEntities ?? []).map((name) => {
+                const own = profiles.find((p) => nameKey(p.name) === nameKey(name));
+                return (
+                  <div key={name} data-testid="sv-loan-coapplicant">
+                    <dt>Co-applicant</dt>
+                    <dd className="pf-loan-entity">
+                      {name}
+                      {own ? ' (your business profile)' : ''}
+                    </dd>
+                  </div>
+                );
+              })}
               {loan.bounceCount > 0 && (
                 <div>
                   <dt>Bounced EMIs</dt>
@@ -673,6 +713,22 @@ export function StatementImport() {
                 </li>
               ))}
             </ul>
+            {profiles.length > 1 && (
+              <div className="field2">
+                <label htmlFor="sv-belongs">Belongs to</label>
+                <select
+                  id="sv-belongs"
+                  value={belongs}
+                  onChange={(e) => setBelongsTo(e.target.value)}
+                >
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button
               type="button"
               className="btn btn-primary press jelly align-start"

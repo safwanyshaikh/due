@@ -44,9 +44,11 @@ function v1Data(commitments: CommitmentV1[]): AppDataV1 {
     userEvents: _u,
     duplicateDecisions: _d,
     reminderStates: _r,
+    profiles: _p,
+    profileDecisions: _pd,
     ...rest
   } = emptyData();
-  void [_a, _i, _u, _d, _r];
+  void [_a, _i, _u, _d, _r, _p, _pd];
   return { ...rest, version: 1, commitments };
 }
 

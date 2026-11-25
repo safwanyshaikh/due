@@ -59,6 +59,7 @@ export async function createModule(pool: Pool, actor: AuditActor, input: Omit<Sa
   if (input.status === 'verified') throw new AppError(422, 'verification_required', 'Create modules as research, then verify them.');
   return withTransaction(pool, async (c) => {
     if (await one(c, 'SELECT id FROM savings_modules WHERE id = $1', [input.id])) throw conflict('Module id already exists');
+    const prev = await catalogVersion(c, now);
     const r = await one<DataRow>(
       c,
       `INSERT INTO savings_modules (id, version, status, data, updated_at) VALUES ($1, 1, $2, $3, $4) RETURNING *`,
@@ -66,6 +67,7 @@ export async function createModule(pool: Pool, actor: AuditActor, input: Omit<Sa
     );
     const m = toModule(r!);
     await writeAudit(c, actor, 'savings.module.create', 'savings_module', m.id, null, m);
+    await recordChange(c, 'module', m.id, 'new', `New: ${m.product} (${m.provider})`, prev, now);
     return m;
   });
 }
@@ -75,6 +77,7 @@ export async function updateModule(pool: Pool, actor: AuditActor, id: string, in
   return withTransaction(pool, async (c) => {
     const cur = await one<DataRow>(c, 'SELECT * FROM savings_modules WHERE id = $1 FOR UPDATE', [id]);
     if (!cur) throw notFound('Module not found');
+    const prev = await catalogVersion(c, now);
     const before = toModule(cur);
     if (input.status === 'verified' && before.status !== 'verified') throw new AppError(422, 'verification_required', 'Use the verify action to mark a module verified.');
     if (input.status === 'verified' && !hasFreshOfficialSource(input, now)) throw unverifiable();
@@ -85,6 +88,7 @@ export async function updateModule(pool: Pool, actor: AuditActor, id: string, in
     );
     const m = toModule(r!);
     await writeAudit(c, actor, 'savings.module.update', 'savings_module', id, before, m);
+    await recordChange(c, 'module', id, 'updated', `Updated: ${m.product} (${m.provider})`, prev, now);
     return m;
   });
 }
@@ -93,6 +97,7 @@ async function setStatus(pool: Pool, actor: AuditActor, id: string, status: 'ver
   return withTransaction(pool, async (c) => {
     const cur = await one<DataRow>(c, 'SELECT * FROM savings_modules WHERE id = $1 FOR UPDATE', [id]);
     if (!cur) throw notFound('Module not found');
+    const prev = await catalogVersion(c, now);
     const before = toModule(cur);
     if (status === 'verified' && !hasFreshOfficialSource(before, now)) throw unverifiable();
     if (before.status === status) return before;
@@ -103,6 +108,7 @@ async function setStatus(pool: Pool, actor: AuditActor, id: string, status: 'ver
     );
     const m = toModule(r!);
     await writeAudit(c, actor, action, 'savings_module', id, before, m);
+    await recordChange(c, 'module', id, status === 'verified' ? 'verified' : 'retired', `${status === 'verified' ? 'Verified' : 'Retired'}: ${m.product} (${m.provider})`, prev, now);
     return m;
   });
 }
@@ -121,6 +127,7 @@ export async function getPack(q: Queryable, id: string): Promise<CityPack | null
 }
 export async function upsertPack(pool: Pool, actor: AuditActor, id: string, input: Omit<CityPack, 'id' | 'updatedAt'>, now: Date): Promise<{ pack: CityPack; created: boolean }> {
   return withTransaction(pool, async (c) => {
+    const prev = await catalogVersion(c, now);
     const beforeRow = await one<DataRow>(c, 'SELECT * FROM city_packs WHERE id = $1 FOR UPDATE', [id]);
     const before = beforeRow ? toPack(beforeRow) : null;
     const r = await one<DataRow>(
@@ -131,8 +138,58 @@ export async function upsertPack(pool: Pool, actor: AuditActor, id: string, inpu
     );
     const pack = toPack(r!);
     await writeAudit(c, actor, before ? 'savings.city_pack.update' : 'savings.city_pack.create', 'city_pack', id, before, pack);
+    await recordChange(c, 'city_pack', id, before ? 'updated' : 'new', `City pack ${before ? 'updated' : 'added'}: ${pack.name}`, prev, now);
     return { pack, created: !before };
   });
+}
+
+/* ---------- change log (public: GET /api/public/savings/catalog/changes) ---------- */
+
+/** Records a catalog change with the catalog version AFTER it, so a device holding that version can ask what came next. */
+export async function recordChange(c: Queryable, entity: 'module' | 'city_pack', entityId: string, kind: 'new' | 'updated' | 'verified' | 'retired', summary: string, prevVersion: string, now: Date): Promise<void> {
+  const version = (await buildCatalog(c, now)).version;
+  await c.query(
+    `INSERT INTO savings_changes (entity, entity_id, kind, summary, prev_version, catalog_version, changed_at) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+    [entity, entityId, kind, summary.slice(0, 200), prevVersion, version, now],
+  );
+}
+
+/** Catalog version as of now; call before a write so the change log can link "before" and "after". */
+export const catalogVersion = async (q: Queryable, now: Date): Promise<string> => (await buildCatalog(q, now)).version;
+
+export interface CatalogChange {
+  entity: 'module' | 'city_pack';
+  id: string;
+  kind: string;
+  summary: string;
+  changedAt: string;
+}
+
+/** Changes after the state `since` (a catalog version). An unknown `since` returns the last 14 days with reset = true. */
+export async function changesSince(q: Queryable, since: string | undefined, now: Date): Promise<{ version: string; since: string | null; reset: boolean; changes: CatalogChange[]; moduleIds: string[] }> {
+  const version = (await buildCatalog(q, now)).version;
+  let afterId = 0;
+  let reset = false;
+  if (since === version) return { version, since, reset: false, changes: [], moduleIds: [] };
+  const after = since ? await one<{ id: number }>(q, 'SELECT max(id) AS id FROM savings_changes WHERE catalog_version = $1', [since]) : null;
+  const before = since ? await one<{ id: number }>(q, 'SELECT min(id) AS id FROM savings_changes WHERE prev_version = $1', [since]) : null;
+  if (after?.id) afterId = after.id;
+  else if (before?.id) afterId = before.id - 1;
+  else reset = true;
+  const rows = await many<{ id: number; entity: 'module' | 'city_pack'; entity_id: string; kind: string; summary: string; changed_at: Date }>(
+    q,
+    `SELECT * FROM savings_changes WHERE id > $1 AND ($2::boolean = false OR changed_at > $3) ORDER BY id DESC LIMIT 500`,
+    [afterId, reset, new Date(now.getTime() - 14 * DAY_MS)],
+  );
+  const seen = new Set<string>();
+  const changes: CatalogChange[] = [];
+  for (const r of rows) {
+    const key = `${r.entity}:${r.entity_id}`;
+    if (seen.has(key)) continue; // newest change per entity wins
+    seen.add(key);
+    changes.push({ entity: r.entity, id: r.entity_id, kind: r.kind, summary: r.summary, changedAt: r.changed_at.toISOString() });
+  }
+  return { version, since: since ?? null, reset, changes: changes.slice(0, 100), moduleIds: changes.filter((c) => c.entity === 'module').map((c) => c.id).slice(0, 100) };
 }
 
 /* ---------- catalog ---------- */

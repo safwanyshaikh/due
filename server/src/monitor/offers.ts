@@ -8,6 +8,7 @@ import { canonicalJson, sha256 } from '../util.js';
 import { checkSource, type MonitorContext } from './engine.js';
 import { BUILTIN_PARSER_VERSION, observationFingerprint, parseObservation, ParserRules, type ObservationFields } from './parser.js';
 import { computeStatus, type OfferStatus, type StatusResult } from './status.js';
+import { applyNewsletterApproval } from '../offerinbox/service.js';
 
 /**
  * Offer intelligence engine (LAUNCH_SPEC "Offer intelligence operations").
@@ -377,6 +378,8 @@ export async function decideReview(
       }
       await recomputeOfferStatus(c, offer!.id, now, { kind: 'admin', userId: actor.userId });
       offer = await one<OfferRow>(c, 'SELECT * FROM offers WHERE id = $1', [offer!.id]);
+      // Newsletter-sourced changes also feed the public savings catalog (research status; verification stays manual).
+      await applyNewsletterApproval(c, rv.proposed, offer!, actor, now);
     }
     const review = await one(
       c,

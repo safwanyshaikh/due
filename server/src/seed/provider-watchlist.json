@@ -1,0 +1,2354 @@
+[
+  {
+    "slug": "uber",
+    "name": "Uber",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "uber.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Offers mostly in-app and push; Uber One membership terms published on uber.com.",
+    "sources": [
+      "https://www.uber.com/in/en/legal/renewable-passes-terms/",
+      "https://www.freepressjournal.in/mumbai/good-news-for-mumbaikars-metro-tickets-now-on-uber-app-via-ondc-big-boost-for-commuters"
+    ]
+  },
+  {
+    "slug": "ola",
+    "name": "Ola",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "olacabs.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Ola rider passes and offers on blog.olacabs.com; mostly in-app.",
+    "sources": [
+      "https://blog.olacabs.com/176771444-2/"
+    ]
+  },
+  {
+    "slug": "rapido",
+    "name": "Rapido",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Power Pass rider subscription; official domain not confirmed in sources.",
+    "sources": [
+      "https://yourstory.com/2019/07/bike-taxi-app-rapido-power-pass-subscription-programme"
+    ]
+  },
+  {
+    "slug": "blusmart",
+    "name": "BluSmart",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Delhi NCR",
+      "Mumbai",
+      "Bengaluru"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Consumer service suspended Apr 2025 and reportedly winding down; likely defunct, monitor only.",
+    "sources": [
+      "https://www.outlookbusiness.com/news/blusmart-to-exit-ride-hailing-transition-to-uber-fleet-partner-amid-cash-burn-concerns"
+    ]
+  },
+  {
+    "slug": "green-smart-mobility",
+    "name": "Green SM",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Delhi NCR"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "EV taxi service launched Jun 2026 in Delhi NCR; reported as BluSmart successor.",
+    "sources": [
+      "https://inc42.com/features/can-green-sm-succeed-where-blusmart-failed/"
+    ]
+  },
+  {
+    "slug": "namma-yatri",
+    "name": "Namma Yatri",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Zero-commission auto/taxi app; Bengaluru, Delhi, Hyderabad and others, Mumbai not confirmed; site nammayatri.in seen only in third-party listings.",
+    "sources": [
+      "https://apps.apple.com/in/app/id1637429831"
+    ]
+  },
+  {
+    "slug": "cityflo",
+    "name": "Cityflo",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": "https://www.cityflo.com/flexi-pass-policy/",
+    "appOnly": true,
+    "notes": "Premium AC bus; Flexi pass and Metro 3 feeder pass; sender domain not confirmed.",
+    "sources": [
+      "https://www.cityflo.com/flexi-pass-policy/",
+      "https://www.freepressjournal.in/mumbai/mumbai-metro-3-ties-up-with-cityflo-for-seamless-metro-bus-connectivity"
+    ]
+  },
+  {
+    "slug": "gala-bus",
+    "name": "Gala Bus",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "User-confirmed app; details unknown, nothing found in search.",
+    "sources": []
+  },
+  {
+    "slug": "chalo",
+    "name": "Chalo",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [
+      "chalo.com"
+    ],
+    "signupUrl": "https://chalo.com/mumbai/super-saver",
+    "appOnly": true,
+    "notes": "BEST Super Saver passes and premium bus bookings via Chalo app.",
+    "sources": [
+      "https://chalo.com/mumbai/super-saver",
+      "https://www.freepressjournal.in/amp/mumbai/mumbai-bests-premium-buses-begin-services-between-bandra-thane-book-via-chalo-app-check-route-timings"
+    ]
+  },
+  {
+    "slug": "best-undertaking",
+    "name": "BEST",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Mumbai city buses; passes sold via Chalo; own domain not confirmed.",
+    "sources": [
+      "https://chalo.com/mumbai/super-saver"
+    ]
+  },
+  {
+    "slug": "mumbai-metro-one",
+    "name": "Mumbai Metro One",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [
+      "mmmocl.co.in"
+    ],
+    "signupUrl": "https://www.mmmocl.co.in/fare_schemes_products",
+    "appOnly": true,
+    "notes": "WhatsApp digital trip and stored-value passes.",
+    "sources": [
+      "https://www.mmmocl.co.in/fare_schemes_products"
+    ]
+  },
+  {
+    "slug": "mumbai-metro-3",
+    "name": "Mumbai Metro Line 3 (MMRC)",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "MetroConnect3 app digital passes, about 15% off 60-trip.",
+    "sources": [
+      "https://www.lokmattimes.com/mumbai/mumbai-metro-line-3-indias-first-app-enabled-monthly-digital-pass-with-discounts-now-available-for-commuters-a525",
+      "https://www.freepressjournal.in/mumbai/mumbai-metro-3-ties-up-with-cityflo-for-seamless-metro-bus-connectivity"
+    ]
+  },
+  {
+    "slug": "mumbai-metro-2a-7",
+    "name": "Mumbai Metro 2A and 7 (MMMOCL)",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Lines 2A and 7 operated by MMMOCL; offers via Mumbai One app; details not confirmed.",
+    "sources": [
+      "https://www.freepressjournal.in/mumbai/mumbai-over-104-crore-tickets-booked-across-metro-suburban-railway-and-municipal-bus-services-through-single-integrated-app-mumbai-one"
+    ]
+  },
+  {
+    "slug": "mumbai-one-app",
+    "name": "Mumbai One app",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Integrated ticketing app for metro, suburban rail and buses.",
+    "sources": [
+      "https://www.freepressjournal.in/mumbai/mumbai-over-104-crore-tickets-booked-across-metro-suburban-railway-and-municipal-bus-services-through-single-integrated-app-mumbai-one"
+    ]
+  },
+  {
+    "slug": "navi-mumbai-metro",
+    "name": "Navi Mumbai Metro (CIDCO)",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Navi Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Line 1 Belapur-Pendhar; fares cut Sep 2024; no pass found.",
+    "sources": [
+      "https://www.freepressjournal.in/amp/mumbai/navi-mumbai-cidco-to-cut-down-metro-fares-by-33-on-belapur-uran-route-check-new-rates-inside"
+    ]
+  },
+  {
+    "slug": "nmmt",
+    "name": "NMMT",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Navi Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Navi Mumbai municipal buses; NMMT BusTracker app; joined Mumbai One app.",
+    "sources": [
+      "https://apps.apple.com/us/app/id1235574124"
+    ]
+  },
+  {
+    "slug": "tmt",
+    "name": "TMT Thane",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Thane Municipal Transport; Majhi TMT app digital tickets.",
+    "sources": [
+      "https://www.freepressjournal.in/mumbai/thane-transport-services-majhi-tmt-app-sees-massive-surge-with-12-lakh-digital-tickets-in-10-months"
+    ]
+  },
+  {
+    "slug": "irctc",
+    "name": "IRCTC",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Rail and air ticketing; official site/newsletter not confirmed in sources.",
+    "sources": [
+      "https://www.goindigo.in/press-releases/2026/march.html"
+    ]
+  },
+  {
+    "slug": "uts-railways",
+    "name": "UTS (Indian Railways)",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Suburban unreserved ticket app; official domain not confirmed.",
+    "sources": [
+      "https://www.freepressjournal.in/mumbai/mumbai-over-104-crore-tickets-booked-across-metro-suburban-railway-and-municipal-bus-services-through-single-integrated-app-mumbai-one"
+    ]
+  },
+  {
+    "slug": "kali-peeli-taxi-auto",
+    "name": "Mumbai auto and taxi (MMRTA fares)",
+    "category": "mobility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Regulated fares; minimum auto Rs 27, taxi Rs 33 from 1 Sep 2026; not an email sender.",
+    "sources": [
+      "https://www.freepressjournal.in/mumbai/mumbai-taxi-auto-fares-to-rise-from-september-1-minimum-fares-to-increase-from-31-to-33-and-26-to-27"
+    ]
+  },
+  {
+    "slug": "fastag-hdfc",
+    "name": "HDFC Bank FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-icici",
+    "name": "ICICI Bank FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-sbi",
+    "name": "SBI FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-axis",
+    "name": "Axis Bank FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-idfc",
+    "name": "IDFC First Bank FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-airtel",
+    "name": "Airtel Payments Bank FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-kotak",
+    "name": "Kotak FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "fastag-iHMCL",
+    "name": "NHAI / IHMCL FASTag",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "FASTag issuer on NHAI authorised list (2024); Paytm Payments Bank removed Mar 2024.",
+    "sources": [
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13",
+      "https://nhai.gov.in/nhai/sites/default/files/mix_file/FAQ-FASTag.pdf"
+    ]
+  },
+  {
+    "slug": "zomato",
+    "name": "Zomato",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "zomato.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Zomato Gold; offers mostly in-app and push.",
+    "sources": [
+      "https://www.businesstoday.in/technology/story/zomato-gold-relaunched-in-india-price-benefits-and-other-details-you-need-to-know-367316-2023-01-24"
+    ]
+  },
+  {
+    "slug": "swiggy",
+    "name": "Swiggy",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "swiggy.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Swiggy One / One Lite; offers in-app.",
+    "sources": [
+      "https://www.swiggy.com/corporate/press-release/swiggy-launches-swiggy-one-lite-membership-for-consumers-free-delivery-extra-benefits-in-food-grocery-and-more-at-rs-99/"
+    ]
+  },
+  {
+    "slug": "zepto",
+    "name": "Zepto",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Quick commerce; Zepto Pass; official domain not confirmed.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/"
+    ]
+  },
+  {
+    "slug": "blinkit",
+    "name": "Blinkit",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Zomato-owned quick commerce; domain not confirmed.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/"
+    ]
+  },
+  {
+    "slug": "bigbasket",
+    "name": "BigBasket",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Includes BB Now quick delivery; domain not confirmed.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/"
+    ]
+  },
+  {
+    "slug": "swiggy-instamart",
+    "name": "Swiggy Instamart",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "swiggy.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Part of Swiggy app; shares swiggy.com.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/",
+      "https://www.swiggy.com/corporate/press-release/swiggy-launches-swiggy-one-lite-membership-for-consumers-free-delivery-extra-benefits-in-food-grocery-and-more-at-rs-99/"
+    ]
+  },
+  {
+    "slug": "jiomart",
+    "name": "JioMart",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Jio grocery marketplace; domain not confirmed.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/"
+    ]
+  },
+  {
+    "slug": "dmart-ready",
+    "name": "DMart Ready",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Online grocery; domain not confirmed.",
+    "sources": [
+      "https://www.91mobiles.com/hub/top-instant-grocery-delivery-apps/amp/"
+    ]
+  },
+  {
+    "slug": "amazon-fresh-now",
+    "name": "Amazon Fresh / Now",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Amazon grocery; not confirmed separately.",
+    "sources": []
+  },
+  {
+    "slug": "flipkart-minutes",
+    "name": "Flipkart Minutes",
+    "category": "grocery",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Flipkart quick commerce; not confirmed.",
+    "sources": [
+      "https://stories.flipkart.com/announcements/"
+    ]
+  },
+  {
+    "slug": "eatsure",
+    "name": "EatSure",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "dominos-india",
+    "name": "Domino's India",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "mcdonalds-india",
+    "name": "McDonald's India",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "starbucks-india",
+    "name": "Starbucks India",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "magicpin",
+    "name": "magicpin",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "eazydiner",
+    "name": "EazyDiner",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "dineout",
+    "name": "Dineout",
+    "category": "food",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "jio",
+    "name": "Jio",
+    "category": "telecom",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "jio.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Prepaid plans with JioHotstar bundles; offers via MyJio app and SMS.",
+    "sources": [
+      "https://www.digit.in/news/telecom/jio-rs-349-vs-airtel-rs-349-prepaid-plan-validity-data-benefits-and-more.html"
+    ]
+  },
+  {
+    "slug": "airtel",
+    "name": "Airtel",
+    "category": "telecom",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "airtel.in"
+    ],
+    "signupUrl": "https://www.airtel.in/prepaid-tariff",
+    "appOnly": true,
+    "notes": "Prepaid/postpaid; Airtel Thanks app and SMS.",
+    "sources": [
+      "https://www.airtel.in/prepaid-tariff"
+    ]
+  },
+  {
+    "slug": "vi",
+    "name": "Vi (Vodafone Idea)",
+    "category": "telecom",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "myvi.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Prepaid plans and OTT bundles; Vi blog lists offers.",
+    "sources": [
+      "https://www.myvi.in/blog/vi-long-validity-prepaid-plans"
+    ]
+  },
+  {
+    "slug": "bsnl",
+    "name": "BSNL",
+    "category": "telecom",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not confirmed in sources.",
+    "sources": []
+  },
+  {
+    "slug": "jiofiber",
+    "name": "JioFiber / JioAirFiber",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "jio.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Broadband; shares Jio account.",
+    "sources": [
+      "https://www.digit.in/news/telecom/jio-rs-349-vs-airtel-rs-349-prepaid-plan-validity-data-benefits-and-more.html"
+    ]
+  },
+  {
+    "slug": "airtel-xstream-fiber",
+    "name": "Airtel Xstream Fiber",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "airtel.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Broadband; Airtel Thanks app.",
+    "sources": [
+      "https://www.airtel.in/prepaid-tariff"
+    ]
+  },
+  {
+    "slug": "act-fibernet",
+    "name": "ACT Fibernet",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Broadband; official domain not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "hathway",
+    "name": "Hathway",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "excitel",
+    "name": "Excitel",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "tata-play-fiber",
+    "name": "Tata Play Fiber",
+    "category": "broadband",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "tataplay.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Tata Play broadband; shares tataplay.com.",
+    "sources": [
+      "https://www.tataplay.com/dth/help/how-to-recharge"
+    ]
+  },
+  {
+    "slug": "tata-play",
+    "name": "Tata Play",
+    "category": "dth",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "tataplay.com"
+    ],
+    "signupUrl": "https://www.tataplay.com/dth/help/how-to-recharge",
+    "appOnly": true,
+    "notes": "DTH recharge via site/app.",
+    "sources": [
+      "https://www.tataplay.com/dth/help/how-to-recharge"
+    ]
+  },
+  {
+    "slug": "dish-tv",
+    "name": "Dish TV",
+    "category": "dth",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "dishtv.in"
+    ],
+    "signupUrl": "https://www.dishtv.in/bn-in/dth-recharge.html",
+    "appOnly": true,
+    "notes": "DTH recharge via site/app.",
+    "sources": [
+      "https://www.dishtv.in/bn-in/dth-recharge.html"
+    ]
+  },
+  {
+    "slug": "airtel-digital-tv",
+    "name": "Airtel Digital TV",
+    "category": "dth",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "airtel.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "DTH; Airtel Thanks app.",
+    "sources": [
+      "https://www.airtel.in/prepaid-tariff"
+    ]
+  },
+  {
+    "slug": "d2h",
+    "name": "d2h / Videocon d2h",
+    "category": "dth",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Merged into Dish TV group; not confirmed.",
+    "sources": [
+      "https://www.dishtv.in/bn-in/dth-recharge.html"
+    ]
+  },
+  {
+    "slug": "sun-direct",
+    "name": "Sun Direct",
+    "category": "dth",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "netflix",
+    "name": "Netflix",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "netflix.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Plans Rs 149 to 649; account emails from netflix.com.",
+    "sources": [
+      "https://help.netflix.com/en/node/24926/in"
+    ]
+  },
+  {
+    "slug": "jiohotstar",
+    "name": "JioHotstar",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "jiostar.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Mobile/Super/Premium plans from 28 Jan 2026; press at jiostar.com.",
+    "sources": [
+      "https://www.jiostar.com/news/jiohotstar-introduces-monthly-plans-across-tiers-giving-viewers-more-choice-in-how-they-watch/"
+    ]
+  },
+  {
+    "slug": "amazon-prime",
+    "name": "Amazon Prime",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Prime and Prime Lite; about.amazon.in seen, mail domain not confirmed.",
+    "sources": [
+      "https://www.aboutamazon.in/amazon-prime-lite-subscription"
+    ]
+  },
+  {
+    "slug": "sonyliv",
+    "name": "SonyLIV",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Appears in Vi bundles; domain not confirmed.",
+    "sources": [
+      "https://svf.in/news/your-guide-to-access-the-top-10-major-ott-platforms/"
+    ]
+  },
+  {
+    "slug": "zee5",
+    "name": "ZEE5",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Appears in Vi bundles; domain not confirmed.",
+    "sources": [
+      "https://svf.in/news/your-guide-to-access-the-top-10-major-ott-platforms/"
+    ]
+  },
+  {
+    "slug": "youtube-premium",
+    "name": "YouTube Premium",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Rs 149 monthly (2024); mail domain not confirmed.",
+    "sources": [
+      "https://www.businesstoday.in/technology/news/story/youtube-premium-subscription-prices-increased-by-up-to-58-in-india-check-revised-pricing-443181-2024-08-27"
+    ]
+  },
+  {
+    "slug": "disney-hotstar-legacy",
+    "name": "Disney+ Hotstar (legacy)",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Merged into JioHotstar; keep for old receipts.",
+    "sources": [
+      "https://www.jiostar.com/news/jiohotstar-introduces-monthly-plans-across-tiers-giving-viewers-more-choice-in-how-they-watch/"
+    ]
+  },
+  {
+    "slug": "lionsgate-play",
+    "name": "Lionsgate Play",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "discovery-plus",
+    "name": "discovery+",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "sun-nxt",
+    "name": "Sun NXT",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "aha",
+    "name": "aha",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "altt-ullu",
+    "name": "ALTBalaji / ULLU",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "mx-player",
+    "name": "MX Player",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "ottplay",
+    "name": "OTTplay",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "OTT aggregator packs; seen in search.",
+    "sources": [
+      "https://www.digit.in/news/general/ottplay-premium-subscription-packs-63956.html"
+    ]
+  },
+  {
+    "slug": "hoichoi",
+    "name": "Hoichoi",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "apple-tv-plus",
+    "name": "Apple TV+",
+    "category": "ott",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "apple.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Apple receipts from apple.com.",
+    "sources": [
+      "https://www.businesstoday.in/technology/news/story/apple-one-apple-music-gets-costlier-in-india-individual-plan-now-starts-at-543864-2026-07-20"
+    ]
+  },
+  {
+    "slug": "spotify",
+    "name": "Spotify",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "spotify.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Individual Rs 139 reported; emails from spotify.com.",
+    "sources": [
+      "https://www.businesstoday.in/technology/story/spotify-cuts-subscription-prices-in-india-discontinues-premium-lite-531507-2026-05-14"
+    ]
+  },
+  {
+    "slug": "jiosaavn",
+    "name": "JioSaavn",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "No info found in search.",
+    "sources": []
+  },
+  {
+    "slug": "apple-music",
+    "name": "Apple Music",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "apple.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Rs 139 individual (Jul 2026 coverage).",
+    "sources": [
+      "https://www.businesstoday.in/technology/news/story/apple-one-apple-music-gets-costlier-in-india-individual-plan-now-starts-at-543864-2026-07-20"
+    ]
+  },
+  {
+    "slug": "youtube-music",
+    "name": "YouTube Music",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Bundled with YouTube Premium; not confirmed separately.",
+    "sources": []
+  },
+  {
+    "slug": "gaana",
+    "name": "Gaana",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "wynk",
+    "name": "Wynk Music",
+    "category": "music",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "google-one",
+    "name": "Google One",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "one.google.com"
+    ],
+    "signupUrl": "https://one.google.com/about/plans",
+    "appOnly": false,
+    "notes": "Storage plans; pricing page seen.",
+    "sources": [
+      "https://one.google.com/about/plans?hl=te"
+    ]
+  },
+  {
+    "slug": "microsoft-365",
+    "name": "Microsoft 365",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "microsoft.com"
+    ],
+    "signupUrl": "https://microsoft.com/en-in/microsoft-365/try",
+    "appOnly": false,
+    "notes": "Personal Rs 689/mo or Rs 6,899/yr per snapshot; Basic Rs 149/mo reported.",
+    "sources": [
+      "https://microsoft.com/en-in/microsoft-365/try"
+    ]
+  },
+  {
+    "slug": "icloud-plus",
+    "name": "iCloud+",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "apple.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Apple receipts.",
+    "sources": [
+      "https://www.businesstoday.in/technology/news/story/apple-one-apple-music-gets-costlier-in-india-individual-plan-now-starts-at-543864-2026-07-20"
+    ]
+  },
+  {
+    "slug": "adobe",
+    "name": "Adobe",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "dropbox",
+    "name": "Dropbox",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "linkedin-premium",
+    "name": "LinkedIn Premium",
+    "category": "other",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "chatgpt-claude-ai-subs",
+    "name": "AI assistant subscriptions",
+    "category": "cloud",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Placeholder, not researched; add individual providers later.",
+    "sources": []
+  },
+  {
+    "slug": "sbi-card",
+    "name": "SBI Card",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "sbicard.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Balance Transfer on EMI 10% to 15.25% p.a.",
+    "sources": [
+      "https://sbicard.com/en/personal/benefits/lower-interest-option/balance-transfer-on-emi.page"
+    ]
+  },
+  {
+    "slug": "hdfc-bank",
+    "name": "HDFC Bank cards",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "hdfc.bank.in"
+    ],
+    "signupUrl": "https://www.hdfc.bank.in/telugu/ps/offers",
+    "appOnly": true,
+    "notes": "Offers page seen (Telugu variant).",
+    "sources": [
+      "https://www.hdfc.bank.in/telugu/ps/offers"
+    ]
+  },
+  {
+    "slug": "icici-bank",
+    "name": "ICICI Bank cards",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Offers page URL truncated in sources; not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "axis-bank",
+    "name": "Axis Bank cards",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "axisbank.com"
+    ],
+    "signupUrl": "https://grabdeals.axisbank.com/allcategories",
+    "appOnly": true,
+    "notes": "Grab Deals offers page seen.",
+    "sources": [
+      "https://grabdeals.axisbank.com/allcategories"
+    ]
+  },
+  {
+    "slug": "kotak",
+    "name": "Kotak cards",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "kotak.com"
+    ],
+    "signupUrl": "https://www.kotak.com/en/offers/view-all-offers/all-offers.html?paymentcardtype=credit",
+    "appOnly": true,
+    "notes": "Credit card offers page seen.",
+    "sources": [
+      "https://www.kotak.com/en/offers/view-all-offers/all-offers.html?paymentcardtype=credit"
+    ]
+  },
+  {
+    "slug": "amex-india",
+    "name": "American Express India",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Official domain not seen in sources.",
+    "sources": [
+      "https://cardadvisor.in/directory"
+    ]
+  },
+  {
+    "slug": "idfc-first",
+    "name": "IDFC First Bank",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "idfcfirst.bank.in"
+    ],
+    "signupUrl": "https://www.idfcfirst.bank.in/credit-card/amp",
+    "appOnly": true,
+    "notes": "Credit card page seen.",
+    "sources": [
+      "https://www.idfcfirst.bank.in/credit-card/amp"
+    ]
+  },
+  {
+    "slug": "au-small-finance",
+    "name": "AU Small Finance Bank",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Official domain not seen.",
+    "sources": [
+      "https://cardadvisor.in/directory"
+    ]
+  },
+  {
+    "slug": "onecard",
+    "name": "OneCard",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "App-controlled metal card; partner banks vary; domain not seen.",
+    "sources": [
+      "https://cardadvisor.in/directory"
+    ]
+  },
+  {
+    "slug": "scapia",
+    "name": "Scapia",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Travel co-branded card; no official info found.",
+    "sources": [
+      "https://cardadvisor.in/directory"
+    ]
+  },
+  {
+    "slug": "hsbc-india",
+    "name": "HSBC India",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "hsbc.co.in"
+    ],
+    "signupUrl": "https://www.hsbc.co.in/credit-cards/balance-transfer/",
+    "appOnly": false,
+    "notes": "Balance transfer 10.99% to 15.99% p.a.",
+    "sources": [
+      "https://www.hsbc.co.in/credit-cards/balance-transfer/"
+    ]
+  },
+  {
+    "slug": "indusind-bank",
+    "name": "IndusInd Bank",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "indusind.com"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "IndusInd Zomato Gold card page seen.",
+    "sources": [
+      "https://www.indusind.com/in/en/personal/tnc-zomatoGold.html"
+    ]
+  },
+  {
+    "slug": "yes-bank",
+    "name": "YES Bank",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "rbl-bank",
+    "name": "RBL Bank",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "standard-chartered",
+    "name": "Standard Chartered India",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "federal-bank",
+    "name": "Federal Bank",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "cred",
+    "name": "CRED",
+    "category": "card",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "App listing seen; domain not confirmed in sources.",
+    "sources": [
+      "https://apps.apple.com/IN/app/id1428580080"
+    ]
+  },
+  {
+    "slug": "phonepe",
+    "name": "PhonePe",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "phonepe.com"
+    ],
+    "signupUrl": "https://www.phonepe.com/payments/",
+    "appOnly": true,
+    "notes": "UPI, bills, co-branded cards.",
+    "sources": [
+      "https://www.phonepe.com/payments/"
+    ]
+  },
+  {
+    "slug": "paytm",
+    "name": "Paytm",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "paytm.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "UPI, recharges; Paytm Payments Bank no longer FASTag issuer.",
+    "sources": [
+      "https://paytm.com/blog/recharge/dth/ultimate-guide-finding-best-dth-recharge/",
+      "https://www.businesstoday.in/india/story/nhai-updates-list-of-fastag-users-paytm-payments-bank-removed-full-list-of-authorised-banks-nbfcs-here-421215-2024-03-13"
+    ]
+  },
+  {
+    "slug": "google-pay",
+    "name": "Google Pay",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Domain not confirmed.",
+    "sources": [
+      "https://apps.apple.com/IN/app/id1428580080"
+    ]
+  },
+  {
+    "slug": "amazon-pay",
+    "name": "Amazon Pay",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Part of Amazon India.",
+    "sources": []
+  },
+  {
+    "slug": "bhim",
+    "name": "BHIM / NPCI",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "npci.org.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "NPCI FAQ page seen.",
+    "sources": [
+      "https://npci.org.in/what-we-do/netc-fastag/faqs"
+    ]
+  },
+  {
+    "slug": "slice",
+    "name": "slice",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "jupiter",
+    "name": "Jupiter",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "fi-money",
+    "name": "Fi Money",
+    "category": "bank",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Winding down banking services on platform (Mar 2026 per prior research).",
+    "sources": [
+      "https://techcrunch.com/2026/03/11/india-neobank-fi-winds-down-banking-services-on-its-platform"
+    ]
+  },
+  {
+    "slug": "flipkart",
+    "name": "Flipkart",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "flipkart.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Plus loyalty, sales; stories.flipkart.com announcements.",
+    "sources": [
+      "https://stories.flipkart.com/announcements/"
+    ]
+  },
+  {
+    "slug": "amazon-in",
+    "name": "Amazon India",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Sales emails; domain not confirmed.",
+    "sources": [
+      "https://www.aboutamazon.in/amazon-prime-lite-subscription"
+    ]
+  },
+  {
+    "slug": "myntra",
+    "name": "Myntra",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Flipkart group; EORS sales.",
+    "sources": [
+      "https://stories.flipkart.com/announcements/"
+    ]
+  },
+  {
+    "slug": "nykaa",
+    "name": "Nykaa",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "ajio",
+    "name": "AJIO",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "tata-cliq",
+    "name": "Tata CLiQ",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "reliance-digital",
+    "name": "Reliance Digital",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "croma",
+    "name": "Croma",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "meesho",
+    "name": "Meesho",
+    "category": "shopping",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "makemytrip",
+    "name": "MakeMyTrip",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "cleartrip",
+    "name": "Cleartrip",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Flipkart group.",
+    "sources": [
+      "https://stories.flipkart.com/announcements/"
+    ]
+  },
+  {
+    "slug": "ixigo",
+    "name": "ixigo",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "goibibo",
+    "name": "Goibibo",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "redbus",
+    "name": "redBus",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "indigo",
+    "name": "IndiGo",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "goindigo.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Newsletter subscription by emailing domestic.support@goindigo.in (per site); press releases on goindigo.in.",
+    "sources": [
+      "https://www.goindigo.in/press-releases/2026/march.html"
+    ]
+  },
+  {
+    "slug": "air-india",
+    "name": "Air India",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Nothing found.",
+    "sources": []
+  },
+  {
+    "slug": "akasa-air",
+    "name": "Akasa Air",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "spicejet",
+    "name": "SpiceJet",
+    "category": "travel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "iocl",
+    "name": "IndianOil (XTRAREWARDS / XTRAPOWER)",
+    "category": "fuel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "iocl.com"
+    ],
+    "signupUrl": "https://www.iocl.com/marketing-loyalty-programs",
+    "appOnly": true,
+    "notes": "Loyalty programmes page; XTRAREWARDS coming to Google Pay.",
+    "sources": [
+      "https://www.iocl.com/marketing-loyalty-programs"
+    ]
+  },
+  {
+    "slug": "hpcl",
+    "name": "HPCL",
+    "category": "fuel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "DRIVE TRACK named by third party; official page not seen.",
+    "sources": [
+      "https://www.iocl.com/marketing-loyalty-programs"
+    ]
+  },
+  {
+    "slug": "bpcl",
+    "name": "BPCL",
+    "category": "fuel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "PETRO CARD / SMART FLEET named by third party; official page not seen.",
+    "sources": [
+      "https://www.iocl.com/marketing-loyalty-programs"
+    ]
+  },
+  {
+    "slug": "shell-india",
+    "name": "Shell India",
+    "category": "fuel",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "acko",
+    "name": "Acko",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "acko.com"
+    ],
+    "signupUrl": "https://www.acko.com/gi",
+    "appOnly": true,
+    "notes": "Car, bike, travel, health insurance.",
+    "sources": [
+      "https://www.acko.com/gi",
+      "https://www.acko.com/disclaimer/"
+    ]
+  },
+  {
+    "slug": "digit-insurance",
+    "name": "Digit Insurance",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "godigit.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Domain from startuptalky listing; page not seen.",
+    "sources": [
+      "https://migrate.startuptalky.com/tag/acko-competitors"
+    ]
+  },
+  {
+    "slug": "policybazaar",
+    "name": "PolicyBazaar",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "policybazaar.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Aggregator; domain from startuptalky listing.",
+    "sources": [
+      "https://wikipedia.com/wiki/Policybazaar"
+    ]
+  },
+  {
+    "slug": "lic",
+    "name": "LIC India",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "hdfc-life",
+    "name": "HDFC Life",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "star-health",
+    "name": "Star Health",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "niva-bupa",
+    "name": "Niva Bupa",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "icici-lombard",
+    "name": "ICICI Lombard",
+    "category": "insurance",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "adani-electricity-mumbai",
+    "name": "Adani Electricity Mumbai",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [
+      "adanielectricity.com"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Site per MERC notice; serves about 85% of Mumbai geography.",
+    "sources": [
+      "https://connect.adani.com/annual_report/2025/aesl/retail-power-distribution-vertical.html"
+    ]
+  },
+  {
+    "slug": "tata-power-mumbai",
+    "name": "Tata Power (Mumbai distribution)",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Official domain not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "msedcl",
+    "name": "MSEDCL (Mahavitaran)",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Thane",
+      "Navi Mumbai"
+    ],
+    "senderDomains": [
+      "mahadiscom.in"
+    ],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Maharashtra state discom; serves parts of MMR.",
+    "sources": [
+      "https://www.mahadiscom.in/en/company-profile/"
+    ]
+  },
+  {
+    "slug": "mgl",
+    "name": "Mahanagar Gas (MGL)",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Mumbai",
+      "Navi Mumbai",
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Piped gas; site not confirmed.",
+    "sources": []
+  },
+  {
+    "slug": "bmc-water",
+    "name": "BMC water and property tax",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "nmmc",
+    "name": "NMMC",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Navi Mumbai"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "tmc",
+    "name": "Thane Municipal Corporation",
+    "category": "utility",
+    "country": "IN",
+    "cities": [
+      "Thane"
+    ],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "indane-hp-bharat-gas",
+    "name": "LPG (Indane / HP Gas / Bharat Gas)",
+    "category": "utility",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "urban-company",
+    "name": "Urban Company",
+    "category": "other",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "cult-fit",
+    "name": "cult.fit",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "No info found in search.",
+    "sources": []
+  },
+  {
+    "slug": "byjus",
+    "name": "BYJU'S",
+    "category": "education",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "unacademy",
+    "name": "Unacademy",
+    "category": "education",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "coursera",
+    "name": "Coursera",
+    "category": "education",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "duolingo",
+    "name": "Duolingo",
+    "category": "education",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "tata-1mg",
+    "name": "Tata 1mg",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "pharmeasy",
+    "name": "PharmEasy",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "apollo-247",
+    "name": "Apollo 24/7",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "practo",
+    "name": "Practo",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "healthifyme",
+    "name": "HealthifyMe",
+    "category": "health",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": true,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "bajaj-finserv",
+    "name": "Bajaj Finserv",
+    "category": "loan",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [
+      "bajajfinserv.in"
+    ],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Aggregator/lender pages seen.",
+    "sources": [
+      "https://www.bajajfinserv.in/home-loan-balance-transfer"
+    ]
+  },
+  {
+    "slug": "sbi-home-loan",
+    "name": "SBI home loans",
+    "category": "loan",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Rates reported Oct 2026; official domain not seen.",
+    "sources": [
+      "https://www.businesstoday.in/personal-finance/story/sbi-raises-home-loan-rates-by-25-bps-562229-2026-10-18"
+    ]
+  },
+  {
+    "slug": "hdfc-home-loans",
+    "name": "HDFC home loans",
+    "category": "loan",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  },
+  {
+    "slug": "lic-hfl",
+    "name": "LIC Housing Finance",
+    "category": "loan",
+    "country": "IN",
+    "cities": [],
+    "senderDomains": [],
+    "signupUrl": null,
+    "appOnly": false,
+    "notes": "Not researched.",
+    "sources": []
+  }
+]
