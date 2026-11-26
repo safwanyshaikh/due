@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { hasConsent } from '../consumer/consents.js';
 import { computeEntitlement } from '../consumer/entitlements.js';
 import { withTransaction, one } from '../db.js';
@@ -272,10 +272,12 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
     if (recent >= MAX_EVENTS_PER_DAY) return reject('quota_exceeded', 'Daily intake limit reached');
 
     // Store the minimal message (sealed) and parse it on the queue; the webhook never parses inline.
+    // Chosen here so the sealed body is bound to its row (AAD "inbound_messages:<id>").
+    const inboundId = randomUUID();
     const out = await withTransaction(pool, async (c) => {
       const ins = await c.query<{ id: string }>(
-        `INSERT INTO inbound_messages (alias_id, account_id, provider, message_id_hash, sender_domain, body, status, received_at)
-         VALUES ($1,$2,$3,$4,$5,$6,'received',$7)
+        `INSERT INTO inbound_messages (id, alias_id, account_id, provider, message_id_hash, sender_domain, body, status, received_at)
+         VALUES ($8,$1,$2,$3,$4,$5,$6,'received',$7)
          ON CONFLICT (account_id, message_id_hash) WHERE message_id_hash IS NOT NULL DO NOTHING RETURNING id`,
         [
           alias.id,
@@ -283,8 +285,9 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
           msg.provider,
           messageIdHashOf(msg.messageId),
           msg.from ? msg.from.slice(msg.from.indexOf('@') + 1) : null,
-          sealInbound(config.dataEncryptionKey, { subject: msg.subject, text: msg.text }),
+          sealInbound(config.dataEncryptionKey, { subject: msg.subject, text: msg.text }, inboundId),
           now,
+          inboundId,
         ],
       );
       const row = ins.rows[0];

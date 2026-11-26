@@ -50,16 +50,20 @@ export function requireRole(role: Role) {
   return async (req: FastifyRequest, _reply: FastifyReply) => {
     const u = currentUser(req);
     if (!hasRole(u.role, role)) throw forbidden();
-    if ((role === 'admin' || role === 'owner') && req.method !== 'GET' && req.method !== 'HEAD') assertFreshMfa(req);
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (role === 'admin' || role === 'owner') assertFreshMfa(req);
+      // Editor-level writes also need a recent code, with a longer window (round-2 Low).
+      else if (role === 'editor') assertFreshMfa(req, req.server.deps.config.adminReauthMs * 3);
+    }
   };
 }
 
 /** Throws 403 reauth_required unless the session passed a TOTP check within config.adminReauthMs. */
-export function assertFreshMfa(req: FastifyRequest): void {
+export function assertFreshMfa(req: FastifyRequest, windowMs?: number): void {
   currentUser(req);
   const { clock, config } = req.server.deps;
   const at = req.sessionMfaAt;
-  if (!at || clock().getTime() - at.getTime() > config.adminReauthMs) {
+  if (!at || clock().getTime() - at.getTime() > (windowMs ?? config.adminReauthMs)) {
     throw new AppError(403, 'reauth_required', 'Confirm it is you: enter a code from your authenticator app.');
   }
 }

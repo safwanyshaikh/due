@@ -48,6 +48,10 @@ export interface PublicLegal {
   privacyPolicyMd: string | null;
   termsMd: string | null;
   deletionPolicyMd: string | null;
+  refundPolicyMd?: string | null;
+  deliveryPolicyMd?: string | null;
+  contactMd?: string | null;
+  cookiesMd?: string | null;
   subprocessors: Subprocessor[] | null;
   effectiveDate: string | null;
   complete: boolean;

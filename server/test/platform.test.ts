@@ -248,6 +248,10 @@ describe('legal', () => {
     'legal.privacy_policy_md': '# Privacy notice\nWe process...',
     'legal.terms_md': '# Terms\n...',
     'legal.deletion_policy_md': '# Deletion\n...',
+    'legal.refund_policy_md': '# refund_policy_md\n...',
+    'legal.delivery_policy_md': '# delivery_policy_md\n...',
+    'legal.contact_md': '# contact_md\n...',
+    'legal.cookies_md': '# cookies_md\n...',
     'legal.subprocessors': [{ name: 'Render', purpose: 'Hosting', region: 'US' }],
     'legal.effective_date': '2026-11-01',
   };
@@ -275,6 +279,33 @@ describe('legal', () => {
     expect(after.json()).toMatchObject({ complete: false, missing: ['legal.terms_md'] });
     // Never served stale from a cache: the admin's "complete/incomplete" view and the app update immediately.
     expect(after.headers['cache-control']).toBe('no-cache');
+  });
+
+  it('refund, delivery, contact and cookies pages are editable, served publicly, required for complete, and reject placeholders', async () => {
+    const admin = await loggedIn(app, pool, 'a@example.com', 'admin');
+    const NEW = ['legal.refund_policy_md', 'legal.delivery_policy_md', 'legal.contact_md', 'legal.cookies_md'];
+    for (const [key, value] of Object.entries(FULL)) await admin.patch('/api/admin/settings', { key, value });
+    expect((await app.inject({ method: 'GET', url: '/api/public/legal' })).json().complete).toBe(true);
+    // Served in camelCase.
+    await admin.patch('/api/admin/settings', { key: 'legal.refund_policy_md', value: '# Refunds\nCancel any time.' });
+    expect((await app.inject({ method: 'GET', url: '/api/public/legal' })).json()).toMatchObject({
+      refundPolicyMd: '# Refunds\nCancel any time.',
+      deliveryPolicyMd: expect.any(String),
+      contactMd: expect.any(String),
+      cookiesMd: expect.any(String),
+    });
+    // Each is required: emptying or placeholdering one closes the gate and names it.
+    for (const key of NEW) {
+      await admin.patch('/api/admin/settings', { key, value: '' });
+      expect((await app.inject({ method: 'GET', url: '/api/public/legal' })).json()).toMatchObject({ complete: false, missing: [key] });
+      await admin.patch('/api/admin/settings', { key, value: 'TBD: write this' });
+      expect((await app.inject({ method: 'GET', url: '/api/public/legal' })).json()).toMatchObject({ complete: false, missing: [key] });
+      await admin.patch('/api/admin/settings', { key, value: FULL[key] });
+    }
+    expect((await app.inject({ method: 'GET', url: '/api/public/legal' })).json().complete).toBe(true);
+    // Oversize and non-string values are refused.
+    expect((await admin.patch('/api/admin/settings', { key: 'legal.contact_md', value: 'x'.repeat(100_001) })).statusCode).toBe(400);
+    expect((await admin.patch('/api/admin/settings', { key: 'legal.cookies_md', value: 5 })).statusCode).toBe(400);
   });
 });
 

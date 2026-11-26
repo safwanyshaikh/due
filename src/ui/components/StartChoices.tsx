@@ -43,7 +43,18 @@ export function StartChoices({
   const signedIn = status === 'signed_in';
   const smtp = mode('smtp');
 
-  const choices: Choice[] = [
+  // Only offer an integration that is actually on: no "Not configured" dead ends (UX audit 3).
+  const available = (m: IntegrationMode | 'unknown') =>
+    m === 'live' || m === 'test_mode' || m === 'verification_pending';
+
+  const all: (Choice & { show?: boolean })[] = [
+    {
+      key: 'statement',
+      icon: 'upload',
+      title: 'Upload a bank/card statement',
+      body: 'Read on your phone. Due finds your subscriptions and AutoPay for you.',
+      href: '#/savings-import',
+    },
     {
       key: 'manual',
       icon: 'plus',
@@ -66,6 +77,7 @@ export function StartChoices({
       body: 'Send one email to your own private Due address.',
       href: '#/forward',
       tag: loading ? undefined : featureTag(mode('inbound'), true, plus),
+      show: available(mode('inbound')),
     },
     {
       key: 'gmail',
@@ -73,6 +85,7 @@ export function StartChoices({
       title: 'Connect Gmail',
       body: 'Read-only search for bills, renewals and trials.',
       tag: loading ? undefined : featureTag(mode('gmail'), true, plus),
+      show: available(mode('gmail')),
     },
     {
       key: 'signin',
@@ -81,11 +94,12 @@ export function StartChoices({
       body: 'Backup, other devices and email reminders.',
       href: '#/account',
       tag:
-        loading || smtp === 'live'
+        loading || !available(smtp) || smtp === 'live'
           ? undefined
           : { text: `Email ${modeLabel(smtp).toLowerCase()}`, tone: modeTone(smtp) },
     },
   ];
+  const choices = all.filter((c) => c.show !== false);
 
   return (
     <>

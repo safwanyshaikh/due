@@ -157,10 +157,10 @@ describe('admin: city packs and research queue', () => {
   });
 
   it('lists research by request count and links a module', async () => {
-    await pub('POST', '/api/public/savings/research', { providerLabel: 'Zing TV', category: 'ott' });
-    for (let i = 0; i < 3; i++) await pub('POST', '/api/public/savings/research', { providerLabel: 'Pocket FM', category: 'music' });
+    await pub('POST', '/api/public/savings/research', { providerLabel: 'Sony LIV', category: 'ott' });
+    for (let i = 0; i < 3; i++) await pub('POST', '/api/public/savings/research', { providerLabel: 'Spotify', category: 'music' });
     const list = (await viewer.get('/api/admin/savings/research')).json().items;
-    expect(list.map((r: { providerLabel: string }) => r.providerLabel)).toEqual(['Pocket FM', 'Zing TV']);
+    expect(list.map((r: { providerLabel: string }) => r.providerLabel)).toEqual(['Spotify', 'Sony LIV']);
     expect(list[0]).toMatchObject({ requestCount: 3, status: 'open' });
     await editor.post('/api/admin/savings/modules', moduleBody());
     const id = list[0].id;
@@ -195,9 +195,9 @@ describe('public: catalog', () => {
 
 describe('public: research requests', () => {
   it('queues, increments the count, and answers known for an existing module', async () => {
-    const a = await pub('POST', '/api/public/savings/research', { providerLabel: 'Zing TV', category: 'ott', cityPack: 'in-mmr' });
+    const a = await pub('POST', '/api/public/savings/research', { providerLabel: 'Sony LIV', category: 'ott', cityPack: 'in-mmr' });
     expect(a.json()).toEqual({ status: 'queued' });
-    await pub('POST', '/api/public/savings/research', { providerLabel: 'zing  tv', category: 'ott' });
+    await pub('POST', '/api/public/savings/research', { providerLabel: 'sony  liv', category: 'ott' });
     const row = (await pool.query('SELECT * FROM research_requests')).rows;
     expect(row).toHaveLength(1);
     expect(row[0]).toMatchObject({ request_count: 2, city_pack: 'in-mmr', status: 'open' });
@@ -211,12 +211,12 @@ describe('public: research requests', () => {
   });
 
   it('rejects labels with personal data and stores nothing', async () => {
-    for (const providerLabel of ['x'.repeat(61), 'me@example.com', 'https://pay.test/abc', 'Acct 123456', 'www.bank.test']) {
+    for (const providerLabel of ['x'.repeat(61), 'me@example.com', 'https://pay.test/abc', 'Acct 123456', 'www.bank.test', 'Ramesh Kumar tuition', 'Priya Sharma rent', 'Flat B Andheri']) {
       const r = await pub('POST', '/api/public/savings/research', { providerLabel, category: 'other' });
       expect(r.statusCode, providerLabel).toBe(400);
     }
-    expect((await pub('POST', '/api/public/savings/research', { providerLabel: 'Ok', category: 'bogus' })).statusCode).toBe(400);
-    expect((await pub('POST', '/api/public/savings/research', { providerLabel: 'Ok', category: 'ott', amount: 99 })).statusCode).toBe(400);
+    expect((await pub('POST', '/api/public/savings/research', { providerLabel: 'Netflix', category: 'bogus' })).statusCode).toBe(400);
+    expect((await pub('POST', '/api/public/savings/research', { providerLabel: 'Netflix', category: 'ott', amount: 99 })).statusCode).toBe(400);
     expect((await pool.query('SELECT 1 FROM research_requests')).rowCount).toBe(0);
   });
 });

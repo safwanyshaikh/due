@@ -107,7 +107,7 @@ for (const [width, height] of [
     const sheet = page.getByRole('dialog', { name: title });
     await expect(sheet).toBeVisible();
     await expect(sheet).toContainText('Sources');
-    await expect(sheet).toContainText(/Last checked|Not checked yet/);
+    await expect(sheet).not.toContainText('Not checked yet');
     await axeClean(page);
 
     const change = sheet.getByRole('button', { name: /^Change:/ }).first();
@@ -139,11 +139,14 @@ for (const [width, height] of [
   });
 }
 
-test('start page shows the hero tagline', async ({ page }) => {
-  await mockSavingsApi(page);
-  await page.goto('/#/start');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Same life. Smaller bills.');
-  await expect(page.locator('[data-block="hero"]')).toContainText(
-    'Due checks your subscriptions, recharges, rides and EMIs',
-  );
+test.describe('landing hero', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test('the landing shows the hero tagline', async ({ page }) => {
+    await mockSavingsApi(page);
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Same life. Smaller bills.');
+    await expect(page.locator('[data-block="hero"]')).toContainText(
+      'Due checks your subscriptions, recharges, rides and EMIs',
+    );
+  });
 });

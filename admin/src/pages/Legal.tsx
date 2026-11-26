@@ -29,6 +29,10 @@ export const LEGAL_FIELDS: { key: string; label: string; kind: Kind; hint?: stri
   { key: 'legal.privacy_policy_md', label: 'Privacy policy (Markdown)', kind: 'markdown' },
   { key: 'legal.terms_md', label: 'Terms of use (Markdown)', kind: 'markdown' },
   { key: 'legal.deletion_policy_md', label: 'Deletion policy (Markdown)', kind: 'markdown' },
+  { key: 'legal.refund_policy_md', label: 'Refund and cancellation policy (Markdown)', kind: 'markdown', hint: 'Required by payment gateways.' },
+  { key: 'legal.delivery_policy_md', label: 'Delivery policy, digital service (Markdown)', kind: 'markdown', hint: 'Say that no physical goods are shipped.' },
+  { key: 'legal.contact_md', label: 'Contact page (Markdown)', kind: 'markdown', hint: 'Address, support email and phone, grievance route.' },
+  { key: 'legal.cookies_md', label: 'Cookies and local storage (Markdown)', kind: 'markdown' },
 ];
 
 const LABEL: Record<string, string> = Object.fromEntries([
@@ -160,7 +164,7 @@ export function LegalPage() {
   return (
     <>
       <PageHeader title="Legal details">
-        Shown in the app’s Privacy, Terms, Deletion, Subprocessors and Grievance pages. {canEdit ? null : 'Read-only. Admins can change legal details.'}
+        Shown in the app’s Privacy, Terms, Refund and Cancellation, Delivery, Contact, Cookies, Deletion, Subprocessors and Grievance pages. {canEdit ? null : 'Read-only. Admins can change legal details.'}
       </PageHeader>
       {status.data?.complete === true ? (
         <p className="msg msg-ok" role="status">

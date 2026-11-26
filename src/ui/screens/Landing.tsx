@@ -4,12 +4,13 @@ import { Glyph } from '../components/Glyph';
 import { Badge } from '../components/ui';
 import { StartChoices } from '../components/StartChoices';
 import { BetaBadge } from '../components/BetaBadge';
-import { HERO_HEADLINE, HERO_SUBLINE } from '../../content/savings';
 import { useApp } from '../store';
 import { useAccount } from '../account/AccountContext';
 import { readPref, writePref } from '../lib/prefs';
 import { usePublicStatus } from '../lib/platform';
+import { useT } from '../lib/lang';
 import { Home } from './Home';
+import { LegalLinks } from './LegalScreen';
 
 /** The five first-use choices on their own page (also shown on an empty Home). */
 export const START_BENEFITS = [
@@ -35,22 +36,23 @@ const OPENED_PREF = 'landing-opened';
 export function LandingPage({ onOpen }: { onOpen: () => void }) {
   const st = usePublicStatus();
   const apps = st.state === 'ok' ? st.value.apps : { androidUrl: null, iosUrl: null };
+  const t = useT();
   return (
     <div className="page2 landing" data-testid="landing">
       <header className="page-head start-hero" data-block="hero">
         <p className="hero-beta">
           <BetaBadge />
         </p>
-        <h1>{HERO_HEADLINE}</h1>
-        <p className="hero-sub">{HERO_SUBLINE}</p>
+        <h1>{t('landing.headline')}</h1>
+        <p className="hero-sub">{t('landing.sub')}</p>
         <ul className="hero-benefits" data-testid="start-benefits">
-          {START_BENEFITS.map((b) => (
-            <li key={b}>{b}</li>
+          {(['landing.benefit1', 'landing.benefit2', 'landing.benefit3'] as const).map((k) => (
+            <li key={k}>{t(k)}</li>
           ))}
         </ul>
         <div className="btn-row landing-cta">
           <a className="btn btn-primary press" href="#/start" onClick={onOpen}>
-            Open Due
+            {t('landing.cta')}
           </a>
           {apps.androidUrl && (
             <a
@@ -74,7 +76,7 @@ export function LandingPage({ onOpen }: { onOpen: () => void }) {
           )}
         </div>
         <p className="muted small" data-testid="landing-privacy">
-          {LANDING_PRIVACY_LINE}
+          {t('landing.privacy')}
         </p>
       </header>
       <section className="stack-8" aria-labelledby="how-h">
@@ -91,9 +93,7 @@ export function LandingPage({ onOpen }: { onOpen: () => void }) {
           </a>
         </p>
       </section>
-      <p className="muted small start-legal" data-testid="start-legal">
-        <a href="#/legal/privacy">Privacy</a> · <a href="#/legal/terms">Terms</a>
-      </p>
+      <LegalLinks />
     </div>
   );
 }
@@ -119,27 +119,16 @@ export function HomeOrLanding() {
 export function StartPaths() {
   return (
     <div className="page2">
-      <header className="page-head start-hero" data-block="hero">
-        <h1>{HERO_HEADLINE}</h1>
-        <p className="hero-sub">{HERO_SUBLINE}</p>
+      <header className="page-head" data-block="hero">
+        <h1 id="start-h">How would you like to start?</h1>
+        <p className="muted">{INTAKE_LINE}</p>
         <p className="hero-beta">
           <BetaBadge />
         </p>
-        <ul className="hero-benefits" data-testid="start-benefits">
-          {START_BENEFITS.map((b) => (
-            <li key={b}>{b}</li>
-          ))}
-        </ul>
       </header>
-      <section className="stack-8" aria-labelledby="start-h">
-        <h2 id="start-h">How would you like to start?</h2>
-        <p className="muted">{INTAKE_LINE}</p>
-      </section>
       <StartChoices headingId="start-h" />
       <EmailIngestionCard />
-      <p className="muted small start-legal" data-testid="start-legal">
-        <a href="#/legal/privacy">Privacy</a> · <a href="#/legal/terms">Terms</a>
-      </p>
+      <LegalLinks />
     </div>
   );
 }

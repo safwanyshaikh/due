@@ -43,6 +43,7 @@ import {
   PERSONAL_PROFILE_ID,
   type EntityQuestion,
 } from '../../lib/profiles';
+import { monthlyOutlay } from './shareCard';
 import { EntityQuestionCard } from '../profiles/EntityQuestionCard';
 
 const MAX_BYTES = 15 * 1024 * 1024;
@@ -88,7 +89,13 @@ function safeCandidates(lines: StatementLine[], loans: LoanStatementSummary[]): 
   }
 }
 
-function guessType(c: RecurringCandidate): CommitmentType {
+/** Food and grocery order apps: frequent payments, but orders, not a subscription. */
+const ORDER_APPS =
+  /zomato|swiggy|blinkit|zepto|instamart|bigbasket|dominos|domino's|mcdonald|eatsure/i;
+export const isOrderApp = (label: string): boolean => ORDER_APPS.test(label);
+
+export function guessType(c: RecurringCandidate): CommitmentType {
+  if (c.kind === 'bill' || isOrderApp(c.label)) return 'bill';
   return c.rail === 'bank_mandate' && c.averageInr >= 3000 ? 'emi' : 'subscription';
 }
 
@@ -163,7 +170,9 @@ export function StatementImport() {
     }
     const cands = findRecurring(lines);
     setFound(cands);
-    setPicked(Object.fromEntries(cands.map((c) => [c.key, c.confidence !== 'low'])));
+    setPicked(
+      Object.fromEntries(cands.map((c) => [c.key, c.confidence !== 'low' && !isOrderApp(c.label)])),
+    );
     setTypes(Object.fromEntries(cands.map((c) => [c.key, guessType(c)])));
   };
 
@@ -536,6 +545,37 @@ export function StatementImport() {
                 <dd>{(upi.recurring ?? []).length}</dd>
               </div>
             </dl>
+            {(upi.recurring ?? []).length === 0 && (
+              <div className="stack-8" data-testid="upi-no-repeats">
+                <p>
+                  {upiCard > 0
+                    ? `We read ${rupees(upiCard)} of UPI-on-credit-card spends. `
+                    : 'We read this statement. '}
+                  No repeating subscriptions were found in it.
+                </p>
+                <p className="muted small">
+                  A UPI app statement lists what you paid, not the AutoPay mandates behind it. Next
+                  steps: add a bank statement (it shows UPI AutoPay debits), or add a subscription
+                  yourself.
+                </p>
+                <div className="btn-row">
+                  <button
+                    type="button"
+                    className="btn btn-secondary press"
+                    onClick={() => {
+                      setSource('bank');
+                      window.scrollTo({ top: 0 });
+                      document.getElementById('sv-stmt')?.focus();
+                    }}
+                  >
+                    Add a bank statement
+                  </button>
+                  <a className="btn btn-quiet press" href="#/add">
+                    Add a subscription myself
+                  </a>
+                </div>
+              </div>
+            )}
             {added === 'upi' ? (
               <Notice>Saved. Savings now uses these payments.</Notice>
             ) : (
@@ -672,6 +712,12 @@ export function StatementImport() {
             <h2 id="sv-found-h">
               {found.length} repeat payment{found.length === 1 ? '' : 's'} found
             </h2>
+            <p className="sv-outlay" data-testid="statement-outlay">
+              You pay about {rupees(monthlyOutlay(found.filter((c) => picked[c.key])))} a month on{' '}
+              {found.filter((c) => picked[c.key]).length} of these (about{' '}
+              {rupees(monthlyOutlay(found.filter((c) => picked[c.key])) * 12)} a year). Untick
+              anything that is not a repeat bill.
+            </p>
             <ul className="sv-cands">
               {found.map((c) => (
                 <li key={c.key} className="sv-cand">

@@ -19,3 +19,20 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ---- Due release build (minifyEnabled true) ----
+# Capacitor finds plugins and their @PluginMethod methods by reflection, and the WebView bridge calls into
+# @JavascriptInterface methods: keep them, or the release app loses its native features.
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin public class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod public *;
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class * extends com.getcapacitor.Plugin { *; }
+# Plugins used by Due (secure storage, biometric auth, notifications, filesystem, share, preferences, app).
+-keep class com.aparajita.capacitor.** { *; }
+-keep class com.capacitorjs.plugins.** { *; }
+-keep class androidx.biometric.** { *; }
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-dontwarn com.getcapacitor.**

@@ -142,3 +142,32 @@ export function greeting(
           : 'Good evening';
   return { hello, date };
 }
+
+/**
+ * The big number on Home. A new user whose only bill falls early next month used to see "Planned in Nov ₹0"
+ * beside a card saying a bill is due: when this month holds nothing but the next 30 days do, show those days.
+ */
+export function summaryHeadline(
+  monthPaise: number,
+  monthUnknown: number,
+  monthLabel: string,
+  next30: { totalPaise: number; unknownAmountCount: number },
+): { label: string; paise: number; unknown: number; next30: boolean } {
+  if (
+    monthPaise === 0 &&
+    monthUnknown === 0 &&
+    (next30.totalPaise > 0 || next30.unknownAmountCount > 0)
+  )
+    return {
+      label: 'Due in the next 30 days',
+      paise: next30.totalPaise,
+      unknown: next30.unknownAmountCount,
+      next30: true,
+    };
+  return {
+    label: `Planned in ${monthLabel}`,
+    paise: monthPaise,
+    unknown: monthUnknown,
+    next30: false,
+  };
+}

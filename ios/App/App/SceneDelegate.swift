@@ -21,4 +21,32 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)
     }
+
+    // App-switcher privacy screen: the snapshot iOS takes for the app switcher shows a plain cover, never
+    // bills, balances or amounts.
+    private var privacyCover: UIView?
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        guard let window = window, privacyCover == nil else { return }
+        let cover = UIView(frame: window.bounds)
+        cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        cover.backgroundColor = UIColor.systemBackground
+        let label = UILabel()
+        label.text = "Due"
+        label.font = UIFont.systemFont(ofSize: 28, weight: .semibold)
+        label.textColor = UIColor.label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        cover.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: cover.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: cover.centerYAnchor),
+        ])
+        window.addSubview(cover)
+        privacyCover = cover
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        privacyCover?.removeFromSuperview()
+        privacyCover = nil
+    }
 }

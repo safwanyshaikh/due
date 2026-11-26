@@ -4,10 +4,15 @@ import { SafeMarkdown } from '../lib/markdown';
 import { Glyph } from '../components/Glyph';
 import { Notice } from '../components/ui';
 import { formatDate } from '../../lib/dates';
+import { PRIVACY_SUMMARY } from '../../content/privacy';
 
 export const LEGAL_TITLES: Record<LegalDoc, string> = {
   privacy: 'Privacy notice',
   terms: 'Terms of use',
+  refund: 'Refund and cancellation',
+  delivery: 'Delivery (digital service)',
+  contact: 'Contact us',
+  cookies: 'Cookies and local storage',
   deletion: 'Deletion policy',
   subprocessors: 'Subprocessors',
   grievance: 'Grievance contact',
@@ -15,12 +20,44 @@ export const LEGAL_TITLES: Record<LegalDoc, string> = {
 
 export const LEGAL_INCOMPLETE = 'Legal details are being finalised';
 
+/** Footer links to every public policy page (payment gateways expect them on the site). */
+export function LegalLinks() {
+  return (
+    <p className="muted small start-legal" data-testid="start-legal">
+      {FOOTER_DOCS.map((d, i) => (
+        <span key={d}>
+          {i > 0 ? ' · ' : null}
+          <a href={`#/legal/${d}`}>{FOOTER_LABEL[d]}</a>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+const FOOTER_DOCS: LegalDoc[] = ['privacy', 'terms', 'refund', 'delivery', 'contact', 'cookies'];
+const FOOTER_LABEL: Partial<Record<LegalDoc, string>> = {
+  privacy: 'Privacy',
+  terms: 'Terms',
+  refund: 'Refunds and cancellation',
+  delivery: 'Delivery',
+  contact: 'Contact',
+  cookies: 'Cookies',
+};
+
 const has = (v: string | null | undefined): v is string => typeof v === 'string' && !!v.trim();
 
 function Body({ doc, legal }: { doc: LegalDoc; legal: PublicLegal }) {
   if (doc === 'privacy')
     return has(legal.privacyPolicyMd) ? <SafeMarkdown source={legal.privacyPolicyMd} /> : null;
   if (doc === 'terms') return has(legal.termsMd) ? <SafeMarkdown source={legal.termsMd} /> : null;
+  if (doc === 'refund')
+    return has(legal.refundPolicyMd) ? <SafeMarkdown source={legal.refundPolicyMd} /> : null;
+  if (doc === 'delivery')
+    return has(legal.deliveryPolicyMd) ? <SafeMarkdown source={legal.deliveryPolicyMd} /> : null;
+  if (doc === 'contact')
+    return has(legal.contactMd) ? <SafeMarkdown source={legal.contactMd} /> : null;
+  if (doc === 'cookies')
+    return has(legal.cookiesMd) ? <SafeMarkdown source={legal.cookiesMd} /> : null;
   if (doc === 'deletion')
     return has(legal.deletionPolicyMd) ? <SafeMarkdown source={legal.deletionPolicyMd} /> : null;
   if (doc === 'subprocessors')
@@ -141,6 +178,16 @@ export function LegalScreen({ doc }: { doc?: LegalDoc }) {
         </Notice>
       )}
       {legal && !legal.complete && <Notice tone="warn">{LEGAL_INCOMPLETE}.</Notice>}
+      {doc === 'privacy' && !legal?.complete && l.state !== 'loading' && (
+        <section aria-labelledby="priv-sum-h" data-testid="privacy-bundled">
+          <h2 id="priv-sum-h">{PRIVACY_SUMMARY.heading}</h2>
+          <ul className="plain-list">
+            {PRIVACY_SUMMARY.points.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       {legal?.complete && body}
       {legal && !body && legal.complete && <p className="muted">Not published yet.</p>}
       <a className="btn btn-quiet press" href="#/legal">

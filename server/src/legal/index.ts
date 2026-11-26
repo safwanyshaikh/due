@@ -35,6 +35,10 @@ export const LEGAL_SCHEMAS = {
   'legal.privacy_policy_md': markdown,
   'legal.terms_md': markdown,
   'legal.deletion_policy_md': markdown,
+  'legal.refund_policy_md': markdown,
+  'legal.delivery_policy_md': markdown,
+  'legal.contact_md': markdown,
+  'legal.cookies_md': markdown,
   'legal.subprocessors': z
     .array(z.object({ name: z.string().trim().min(1).max(120), purpose: z.string().trim().min(1).max(300), region: z.string().trim().min(1).max(80) }).strict())
     .max(50),
@@ -57,6 +61,10 @@ export const LEGAL_DEFAULTS: { [K in LegalKey]: z.infer<(typeof LEGAL_SCHEMAS)[K
   'legal.privacy_policy_md': '',
   'legal.terms_md': '',
   'legal.deletion_policy_md': '',
+  'legal.refund_policy_md': '',
+  'legal.delivery_policy_md': '',
+  'legal.contact_md': '',
+  'legal.cookies_md': '',
   'legal.subprocessors': [],
   'legal.effective_date': null,
 };
@@ -72,6 +80,10 @@ export const REQUIRED_LEGAL: LegalKey[] = [
   'legal.privacy_policy_md',
   'legal.terms_md',
   'legal.deletion_policy_md',
+  'legal.refund_policy_md',
+  'legal.delivery_policy_md',
+  'legal.contact_md',
+  'legal.cookies_md',
   'legal.subprocessors',
   'legal.effective_date',
 ];
@@ -114,6 +126,10 @@ export function publicLegal(v: LegalValues) {
     privacyPolicyMd: v['legal.privacy_policy_md'],
     termsMd: v['legal.terms_md'],
     deletionPolicyMd: v['legal.deletion_policy_md'],
+    refundPolicyMd: v['legal.refund_policy_md'],
+    deliveryPolicyMd: v['legal.delivery_policy_md'],
+    contactMd: v['legal.contact_md'],
+    cookiesMd: v['legal.cookies_md'],
     subprocessors: v['legal.subprocessors'],
     effectiveDate: v['legal.effective_date'],
     complete: missing.length === 0,

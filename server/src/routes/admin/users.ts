@@ -28,6 +28,24 @@ function baseUrl(app: FastifyInstance, req: FastifyRequest): string {
   return app.deps.config.publicBaseUrl ?? `${req.protocol}://${req.host}`;
 }
 
+/**
+ * Credentials of admin-level accounts (admin and owner) can only be reset by an owner (M-C): otherwise one admin
+ * could reset another admin's password link or 2-step verification and take the account over.
+ */
+function assertCanResetCredentials(actorRole: Role, target: { role: Role }): void {
+  if ((target.role === 'admin' || target.role === 'owner') && actorRole !== 'owner') {
+    throw forbidden('Only an owner can reset sign-in for an admin or owner account');
+  }
+}
+
+/**
+ * The one-time link is shown in the console only when the server cannot email it. With SMTP configured it goes
+ * only to the user's own inbox, so whoever pressed the button never holds it (M-C).
+ */
+function linkForResponse(app: FastifyInstance, link: string): string | null {
+  return app.deps.mailer ? null : link;
+}
+
 /** Only an owner may act on an owner or grant the owner role. */
 function assertCanManage(actorRole: Role, target: { role: Role }, newRole?: Role): void {
   if (target.role === 'owner' && actorRole !== 'owner') throw forbidden('Only an owner can change an owner account');
@@ -114,7 +132,7 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
     });
     return reply.code(201).send({
       user: camel(out.user),
-      setupLink: out.link.link,
+      setupLink: linkForResponse(app, out.link.link),
       expiresAt: out.link.expiresAt,
       emailed: out.link.emailed,
     });
@@ -167,12 +185,13 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       const user = await one<UserRow>(c, `SELECT ${USER_COLS} FROM users WHERE id = $1`, [id]);
       if (!user) throw notFound('User not found');
       assertCanManage(actor.role, user);
+      assertCanResetCredentials(actor.role, user);
       if (user.status !== 'active') throw badRequest('User is disabled');
       const link = await issueLink(app, req, c, user, 'reset');
       await writeAudit(c, actorOf(req), 'user.reset_link', 'user', id, null, { expiresAt: link.expiresAt, emailed: link.emailed });
       return link;
     });
-    return { resetLink: out.link, expiresAt: out.expiresAt, emailed: out.emailed };
+    return { resetLink: linkForResponse(app, out.link), expiresAt: out.expiresAt, emailed: out.emailed };
   });
 
   app.post('/users/:id/revoke-sessions', admin, async (req) => {
@@ -198,6 +217,7 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       const user = await one<UserRow>(c, `SELECT ${USER_COLS} FROM users WHERE id = $1 FOR UPDATE`, [id]);
       if (!user) throw notFound('User not found');
       assertCanManage(actor.role, user);
+      assertCanResetCredentials(actor.role, user);
       await c.query('UPDATE users SET totp_secret_enc = NULL, totp_enrolled_at = NULL, totp_last_step = NULL WHERE id = $1', [id]);
       await c.query('DELETE FROM admin_recovery_codes WHERE user_id = $1', [id]);
       await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE user_id = $1 AND used_at IS NULL', [id, clock()]);

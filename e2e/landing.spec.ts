@@ -43,7 +43,7 @@ test.describe('landing', () => {
     ).toBe(true);
     await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
-    await page.getByRole('link', { name: 'Open Due' }).click();
+    await page.getByRole('link', { name: 'Start free, no sign-up' }).click();
     await expect(page.getByRole('heading', { name: 'How would you like to start?' })).toBeVisible();
   });
 

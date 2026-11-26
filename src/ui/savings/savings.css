@@ -284,3 +284,72 @@
     font-size: 2.1rem;
   }
 }
+
+/* Hero strip: the found amount is the first thing in Home's summary card (UX audit 2). */
+.sv-hero {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+.sv-hero-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sv-hero-fig {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sv-hero-lbl {
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+.sv-hero-go {
+  font-weight: 650;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Amounts never break mid-word; "/month" may drop to its own line (UX audit 10). */
+.amt,
+.sv-big,
+.sv-move-amt {
+  white-space: nowrap;
+}
+.sv-big .per,
+.sv-move-amt .per {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.sv-totals-hero .sv-total-found {
+  grid-column: 1 / -1;
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.sv-totals-hero .sv-total-found .sv-big {
+  font-size: 2.1rem;
+}
+.sv-move-amt .small {
+  display: block;
+}
+
+/* A long chip ("Reported price, check before switching") wraps inside its row at 320px. */
+.sv-move-body {
+  min-width: 0;
+}
+.sv-move .chip {
+  white-space: normal;
+  max-width: 100%;
+  text-align: left;
+}

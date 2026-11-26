@@ -597,7 +597,7 @@ export async function exportAccount(q: Queryable, a: ConsumerAccount, now: Date,
     let rawText: string | null = null;
     if (raw_text && opts.dataKey) {
       try {
-        rawText = decryptText(opts.dataKey, raw_text);
+        rawText = decryptText(opts.dataKey, raw_text, `user_events:${String(e.id)}`);
       } catch {
         rawText = null;
       }

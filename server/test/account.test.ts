@@ -1043,11 +1043,12 @@ describe('consents take effect', () => {
     const r = await c.put('/api/account/data', { baseVersion: 1, data: { a: 2 } });
     expect(r.statusCode).toBe(403);
     expect(r.json().error.code).toBe('consent_required');
-    expect((await c.get('/api/account/data')).json()).toMatchObject({ version: 1, data: { a: 1 } });
+    // M-D: the withdrawal also erased the server copy.
+    expect((await c.get('/api/account/data')).json()).toMatchObject({ version: 0, data: null });
     await consent(c, 'sync_backup', true);
     expect(
-      (await c.put('/api/account/data', { baseVersion: 1, data: { a: 2 } })).json().version,
-    ).toBe(2);
+      (await c.put('/api/account/data', { baseVersion: 0, data: { a: 2 } })).json().version,
+    ).toBe(1);
   });
 
   it("withdrawn 'reminders_email' makes the reminder job skip email and record unavailable / consent_withdrawn", async () => {

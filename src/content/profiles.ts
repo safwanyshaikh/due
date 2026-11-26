@@ -53,7 +53,8 @@ export const ENTITY_CHOICES: Record<
     {
       type: 'proprietorship',
       label: 'Just me, on my PAN (proprietorship)',
-      explain: 'No separate legal identity. Its dues are your dues, so Due counts them as yours.',
+      explain:
+        'Your own shop or practice, filed on your PAN. No separate legal identity, so Due counts its dues as yours.',
     },
     {
       type: 'partnership',
@@ -71,7 +72,7 @@ export const ENTITY_CHOICES: Record<
       type: 'private_limited',
       label: 'Private Limited / OPC',
       explain:
-        'A Private Limited’s loans are the company’s, not yours, unless you signed as guarantor.',
+        'A registered company (Private Limited or One Person Company). Its loans are the company’s, not yours, unless you signed as guarantor.',
     },
     {
       type: 'other',
@@ -187,7 +188,8 @@ export const GST_CHOICES: { value: boolean | null; label: string; explain: strin
   {
     value: true,
     label: 'Yes',
-    explain: 'Savings adds a note on business costs about input tax credit.',
+    explain:
+      'Savings adds a note on business costs about input tax credit (GST you paid on business costs, which you may be able to claim back).',
   },
   { value: false, label: 'No', explain: 'No GST notes.' },
   {

@@ -98,23 +98,28 @@ describe('Plans during the free beta', () => {
 });
 
 describe('start page', () => {
-  it('shows the tagline, three benefits, the beta badge and Privacy/Terms links', async () => {
+  it('leads with the choices (no repeated hero), the beta badge and the policy links', async () => {
     fakePlatform({ 'GET /api/public/status': STATUS({ plusFree: true, endsOn: null }) });
     renderApp({ hash: '#/start' });
-    expect(await screen.findByText('Same life. Smaller bills.')).toBeTruthy();
-    expect(screen.getByTestId('start-benefits').querySelectorAll('li')).toHaveLength(3);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'How would you like to start?' }),
+    ).toBeTruthy();
+    expect(screen.queryByText('Same life. Smaller bills.')).toBeNull();
+    expect(screen.queryByTestId('start-benefits')).toBeNull();
     await waitFor(() =>
       expect(screen.getByTestId('beta-badge').textContent).toBe('Free during beta'),
     );
     const legal = screen.getByTestId('start-legal');
     expect(legal.querySelector('a[href="#/legal/privacy"]')).toBeTruthy();
     expect(legal.querySelector('a[href="#/legal/terms"]')).toBeTruthy();
+    for (const d of ['refund', 'delivery', 'contact', 'cookies'])
+      expect(legal.querySelector(`a[href="#/legal/${d}"]`)).toBeTruthy();
   });
 
   it('shows no beta badge when the beta is off or the status is unavailable', async () => {
     fakePlatform({ 'GET /api/public/status': STATUS({ plusFree: false, endsOn: null }) });
     renderApp({ hash: '#/start' });
-    await screen.findByText('Same life. Smaller bills.');
+    await screen.findByRole('heading', { level: 1, name: 'How would you like to start?' });
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByTestId('beta-badge')).toBeNull();
   });
@@ -135,7 +140,9 @@ describe('landing page', () => {
     expect(screen.getByTestId('landing-privacy').textContent).toBe(
       'Your statements are read on your phone.',
     );
-    expect(screen.getByRole('link', { name: 'Open Due' }).getAttribute('href')).toBe('#/start');
+    expect(screen.getByRole('link', { name: 'Start free, no sign-up' }).getAttribute('href')).toBe(
+      '#/start',
+    );
     await waitFor(() =>
       expect(screen.getByTestId('beta-badge').textContent).toBe('Free during beta'),
     );
@@ -164,7 +171,7 @@ describe('landing page', () => {
   it('after Open Due the landing is remembered as seen on this device', async () => {
     fakePlatform({ 'GET /api/public/status': STATUS({ plusFree: false, endsOn: null }) });
     renderApp({ hash: '', landing: true });
-    fireEvent.click(await screen.findByRole('link', { name: 'Open Due' }));
+    fireEvent.click(await screen.findByRole('link', { name: 'Start free, no sign-up' }));
     expect(window.localStorage.getItem('due:landing-opened')).toBe('1');
     await waitFor(() => expect(screen.queryByTestId('landing')).toBeNull());
   });

@@ -104,7 +104,7 @@ describe('Savings screen', () => {
     ]);
     const { unmount } = renderApp({ data, hash: '#/savings' });
     const research = await screen.findByTestId('research');
-    expect(research.textContent).toContain('We’re studying these bills');
+    expect(research.textContent).toContain('No cheaper plan found for Sony LIV');
     expect(research.textContent).toContain('Sony LIV');
     expect(research.textContent).not.toContain('Gala Bus');
     await waitFor(() => expect(calls.filter((c) => c.url.includes('/research')).length).toBe(1));
@@ -160,8 +160,8 @@ describe('Move sheet', () => {
     fireEvent.click(first);
     const dialog = screen.getByRole('dialog', { name: title });
     expect(within(dialog).getByText(/\/month$/)).toBeTruthy();
-    expect(dialog.textContent).toMatch(/Likely range/);
-    expect(dialog.textContent).toMatch(/Last checked|Not checked yet/);
+    expect(dialog.textContent).toMatch(/Likely range|a year/);
+    expect(dialog.textContent).not.toMatch(/Not checked yet/);
     // The fixture modules are 'research', so prices are flagged.
     expect(dialog.textContent).toContain('Reported price, check before switching');
     const official = dialog.querySelector('a.btn-primary') as HTMLAnchorElement | null;
@@ -363,10 +363,14 @@ describe('Home and landing', () => {
   it('Home has one compact savings entry inside the summary card, before the tiles', async () => {
     mockFetch();
     const { container } = renderApp({ data: sameer() });
-    const entry = await screen.findByTestId('home-savings');
+    await screen.findByTestId('home-savings');
+    await waitFor(() => expect(screen.getByTestId('home-savings').textContent).toMatch(/found/));
+    const entry = screen.getByTestId('home-savings');
     expect(entry.closest('[data-block="summary"]')).not.toBeNull();
     expect(entry.getAttribute('href')).toBe('#/savings');
-    await waitFor(() => expect(entry.textContent).toMatch(/^₹[\d,]+\/month found$/));
+    await waitFor(() =>
+      expect(entry.textContent).toMatch(/^₹[\d,]+\/monthfound · \d+ moves? to look atSee how →$/),
+    );
     expect(container.querySelectorAll('[data-testid="home-savings"]')).toHaveLength(1);
     const order = Array.from(container.querySelectorAll('[data-block]')).map((e) =>
       e.getAttribute('data-block'),
@@ -374,10 +378,17 @@ describe('Home and landing', () => {
     expect(order.slice(0, 4)).toEqual(['topbar', 'header', 'summary', 'tiles']);
   });
 
-  it('start page leads with the tagline and sub-line', () => {
+  it('the landing leads with the tagline and sub-line; the start page leads with the choices', async () => {
     mockFetch();
     renderApp({ hash: '#/start' });
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Same life. Smaller bills.');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'How would you like to start?',
+    );
+    cleanup();
+    renderApp({ hash: '#/', landing: true });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Same life. Smaller bills.' }),
+    ).toBeTruthy();
     expect(document.body.textContent).toContain(
       'Due checks your subscriptions, recharges, rides and EMIs, and shows where you’re overpaying.',
     );

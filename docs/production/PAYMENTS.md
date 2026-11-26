@@ -46,3 +46,17 @@ The company is GST-registered. In Admin > Settings > GST set "We are registered 
 ## Razorpay (unchanged)
 
 Set `BILLING_PROVIDER=razorpay` (default), keys `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, webhook `https://due.karigarai.com/api/billing/razorpay/webhook`, plan ids in Admin > Plans.
+
+## Native apps: decision needed from the owner (store rules)
+
+**Today (code):** the iOS and Android apps sell nothing. For a request from the native app origin, `GET /api/public/plans` reports `paymentsAvailable: false`, `purchaseChannel: null` and `inAppPurchase: "not_offered"`, so the app shows no purchase UI, and `POST /api/account/checkout` answers 403 `not_sold_in_app`. The app does not tell people to buy on the website either (Apple's anti-steering rules forbid that outside the few allowed cases). The web app is unchanged. The beta is free, so nothing is lost while this is decided. A person who paid on the web keeps Plus in the app (entitlements are per account) and can still cancel there.
+
+**Decide before turning paid plans on in the apps:**
+
+| Option | Apple (App Store Review 3.1.1) | Google (Play payments policy) | Effort / cost |
+| --- | --- | --- | --- |
+| A. In-app purchase / Play Billing for Plus | Required for digital subscriptions bought in the app | Play Billing required; user-choice billing (alternative billing next to Play Billing) is allowed in India | StoreKit 2 + Play Billing integration, server receipt validation (App Store Server API, Play Developer API), store fees (15% small-business / subscriptions after year 1, 30% otherwise) |
+| B. Keep apps purchase-free (current) | Allowed: no purchase, no link, no call to action to buy elsewhere | Allowed | None; people subscribe on the website by themselves |
+| C. External purchase link | Only with Apple's entitlements, in the countries where they apply (not India today) | Only through Play's alternative billing programmes | Legal review per store |
+
+Recommendation: stay on **B** for the beta; plan **A** if most paying users come from the apps. Record the decision here, then remove the native block in `server/src/routes/billing.ts` only together with a store-compliant purchase flow.

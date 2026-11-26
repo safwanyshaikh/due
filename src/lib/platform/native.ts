@@ -66,8 +66,36 @@ export function fileNameFromUrl(url: string): string {
   return /\.pdf$/i.test(last) ? last : 'document.pdf';
 }
 
-/** Reads a file:// or content:// PDF handed to the app and returns it as a web File. */
-export async function readOpenedFile(url: string): Promise<File | null> {
+/** Android package / FileProvider authority prefix of this app (its own private files must never be read in). */
+export const APP_ID = 'com.karigarai.due';
+
+/**
+ * Which handed-in document URLs may be read (round-2 mobile finding). Another app can hand Due a URL that points
+ * at Due's own private files (file:///data/data/com.karigarai.due/..., or content:// via Due's own FileProvider);
+ * reading it would pull private data into the import flow. Allowed:
+ * - Android: content:// from another app's provider only (never file://, never Due's own authority);
+ * - iOS: file:// inside the app's Documents/Inbox, where iOS copies "Open in Due" files (no other file paths).
+ */
+export function openedFileAllowed(url: string, platform: 'ios' | 'android'): boolean {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  const path = decodeURIComponent(u.pathname);
+  if (path.includes('/../') || path.endsWith('/..')) return false;
+  if (platform === 'android') {
+    if (u.protocol !== 'content:') return false;
+    const authority = u.host.toLowerCase();
+    return authority !== '' && !authority.startsWith(APP_ID);
+  }
+  return u.protocol === 'file:' && /\/Documents\/Inbox\/[^/]+$/.test(path);
+}
+
+/** Reads a document handed to the app (see openedFileAllowed) and returns it as a web File. */
+export async function readOpenedFile(url: string, platform: 'ios' | 'android' = 'android'): Promise<File | null> {
+  if (!openedFileAllowed(url, platform)) return null;
   try {
     const r = await Filesystem.readFile({ path: url });
     if (typeof r.data !== 'string') {
@@ -83,9 +111,9 @@ function isDocumentUrl(url: string): boolean {
   return /^(content|file):/i.test(url);
 }
 
-async function dispatchUrl(url: string, h: PlatformHandlers): Promise<void> {
+async function dispatchUrl(url: string, h: PlatformHandlers, platform: 'ios' | 'android'): Promise<void> {
   if (isDocumentUrl(url)) {
-    const file = await readOpenedFile(url);
+    const file = await readOpenedFile(url, platform);
     if (file) h.onOpenFile?.(file);
     return;
   }
@@ -184,7 +212,7 @@ export function createNativeAdapter(name: 'ios' | 'android'): PlatformAdapter {
 
       subs.push(
         await App.addListener('appUrlOpen', ({ url }) => {
-          void dispatchUrl(url, handlers);
+          void dispatchUrl(url, handlers, name);
         }),
       );
       if (name === 'android') {
@@ -200,7 +228,7 @@ export function createNativeAdapter(name: 'ios' | 'android'): PlatformAdapter {
         );
       }
       const launch = await App.getLaunchUrl().catch(() => undefined);
-      if (launch?.url) void dispatchUrl(launch.url, handlers);
+      if (launch?.url) void dispatchUrl(launch.url, handlers, name);
       await SplashScreen.hide().catch(() => undefined);
       return () => {
         for (const s of subs) void s.remove();
@@ -250,11 +278,13 @@ export function createNativeAdapter(name: 'ios' | 'android'): PlatformAdapter {
 
     async saveAndShareFile(filename, text) {
       try {
+        // Only the cache's exports/ folder is shared through the FileProvider (android res/xml/file_paths.xml).
         const { uri } = await Filesystem.writeFile({
-          path: filename,
+          path: `exports/${filename.replace(/[/\\]/g, '_')}`,
           data: text,
           directory: Directory.Cache,
           encoding: Encoding.UTF8,
+          recursive: true,
         });
         await Share.share({ title: filename, files: [uri], dialogTitle: filename });
         return 'shared';

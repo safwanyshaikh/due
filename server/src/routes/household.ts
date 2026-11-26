@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { addMinutes } from '../clock.js';
 import { consumerAudit, currentAccount, entitlementOf, premiumRequired, requireAccount, requireFeature } from '../consumer/context.js';
 import { computeEntitlement, getPlan } from '../consumer/entitlements.js';
+import { hasConsent, recordConsentV2 } from '../consumer/consents.js';
 import { hashInviteToken } from '../consumer/sessions.js';
 import { many, one, withTransaction, type Queryable } from '../db.js';
 import { AppError, forbidden, notFound, parse } from '../http/errors.js';
@@ -79,6 +80,9 @@ export function plainName(raw: string): string {
     .slice(0, 60);
 }
 
+/** Version of the household-sharing consent recorded when a person creates or joins a household. */
+export const HOUSEHOLD_CONSENT_VERSION = 'household-2026-11';
+
 export async function householdRoutes(app: FastifyInstance): Promise<void> {
   const { pool, clock, config } = app.deps;
   const feature = requireFeature('household_sharing');
@@ -88,7 +92,14 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
       throw new AppError(403, 'plan_unavailable', 'Household sharing is not available yet');
     }
   };
-  const gate = [requireAccount, offered, feature];
+  // The household purpose must be consented to (recorded when creating or joining); a withdrawal ends access.
+  const consented = async (req: FastifyRequest) => {
+    const m = await membershipOf(pool, currentAccount(req).id);
+    if (m && !(await hasConsent(pool, currentAccount(req).id, 'household'))) {
+      throw new AppError(403, 'consent_required', 'Household sharing needs your consent. Join or create the household again to share data.');
+    }
+  };
+  const gate = [requireAccount, offered, feature, consented];
 
   app.get('/api/account/household', { preHandler: gate }, async (req) => {
     const m = await membershipOf(pool, currentAccount(req).id);
@@ -128,6 +139,8 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
         now,
       ]);
       await consumerAudit(c, a.id, 'household.created', 'household', row.id, null, { name: body.name }, now);
+      // Creating a household is the explicit act of consent to share data in it (M-D); withdrawing deletes it.
+      await recordConsentV2(c, { accountId: a.id }, { purpose: 'household', granted: true, policyVersion: HOUSEHOLD_CONSENT_VERSION, scope: { role: 'owner' }, source: 'app' }, now);
       return row;
     });
     return reply.code(201).send({ household: { id: h.id, name: h.name, ownerAccountId: a.id, createdAt: h.created_at }, role: 'owner' });
@@ -224,6 +237,7 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
         [h.id, a.id, inv.email, now],
       );
       await consumerAudit(c, a.id, 'household.joined', 'household', h.id, null, { role: 'member' }, now);
+      await recordConsentV2(c, { accountId: a.id }, { purpose: 'household', granted: true, policyVersion: HOUSEHOLD_CONSENT_VERSION, scope: { role: 'member' }, source: 'app' }, now);
       return h;
     });
     req.entitlement = null;

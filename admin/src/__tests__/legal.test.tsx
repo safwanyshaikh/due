@@ -49,6 +49,18 @@ describe('legal details', () => {
     ]);
   });
 
+  it('has editable fields for refund, delivery, contact and cookies pages', async () => {
+    mockFetch((url) => (url.endsWith('/api/public/legal') ? { body: incomplete } : { body: {} }));
+    renderAs('admin', <LegalPage />);
+    for (const l of [
+      'Refund and cancellation policy (Markdown)',
+      'Delivery policy, digital service (Markdown)',
+      'Contact page (Markdown)',
+      'Cookies and local storage (Markdown)',
+    ])
+      expect(await screen.findByLabelText(l)).toBeEnabled();
+  });
+
   it('viewers see the form read-only', async () => {
     mockFetch((url) => (url.endsWith('/api/public/legal') ? { body: incomplete } : { body: { 'legal.entity_name': 'X' } }));
     renderAs('viewer', <LegalPage />);

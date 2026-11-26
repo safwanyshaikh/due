@@ -21,3 +21,9 @@ Good: Keychain/Keystore token, allowBackup=false, no cleartext, association file
 
 ## Round-1 status
 Fixed: H1 (hop count to verify), M1, M2, M3, M4, M8, M12, L1–L7, L10. Partly: H2, H3, H4, M5, M6, M7, M9, M10, M11, L8. Not fixed: L9 (operational).
+
+## Fix status (fix pass 2)
+
+Fixed with regression tests (`server/test/round2.test.ts`, `compliance.test.ts`, `cashfree.test.ts`, app `mobileHardening`, `platform`, `researchProviders` tests):
+M-A (one decoded/routed path for every hook), M-C (owner-only credential resets for admins; links never returned with SMTP), M-D (withdrawal disconnects Gmail, erases the server backup, leaves/deletes the household; handlers check consent), M-B (incident record, fixed link-free template, owner alerts, second-owner approval, 5,000/day cap), M-E (`sync.seal_backfill` job; VACUUM FULL and backup expiry in `E2E_SYNC_PLAN.md`), M-F (proxy-chain evidence logging, optional `CLIENT_IP_HEADER`, verification steps in `SECURITY.md`), M5 (GET offer match removed), M6 (server accepts known provider names only), M10 (CI step `scripts/check-native-csp.mjs`), M11 (Purchase History, Phone Number), all listed Lows, Android/iOS hardening, and no purchase in the native apps (decision table in `PAYMENTS.md`).
+Still open: H3 end-to-end encryption, H4 India hosting, DPDP nomination and dormant-account retention, L9.

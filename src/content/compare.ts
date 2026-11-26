@@ -23,63 +23,63 @@ export type CompareColumn = (typeof COMPARE_COLUMNS)[number];
 
 const NS: Cell = { mark: 'unknown', note: 'Not stated' };
 
+/**
+ * Every rival cell below comes from docs/launch/COMPETITION.md (scores 0 to 5 are Due's own judgment from public
+ * information, 23 Nov 2026) or the first-run benchmark in docs/launch/UX_AUDIT.md (26 Nov 2026). "Our rating"
+ * cells say so. Marks: 4 or 5 of 5 = yes, 2 or 3 = partly, 0 or 1 = no. Wording stays plain ASCII.
+ */
 export const COMPARE_ROWS: { id: string; label: string; cells: Record<CompareColumn, Cell> }[] = [
   {
     id: 'sees-all',
     label: 'Sees all your recurring payments (subs, EMIs, cards, telecom, rides)',
     cells: {
       Due: { mark: 'partly', note: 'Subs, EMIs, cards and bills you add or import' },
-      CRED: { mark: 'partly', note: 'Card bills and rewards' },
-      INDmoney: { mark: 'partly', note: 'Investments, net worth and tracking' },
-      'Rocket Money': { mark: 'partly', note: 'Subscriptions and bills, US-focused' },
-      'Monarch Money': { mark: 'partly', note: 'Budgeting across accounts, US-focused' },
-    },
-  },
-  {
-    id: 'on-phone',
-    label: 'Reads your statements on your phone, not on a server',
-    cells: {
-      Due: { mark: 'yes', note: 'Files are read on your device' },
-      CRED: NS,
-      INDmoney: NS,
-      'Rocket Money': NS,
-      'Monarch Money': NS,
-    },
-  },
-  {
-    id: 'double',
-    label: 'Finds double payments & overlaps',
-    cells: {
-      Due: { mark: 'yes', note: 'Flags repeats and overlapping plans' },
-      CRED: NS,
-      INDmoney: NS,
-      'Rocket Money': NS,
-      'Monarch Money': NS,
-    },
-  },
-  {
-    id: 'leaks',
-    label: 'Shows card-interest and EMI-bounce leaks',
-    cells: {
-      Due: {
-        mark: 'partly',
-        note: 'Loan and EMI summary from a statement; bounce alerts are not built yet',
+      CRED: { mark: 'partly', note: 'Card bills and rewards. Our rating: 2 of 5' },
+      INDmoney: { mark: 'partly', note: 'Investments, net worth and tracking. Our rating: 3 of 5' },
+      'Rocket Money': {
+        mark: 'yes',
+        note: 'Subscriptions and bills, US-focused. Our rating: 4 of 5',
       },
-      CRED: NS,
-      INDmoney: NS,
-      'Rocket Money': NS,
-      'Monarch Money': NS,
+      'Monarch Money': {
+        mark: 'yes',
+        note: 'Budgeting across accounts, US-focused. Our rating: 4 of 5',
+      },
     },
   },
   {
-    id: 'lenders',
-    label: 'Earns money from lenders / loan referrals',
+    id: 'life',
+    label: 'Knows commute, food and phone-plan spending',
     cells: {
-      Due: { mark: 'no', note: 'Earns only from users (Plus, later)' },
-      CRED: { mark: 'yes', note: 'Offers loans through partner lenders' },
-      INDmoney: NS,
-      'Rocket Money': NS,
-      'Monarch Money': { mark: 'no', note: 'Paid subscription, no ads' },
+      Due: { mark: 'yes', note: 'Rides, food apps and telecom plans are part of its checks' },
+      CRED: { mark: 'no', note: 'Our rating: 1 of 5' },
+      INDmoney: { mark: 'no', note: 'Our rating: 0 of 5' },
+      'Rocket Money': { mark: 'no', note: 'Our rating: 1 of 5' },
+      'Monarch Money': { mark: 'no', note: 'Our rating: 0 of 5' },
+    },
+  },
+  {
+    id: 'proof',
+    label: 'Shows savings actually achieved',
+    cells: {
+      Due: { mark: 'partly', note: 'Counts a saving only after your bills show the change' },
+      CRED: { mark: 'no', note: 'Our rating: 1 of 5' },
+      INDmoney: { mark: 'no', note: 'Our rating: 1 of 5' },
+      'Rocket Money': {
+        mark: 'partly',
+        note: 'Our rating: 3 of 5. Bill negotiation, fee on success',
+      },
+      'Monarch Money': { mark: 'partly', note: 'Our rating: 2 of 5' },
+    },
+  },
+  {
+    id: 'neutral',
+    label: 'No lender or merchant money steering its advice',
+    cells: {
+      Due: { mark: 'yes', note: 'Earns only from users (Plus, later)' },
+      CRED: { mark: 'no', note: 'Sells loans through lenders. Our rating: 1 of 5' },
+      INDmoney: { mark: 'partly', note: 'Earns from investment products. Our rating: 2 of 5' },
+      'Rocket Money': { mark: 'partly', note: 'Success fee plus premium. Our rating: 3 of 5' },
+      'Monarch Money': { mark: 'yes', note: 'Paid subscription, no ads. Our rating: 5 of 5' },
     },
   },
   {
@@ -105,15 +105,29 @@ export const COMPARE_ROWS: { id: string; label: string; cells: Record<CompareCol
     },
   },
   {
+    id: 'signup',
+    label: 'What you need to start',
+    cells: {
+      Due: { mark: 'yes', note: 'Nothing. Open it and add a bill, no sign-up' },
+      CRED: { mark: 'partly', note: 'Phone number and OTP; members-only by credit score' },
+      INDmoney: { mark: 'partly', note: 'Mobile number, then KYC details' },
+      'Rocket Money': { mark: 'partly', note: 'An account and a linked bank account (via Plaid)' },
+      'Monarch Money': NS,
+    },
+  },
+  {
     id: 'price',
     label: 'Price',
     cells: {
       Due: { mark: 'yes', note: 'Free during beta' },
-      CRED: NS,
-      INDmoney: NS,
+      CRED: { mark: 'yes', note: 'No paywall for core features; earns from lenders and merchants' },
+      INDmoney: {
+        mark: 'yes',
+        note: 'No paywall for core features; earns from investment products',
+      },
       'Rocket Money': {
         mark: 'partly',
-        note: 'Fee on negotiated savings and a premium plan (amounts not stated)',
+        note: 'Finding subscriptions is free; cancelling needs Premium; fee on negotiated savings (amounts not stated)',
       },
       'Monarch Money': { mark: 'partly', note: 'Paid only, no free tier (amount not stated)' },
     },

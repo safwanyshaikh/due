@@ -25,6 +25,13 @@ export const AMOUNT_CONFIDENCE_CHOICES: [ValueConfidence, string][] = [
   ['estimated', 'An estimate'],
 ];
 
+/** Plain wording for the same three values (stored as user_entered / confirmed / estimated). */
+const EXACT_CHOICES: [ValueConfidence, string][] = [
+  ['user_entered', 'Yes, I typed it exactly'],
+  ['confirmed', 'Yes, it is on a bill or statement'],
+  ['estimated', 'No, it is an estimate'],
+];
+
 export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
   const { mutate, ctx, today, data } = useApp();
   const { entitlement } = useAccount();
@@ -159,9 +166,6 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
           required
         />
       </Field>
-      <Field label="Nickname (optional)" htmlFor="add-nick">
-        <input id="add-nick" value={nickname} onChange={(e) => setNickname(e.target.value)} />
-      </Field>
 
       <div className="inline-row">
         <Field label="Amount (₹)" htmlFor="add-amount">
@@ -173,40 +177,44 @@ export function AddScreen({ type: initialType }: { type?: CommitmentType }) {
             onChange={(e) => setAmount(e.target.value)}
           />
         </Field>
-        <Field label="How sure is the amount?" htmlFor="add-aconf">
-          <select
-            id="add-aconf"
-            value={amountConf}
-            onChange={(e) => setAmountConf(e.target.value as ValueConfidence)}
-          >
-            {AMOUNT_CONFIDENCE_CHOICES.map(([v, l]) => (
-              <option key={v} value={v}>
-                {l}
-              </option>
-            ))}
-          </select>
-        </Field>
       </div>
 
       <RuleEditor draft={draft} onChange={setDraft} today={today} entitlement={entitlement} />
 
-      <Field label="How sure is the date?" htmlFor="add-dconf">
-        <select
-          id="add-dconf"
-          value={dateConf}
-          onChange={(e) => setDateConf(e.target.value as ValueConfidence)}
-        >
-          {AMOUNT_CONFIDENCE_CHOICES.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-      </Field>
-
       <details className="more">
-        <summary className="press">More (owner, payment method, importance)</summary>
+        <summary className="press">
+          More (nickname, how exact, owner, payment method, importance)
+        </summary>
         <div className="stack-16">
+          <Field label="Nickname (optional)" htmlFor="add-nick">
+            <input id="add-nick" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+          </Field>
+          <Field label="Is the amount exact?" htmlFor="add-aconf">
+            <select
+              id="add-aconf"
+              value={amountConf}
+              onChange={(e) => setAmountConf(e.target.value as ValueConfidence)}
+            >
+              {EXACT_CHOICES.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Is the date exact?" htmlFor="add-dconf">
+            <select
+              id="add-dconf"
+              value={dateConf}
+              onChange={(e) => setDateConf(e.target.value as ValueConfidence)}
+            >
+              {EXACT_CHOICES.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </Field>
           {!multi && (
             <p className="muted small">
               Is this a business due? <a href="#/profiles">Add a business profile</a> to keep it

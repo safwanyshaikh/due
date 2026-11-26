@@ -32,8 +32,10 @@ android {
     buildTypes {
         release {
             if (System.getenv('DUE_KEYSTORE_FILE')) signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Shrink and obfuscate release builds; proguard-rules.pro keeps what Capacitor loads by reflection.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

@@ -1,3 +1,4 @@
+import { requestPath } from './http/paths.js';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
@@ -111,6 +112,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     genReqId: (req) => requestIdFrom(req.headers['x-request-id']),
     requestIdLogLabel: 'requestId',
   });
+  registerClientIp(app, config);
   if (config.sentryDsn && !errorReporter().configured) configureErrorReporter(config.sentryDsn, config.env);
   registerPlatformHandlers();
   registerOfferHandlers();
@@ -170,7 +172,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const adminAllow = adminAllowList(config.adminAllowedIps);
   if (adminAllow) {
     app.addHook('onRequest', async (req, reply) => {
-      const path = req.url.split('?')[0]!;
+      const path = requestPath(req);
       if (!isAdminPath(path)) return;
       if (!ipAllowed(adminAllow, req.ip)) {
         return reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } });
@@ -182,7 +184,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const accountCookie = cookieName('due_acct', config.isProduction);
   const intakeCookie = cookieName('due_intake', config.isProduction);
   app.addHook('onRequest', async (req) => {
-    const path = req.url.split('?')[0]!;
+    const path = requestPath(req);
     if (!path.startsWith('/api/admin') && !path.startsWith('/api/auth')) return;
     const token = req.cookies[adminCookie];
     if (!token || token.length > 200) return;
@@ -201,7 +203,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   // Consumer accounts (due_acct cookie) for /api/account, /api/intake and /api/telemetry.
   app.addHook('onRequest', async (req) => {
-    const path = req.url.split('?')[0]!;
+    const path = requestPath(req);
     if (!path.startsWith('/api/account') && !path.startsWith('/api/intake') && !path.startsWith('/api/telemetry')) return;
     // The native app (Capacitor origin) authenticates with a bearer token only: cookies are never read for it.
     const mobile = isMobileOrigin(req.headers.origin, config.mobileAppOrigins);
@@ -284,7 +286,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   }
 
   app.setNotFoundHandler((req, reply) => {
-    const path = req.url.split('?')[0]!;
+    const path = requestPath(req);
     if (req.method === 'GET' && (path === '/admin' || path.startsWith('/admin/')) && existsSync(resolve(adminDist, 'index.html'))) {
       reply.header('Cache-Control', 'no-cache');
       return reply.sendFile('index.html', adminDist);
@@ -297,6 +299,32 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   return app;
+}
+
+/**
+ * M-F: evidence for TRUST_PROXY_HOPS. In production the first 20 requests after start log how many
+ * X-Forwarded-For entries arrived (a count only, never addresses), so the hop setting can be checked against
+ * the real proxy chain (docs/production/SECURITY.md, "Client IP"). With CLIENT_IP_HEADER set, a valid IP in that
+ * header is the client IP; the hop derivation is used when it is missing or invalid.
+ */
+function registerClientIp(app: FastifyInstance, config: AppConfig): void {
+  let observed = 0;
+  app.addHook('onRequest', async (req) => {
+    if (config.clientIpHeader) {
+      const v = req.headers[config.clientIpHeader];
+      const ip = typeof v === 'string' ? v.trim() : '';
+      if (isIP(ip)) Object.defineProperty(req, 'ip', { value: ip, configurable: true });
+    }
+    if (config.isProduction && observed < 20) {
+      observed++;
+      const xff = req.headers['x-forwarded-for'];
+      const entries = typeof xff === 'string' ? xff.split(',').filter((x) => x.trim()).length : 0;
+      req.log.info(
+        { proxyChain: { xffEntries: entries, trustProxyHops: config.trustProxyHops, clientIpHeader: config.clientIpHeader, headerPresent: config.clientIpHeader ? Boolean(req.headers[config.clientIpHeader]) : null } },
+        'proxy chain observed',
+      );
+    }
+  });
 }
 
 /** proxy-addr trust function: the socket peer and the next hops-1 entries are proxies; everything left is not. */

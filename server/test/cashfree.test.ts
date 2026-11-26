@@ -51,7 +51,7 @@ afterAll(async () => {
 });
 
 let seq = 0;
-function webhook(type: string, data: Record<string, unknown>, eventTime = clock.now.toISOString(), secret = SECRET, ts = String(Date.now() + seq++)) {
+function webhook(type: string, data: Record<string, unknown>, eventTime = clock.now.toISOString(), secret = SECRET, ts = String(clock.now.getTime() + seq++)) {
   const raw = JSON.stringify({ type, event_time: eventTime, data });
   return {
     raw,
@@ -131,8 +131,11 @@ describe('cashfree checkout', () => {
 
 describe('cashfree webhooks', () => {
   it('verifies signatures (valid, tampered, wrong secret, missing headers)', async () => {
-    expect(verifyCashfreeSignature('s', '1', 'body', computeCashfreeSignature('s', '1', 'body'))).toBe(true);
-    expect(verifyCashfreeSignature('s', '2', 'body', computeCashfreeSignature('s', '1', 'body'))).toBe(false);
+    const t1 = String(clock.now.getTime());
+    const t2 = String(clock.now.getTime() + 1);
+    expect(verifyCashfreeSignature('s', t1, 'body', computeCashfreeSignature('s', t1, 'body'), clock.now)).toBe(true);
+    expect(verifyCashfreeSignature('s', t2, 'body', computeCashfreeSignature('s', t1, 'body'), clock.now)).toBe(false);
+    expect(verifyCashfreeSignature('s', '1', 'body', computeCashfreeSignature('s', '1', 'body'), clock.now)).toBe(false);
     expect(verifyCashfreeSignature('s', undefined, 'body', 'x')).toBe(false);
     const c = await signIn(app, mailer, 'a@example.com');
     const id = await checkout(c);
@@ -145,6 +148,15 @@ describe('cashfree webhooks', () => {
       headers: { 'content-type': 'application/json', 'x-webhook-timestamp': '1', 'x-webhook-signature': computeCashfreeSignature(SECRET, '1', ok.raw) },
     });
     expect(tampered.statusCode).toBe(400);
+    // A correctly signed delivery outside the 5-minute window (replay) is refused.
+    const oldTs = String(clock.now.getTime() - 6 * 60 * 1000);
+    const replay = await app.inject({
+      method: 'POST',
+      url: '/api/billing/webhook/cashfree',
+      payload: ok.raw,
+      headers: { 'content-type': 'application/json', 'x-webhook-timestamp': oldTs, 'x-webhook-signature': computeCashfreeSignature(SECRET, oldTs, ok.raw) },
+    });
+    expect(replay.statusCode).toBe(400);
     expect((await app.inject({ method: 'POST', url: '/api/billing/webhook/cashfree', payload: ok.raw, headers: { 'content-type': 'application/json' } })).statusCode).toBe(400);
     expect(await ent('a@example.com')).toBeUndefined();
     expect((await ok.send()).json()).toMatchObject({ ok: true, applied: true });

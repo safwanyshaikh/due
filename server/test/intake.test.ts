@@ -231,7 +231,7 @@ describe('inbound webhook', () => {
     expect(await n('SELECT count(*) AS n FROM user_events')).toBe(0);
     const stored = (await pool.query('SELECT body, status FROM inbound_messages')).rows[0];
     expect(stored.status).toBe('received');
-    expect(stored.body.startsWith('v2:k0:')).toBe(true);
+    expect(stored.body.startsWith('v3:k0:')).toBe(true);
     expect(stored.body).not.toContain('Netflix');
     const job = (await pool.query(`SELECT type, payload, status, correlation_id FROM jobs_queue`)).rows[0];
     expect(job).toMatchObject({ type: 'inbound.parse', status: 'queued', payload: { inboundMessageId: r.json().inboundMessageId } });
@@ -254,11 +254,13 @@ describe('inbound webhook', () => {
     expect(ev.confidence.provider).toBeLessThan(1);
     expect(ev).toMatchObject({ intakeType: 'forwarded_email', sourceDomain: 'mailer.netflix.com', rawAvailable: true });
 
-    const row = (await pool.query('SELECT raw_text, raw_retention_until FROM user_events')).rows[0];
-    expect(row.raw_text.startsWith('v2:k0:')).toBe(true);
+    const row = (await pool.query('SELECT id, raw_text, raw_retention_until FROM user_events')).rows[0];
+    expect(row.raw_text.startsWith('v3:k0:')).toBe(true);
+    // Bound to its row: the same ciphertext does not open as another event's text.
+    expect(() => decryptText(Buffer.from(KEY_B64, 'base64'), row.raw_text, 'user_events:00000000-0000-4000-8000-000000000000')).toThrow();
     expect(row.raw_text).not.toContain('Netflix');
     expect(row.raw_retention_until.toISOString()).toBe('2026-11-06T10:00:00.000Z');
-    const plain = decryptText(Buffer.from(KEY_B64, 'base64'), row.raw_text);
+    const plain = decryptText(Buffer.from(KEY_B64, 'base64'), row.raw_text, `user_events:${row.id}`);
     expect(plain).toContain('renews on 12 Nov 2026');
     expect(plain).not.toContain(CARD);
     expect(plain).toContain('[card ending 1111]');
@@ -396,8 +398,8 @@ describe('review actions, export and delete', () => {
     const sms = await c.post('/api/intake/events', { intakeType: 'shared_sms', text: 'Your Airtel postpaid bill of Rs. 599 is due on 15-11-2026. OTP is 482913' });
     expect(sms.statusCode).toBe(201);
     expect(sms.json().event.extractedFields).toMatchObject({ amountInr: 599, dueDate: '2026-11-15' });
-    const raw = (await pool.query(`SELECT raw_text FROM user_events WHERE intake_type = 'shared_sms'`)).rows[0].raw_text;
-    expect(decryptText(Buffer.from(KEY_B64, 'base64'), raw)).not.toContain('482913');
+    const sr = (await pool.query(`SELECT id, raw_text FROM user_events WHERE intake_type = 'shared_sms'`)).rows[0];
+    expect(decryptText(Buffer.from(KEY_B64, 'base64'), sr.raw_text, `user_events:${sr.id}`)).not.toContain('482913');
     expect((await c.post('/api/intake/events', { intakeType: 'shared_sms', text: 'hello there' })).json().event.reviewStatus).toBe('unreadable');
     const manual = await c.post('/api/intake/events', { intakeType: 'manual', fields: { provider: 'School', amountInr: 12000, dueDate: '2026-12-01' } });
     expect(manual.json().event).toMatchObject({ reviewStatus: 'needs_review', confidence: { provider: 1, amountInr: 1 } });

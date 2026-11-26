@@ -17,6 +17,7 @@ import { applyRefund } from '../consumer/billing-reconcile.js';
 import { one, withTransaction } from '../db.js';
 import { metrics } from '../observability/metrics.js';
 import { AppError, parse } from '../http/errors.js';
+import { isMobileOrigin } from '../http/security.js';
 import { getSettings } from '../settings.js';
 import { normaliseKeys, sha256 } from '../util.js';
 
@@ -84,14 +85,18 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     return new CashfreeClient(config.cashfree, fetchImpl);
   };
 
-  app.get('/api/public/plans', async (_req, reply) => {
+  app.get('/api/public/plans', async (req, reply) => {
     const plans = (await listPlans(pool)).filter((p) => p.active);
     const settings = await getSettings(pool);
     const terms = settings.billing_terms;
     const provider = activeProvider(config);
-    const configured = providerConfigured(config, provider);
+    // Store rules (Apple 3.1.1, Google Play Billing): no purchase inside the native apps until the owner decides
+    // on in-app purchase. The native app sees payments as unavailable, so it shows no purchase UI (PAYMENTS.md).
+    const native = isMobileOrigin(req.headers.origin, config.mobileAppOrigins);
+    const configured = !native && providerConfigured(config, provider);
     const tax = taxDisplay(settings);
     reply.header('Cache-Control', 'public, max-age=60');
+    reply.header('Vary', 'Origin');
     const beta = betaState(settings, clock());
     return {
       beta,
@@ -107,11 +112,15 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
       tax: { note: tax.note, pricesIncludeTax: tax.pricesIncludeTax, gstRegistered: tax.gstRegistered, gstin: tax.gstin },
       purchaseChannel: configured ? provider : null,
       paymentsAvailable: configured && plans.some((p) => Object.values(checkoutAvailability(p, true, provider)).some(Boolean)),
+      ...(native ? { inAppPurchase: 'not_offered' } : {}),
     };
   });
 
   app.post('/api/account/checkout', { preHandler: requireAccount }, async (req, reply) => {
     const a = currentAccount(req);
+    if (isMobileOrigin(req.headers.origin, config.mobileAppOrigins)) {
+      throw new AppError(403, 'not_sold_in_app', 'Paid plans are not sold in the app.');
+    }
     // billingPeriod has no default: yearly is only ever used when explicitly chosen.
     const body = parse(z.object({ plan: z.enum(PAID_PLAN_IDS), billingPeriod: z.enum(['monthly', 'yearly']), customerPhone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a 10-digit Indian mobile number').optional() }).strict(), normaliseKeys(req.body));
     // Free public beta: nothing is charged while it runs. Turning the beta off restores the paid flow unchanged.
@@ -265,7 +274,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     const raw = req.rawBody ?? '';
     const sig = req.headers[CASHFREE.webhook.signatureHeader];
     const ts = req.headers[CASHFREE.webhook.timestampHeader];
-    if (!verifyCashfreeSignature(config.cashfree.webhookSecret, typeof ts === 'string' ? ts : undefined, raw, typeof sig === 'string' ? sig : undefined)) {
+    if (!verifyCashfreeSignature(config.cashfree.webhookSecret, typeof ts === 'string' ? ts : undefined, raw, typeof sig === 'string' ? sig : undefined, clock())) {
       metrics.inc('billing.webhook', { outcome: 'invalid_signature', provider: 'cashfree' });
       throw new AppError(400, 'invalid_signature', 'Webhook signature verification failed');
     }

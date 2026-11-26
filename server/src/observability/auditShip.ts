@@ -14,15 +14,26 @@ const TABLES = [
   { table: 'login_events', cols: 'id, user_id, success, reason, ip, user_agent, at' },
 ] as const;
 
-const CURSOR_KEY = 'log_sink.cursor';
+export const CURSOR_KEY = 'log_sink.cursor';
 const BATCH = 1000;
+/**
+ * Only rows older than this are shipped. Ids come from sequences, so a row can commit after one with a higher id;
+ * waiting until every transaction that could hold a lower id has finished means the cursor never skips a row.
+ */
+export const SHIP_SETTLE_MS = 5 * 60 * 1000;
 
-export async function shipAuditRows(pool: Pool, sink: LogSinkOptions): Promise<Record<string, number>> {
-  const cur = (await pool.query<{ value: Record<string, number> }>('SELECT value FROM settings WHERE key = $1', [CURSOR_KEY])).rows[0]?.value ?? {};
+/** Shipped-up-to id per table (purging is limited to shipped rows while a sink is configured). */
+export async function shippedCursor(pool: Pool): Promise<Record<string, number>> {
+  return (await pool.query<{ value: Record<string, number> }>('SELECT value FROM settings WHERE key = $1', [CURSOR_KEY])).rows[0]?.value ?? {};
+}
+
+export async function shipAuditRows(pool: Pool, sink: LogSinkOptions, now: Date = new Date()): Promise<Record<string, number>> {
+  const cur = await shippedCursor(pool);
+  const settled = new Date(now.getTime() - SHIP_SETTLE_MS);
   const out: Record<string, number> = {};
   for (const t of TABLES) {
     const from = Number(cur[t.table] ?? 0);
-    const rows = (await pool.query(`SELECT ${t.cols} FROM ${t.table} WHERE id > $1 ORDER BY id LIMIT ${BATCH}`, [from])).rows as { id: string | number }[];
+    const rows = (await pool.query(`SELECT ${t.cols} FROM ${t.table} WHERE id > $1 AND at < $2 ORDER BY id LIMIT ${BATCH}`, [from, settled])).rows as { id: string | number }[];
     if (!rows.length) {
       out[t.table] = 0;
       continue;
@@ -43,8 +54,21 @@ export async function shipAuditRows(pool: Pool, sink: LogSinkOptions): Promise<R
   return out;
 }
 
+/** Keys whose values are names or free text a person chose (household names, titles, labels): never shipped. */
+const NAME_KEYS = /^(name|display_?name|label|title|nickname|provider|notes?|household|household_?name|invited_?email|subject|description)$/i;
+
+function dropNames(v: unknown, depth = 0): unknown {
+  if (depth > 6) return '[depth]';
+  if (Array.isArray(v)) return v.map((x) => dropNames(x, depth + 1));
+  if (v && typeof v === 'object' && !(v instanceof Date)) {
+    return Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, NAME_KEYS.test(k) ? '[redacted]' : dropNames(x, depth + 1)]));
+  }
+  return v;
+}
+
 /** Ids, actions, timestamps and IPs are kept (they are the audit trail); payload values are redacted. */
-function redactAuditRow(r: Record<string, unknown>): Record<string, unknown> {
+export function redactAuditRow(r: Record<string, unknown>): Record<string, unknown> {
   const { before, after, ...rest } = r;
-  return { ...rest, before: before === null ? null : redactObject(before), after: after === null ? null : redactObject(after) };
+  const red = (x: unknown) => (x === null || x === undefined ? null : redactObject(dropNames(x)));
+  return { ...rest, ...('user_agent' in rest ? { user_agent: rest.user_agent ? String(rest.user_agent).slice(0, 120) : null } : {}), before: red(before), after: red(after) };
 }

@@ -19,6 +19,8 @@ export interface DataKeyRing {
 
 const V1 = 'v1:';
 const V2 = 'v2:';
+/** v3 = v2 plus additional authenticated data naming the row (e.g. "user_events:<id>"): a ciphertext copied to another row does not open. */
+const V3 = 'v3:';
 const KID_RE = /^[A-Za-z0-9_-]{1,32}$/;
 
 function decodeKey(b64: string, label: string): Buffer {
@@ -54,25 +56,39 @@ function asRing(k: DataKeyRing | Buffer): DataKeyRing {
   return k;
 }
 
-function open(key: Buffer, b64: string): string {
+function open(key: Buffer, b64: string, aad?: string): string {
   const buf = Buffer.from(b64, 'base64');
   const decipher = createDecipheriv('aes-256-gcm', key, buf.subarray(0, 12));
+  if (aad !== undefined) decipher.setAAD(Buffer.from(aad));
   decipher.setAuthTag(buf.subarray(12, 28));
   return Buffer.concat([decipher.update(buf.subarray(28)), decipher.final()]).toString('utf8');
 }
 
-/** AES-256-GCM under the current key: "v2:<kid>:" + base64(iv[12] | tag[16] | ciphertext). */
-export function encryptText(keys: DataKeyRing | Buffer, plaintext: string): string {
+/**
+ * AES-256-GCM under the current key: "v2:<kid>:" + base64(iv[12] | tag[16] | ciphertext), or "v3:<kid>:" when
+ * `aad` (the row it belongs to) is given. Every row-level caller passes `aad`.
+ */
+export function encryptText(keys: DataKeyRing | Buffer, plaintext: string, aad?: string): string {
   const { current } = asRing(keys);
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', current.key, iv);
+  if (aad !== undefined) cipher.setAAD(Buffer.from(aad));
   const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-  return `${V2}${current.kid}:${Buffer.concat([iv, cipher.getAuthTag(), ct]).toString('base64')}`;
+  return `${aad !== undefined ? V3 : V2}${current.kid}:${Buffer.concat([iv, cipher.getAuthTag(), ct]).toString('base64')}`;
 }
 
-/** Decrypts encryptText output; throws if no key matches or the ciphertext was tampered with. */
-export function decryptText(keys: DataKeyRing | Buffer, stored: string): string {
+/** Decrypts encryptText output; throws if no key matches, the row (aad) differs or the ciphertext was tampered with. */
+export function decryptText(keys: DataKeyRing | Buffer, stored: string, aad?: string): string {
   const ring = asRing(keys);
+  if (stored.startsWith(V3)) {
+    if (aad === undefined) throw new Error('This ciphertext is bound to a row: pass its context');
+    const rest = stored.slice(V3.length);
+    const idx = rest.indexOf(':');
+    const kid = rest.slice(0, idx);
+    const k = ring.keys.find((x) => x.kid === kid) ?? (Buffer.isBuffer(keys) ? ring.current : undefined);
+    if (!k) throw new Error(`Unknown encryption key id "${kid}"`);
+    return open(k.key, rest.slice(idx + 1), aad);
+  }
   if (stored.startsWith(V2)) {
     const rest = stored.slice(V2.length);
     const idx = rest.indexOf(':');
@@ -97,6 +113,7 @@ export function decryptText(keys: DataKeyRing | Buffer, stored: string): string 
 
 /** Key id a ciphertext was written with ("legacy" for v1). */
 export function ciphertextKid(stored: string): string | null {
+  if (stored.startsWith(V3)) return stored.slice(V3.length).split(':')[0] ?? null;
   if (stored.startsWith(V2)) return stored.slice(V2.length).split(':')[0] ?? null;
   if (stored.startsWith(V1)) return 'legacy';
   return null;

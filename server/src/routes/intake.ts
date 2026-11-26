@@ -24,6 +24,7 @@ import {
   type Owner,
 } from '../intake/service.js';
 import { camelAll, normaliseKeys } from '../util.js';
+import { revokeAllForAccount } from '../gmail/service.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -35,6 +36,42 @@ declare module 'fastify' {
 export const CONSENT_PURPOSES = ACCEPTED_PURPOSES;
 const textVersion = z.string().trim().min(1).max(40);
 const uuidParam = z.object({ id: z.string().uuid() });
+
+/**
+ * M-D: withdrawing consent stops the processing it covered, at once (DPDP s.6(4)):
+ * - gmail: every Gmail connection is disconnected, its Google grant revoked and queued scans cancelled;
+ * - sync_backup: the server copy of the backup is erased (this device keeps its own data);
+ * - household: a member leaves the household; an owner's household (and its shared data) is deleted;
+ * - reminders_email / forwarding / analytics: their handlers check the consent before every run.
+ */
+export async function applyWithdrawal(app: FastifyInstance, accountId: string, purpose: string, now: Date): Promise<Record<string, unknown>> {
+  const { pool, config, clock } = app.deps;
+  if (purpose === 'gmail') {
+    const r = await revokeAllForAccount({ pool, config, clock }, accountId);
+    await consumerAudit(pool, accountId, 'consent.withdrawal_applied', 'gmail', null, null, r, now);
+    return { gmailDisconnected: r.identities };
+  }
+  if (purpose === 'sync_backup') {
+    const r = await withTransaction(pool, async (c) => {
+      const d = await c.query('DELETE FROM account_data WHERE account_id = $1', [accountId]);
+      await consumerAudit(c, accountId, 'consent.withdrawal_applied', 'account_data', accountId, null, { erased: d.rowCount ?? 0 }, now);
+      return d.rowCount ?? 0;
+    });
+    return { serverCopyErased: r > 0 };
+  }
+  if (purpose === 'household') {
+    const r = await withTransaction(pool, async (c) => {
+      const m = await one<{ household_id: string; role: string }>(c, 'SELECT household_id, role FROM household_members WHERE account_id = $1', [accountId]);
+      if (!m) return null;
+      if (m.role === 'owner') await c.query('DELETE FROM households WHERE id = $1', [m.household_id]);
+      else await c.query('DELETE FROM household_members WHERE household_id = $1 AND account_id = $2', [m.household_id, accountId]);
+      await consumerAudit(c, accountId, 'consent.withdrawal_applied', 'household', m.household_id, null, { role: m.role }, now);
+      return m.role;
+    });
+    return r ? { household: r === 'owner' ? 'deleted' : 'left' } : {};
+  }
+  return {};
+}
 
 /** Signed-in account wins; otherwise the temporary intake session. Never both. */
 export function intakeOwner(req: FastifyRequest): Owner {
@@ -402,7 +439,8 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
       // Withdrawing intake consent pauses forwarding immediately.
       await pool.query(`UPDATE intake_aliases SET status = 'paused', updated_at = $2 WHERE ${ownerWhere(owner, 1)} AND status = 'active'`, [owner.id, now]);
     }
-    return reply.code(201).send({ ok: true, purpose, granted: body.granted, at: now });
+    const effects = !body.granted && owner.kind === 'account' ? await applyWithdrawal(app, owner.id, purpose, now) : {};
+    return reply.code(201).send({ ok: true, purpose, granted: body.granted, at: now, ...effects });
   });
 
   app.get('/api/account/consents', async (req) => {

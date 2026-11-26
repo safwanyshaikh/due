@@ -405,10 +405,9 @@ describe('cross-calculation match endpoint', () => {
     return app.inject({ method: 'POST', url: '/api/public/offers/match', payload: body });
   };
 
-  it('keeps the legacy GET form working', async () => {
+  it('no longer answers the legacy GET form (provider and price would be in the URL)', async () => {
     const r = await app.inject({ method: 'GET', url: '/api/public/offers/match?provider=airtel&price=699' });
-    expect(r.statusCode).toBe(200);
-    expect(r.json().query).toMatchObject({ provider: 'airtel', price: 699 });
+    expect(r.statusCode).toBe(404);
   });
 
   it('returns possible benefits with eligibility, expiry, assumptions, confidence and sources', async () => {

@@ -48,7 +48,7 @@ describe('Home', () => {
   it('summary card shows planned this month, the next item, confidence/source and compact actions', () => {
     renderApp({ data: dataWithOne() });
     const card = document.querySelector('[data-block="summary"]') as HTMLElement;
-    expect(card.textContent).toMatch(/Planned in/);
+    expect(card.textContent).toMatch(/Planned in|Due in the next 30 days/);
     expect(card.textContent).toContain('Netflix');
     expect(card.textContent).toContain('₹649');
     expect(card.textContent).toMatch(/Date entered by you/);
@@ -107,20 +107,17 @@ describe('Home', () => {
     const choices = Array.from(container.querySelectorAll<HTMLElement>('[data-choice]')).map(
       (e) => e.querySelector('strong')?.textContent,
     );
+    // Statement first; unconfigured integrations (status unreachable here) are hidden, never "Not configured".
     expect(choices).toEqual([
+      'Upload a bank/card statement',
       'Add manually',
       'Upload a bill or sanction letter',
-      'Forward a subscription email',
-      'Connect Gmail',
       'Sign in for sync and reminders',
     ]);
-    // Status endpoint unreachable in tests: integrations are labelled honestly, never "Live".
-    await waitFor(() =>
-      expect(container.querySelector('[data-choice="gmail"]')?.textContent).toMatch(
-        /Status unavailable/,
-      ),
-    );
-    expect(container.querySelector('[data-choice="gmail"]')?.textContent).not.toMatch(/Live/);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(container.querySelector('[data-choice="gmail"]')).toBeNull();
+    expect(container.querySelector('[data-choice="forward"]')).toBeNull();
+    expect(container.textContent).not.toMatch(/Not configured|Status unavailable/);
     expect(container.querySelector('[data-choice="upload"]')?.textContent).toMatch(
       /5 of 5 document uploads left/,
     );

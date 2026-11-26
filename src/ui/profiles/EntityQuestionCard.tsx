@@ -226,6 +226,26 @@ export function EntityQuestionCard({
     );
   };
 
+  const noneMine = () => {
+    const at = new Date().toISOString();
+    update((d) =>
+      pending.reduce(
+        (acc, x) =>
+          recordDecision(acc, {
+            key: x.key,
+            name: x.name,
+            reason: x.reason,
+            answer: 'not_mine',
+            at,
+          }),
+        d,
+      ),
+    );
+    setHandled((h) => new Set([...h, ...pending.map((x) => x.key)]));
+    setStep(null);
+    setSaid('Got it. Due won’t ask about these names again.');
+  };
+
   const save = (entityType: EntityType, role: ProfileRole, gst: boolean | null): string | null => {
     if (!q || !step) return null;
     const at = new Date().toISOString();
@@ -275,6 +295,21 @@ export function EntityQuestionCard({
         <p className="muted small" role="status">
           {said}
         </p>
+      )}
+      {pending.length > 1 && !step && (
+        <div className="stack-8" data-testid="entity-group">
+          <p className="muted small">
+            {pending.length} names found: {pending.map((x) => `‘${x.name}’`).join(', ')}. Which are
+            yours? Answer one at a time, or skip them all.
+          </p>
+          <button
+            type="button"
+            className="btn btn-quiet btn-sm press align-start"
+            onClick={noneMine}
+          >
+            None of these are mine
+          </button>
+        </div>
       )}
       <p className="pf-question-text">{questionText(q)}</p>
       {step ? (

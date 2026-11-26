@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { randomBytes } from 'node:crypto';
 import type { Clock } from '../clock.js';
 import { addMinutes } from '../clock.js';
@@ -151,13 +152,15 @@ export async function ingest(q: Queryable, input: IngestInput, key: DataKeyRing 
   for (const k of Object.keys(input.manualFields ?? {})) confidence[k] = 1;
   const hasText = parsed.redactedText.trim().length > 0;
   const status = !hasText && !input.manualFields ? 'unreadable' : parsed.unreadable && !input.manualFields ? 'unreadable' : 'needs_review';
-  const raw = key && hasText ? encryptText(key, parsed.redactedText) : null;
+  // The row id is chosen here so the ciphertext can be bound to it (AAD "user_events:<id>").
+  const eventId = randomUUID();
+  const raw = key && hasText ? encryptText(key, parsed.redactedText, rawTextContext(eventId)) : null;
   const cols = ownerCols(input.owner);
   const event = (await one<EventRow>(
     q,
-    `INSERT INTO user_events (account_id, temp_session_id, alias_id, intake_type, message_fingerprint, message_id_hash, source_domain,
+    `INSERT INTO user_events (id, account_id, temp_session_id, alias_id, intake_type, message_fingerprint, message_id_hash, source_domain,
         extracted_fields, confidence, review_status, raw_text, raw_retention_until, parser_version, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
+     VALUES ($15,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
     [
       cols.account_id,
       cols.temp_session_id,
@@ -173,9 +176,15 @@ export async function ingest(q: Queryable, input: IngestInput, key: DataKeyRing 
       raw ? addMinutes(now, RAW_RETENTION_DAYS * 1440) : null,
       parsed.parserVersion,
       now,
+      eventId,
     ],
   ))!;
   return { duplicate: false, event };
+}
+
+/** Additional authenticated data for user_events.raw_text (binds the ciphertext to its row). */
+export function rawTextContext(eventId: string): string {
+  return `user_events:${eventId}`;
 }
 
 export function eventView(e: EventRow, key: DataKeyRing | null, includeRaw = false) {
@@ -184,7 +193,7 @@ export function eventView(e: EventRow, key: DataKeyRing | null, includeRaw = fal
     rawText = null;
     if (e.raw_text && key) {
       try {
-        rawText = decryptText(key, e.raw_text);
+        rawText = decryptText(key, e.raw_text, rawTextContext(e.id));
       } catch {
         rawText = null;
       }

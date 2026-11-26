@@ -1,6 +1,7 @@
 import { addMinutes } from '../clock.js';
 import { many, one } from '../db.js';
 import { checkSource, type MonitorContext, type Outcome } from '../monitor/engine.js';
+import { shippedCursor } from '../observability/auditShip.js';
 import { enqueueDueReminders } from '../consumer/notifications.js';
 import { enqueue } from '../queue/index.js';
 import { enqueueDueOfferRefreshes } from '../monitor/offers.js';
@@ -17,6 +18,7 @@ export const JOB_IDS = [
   'offers_refresh',
   'offers_status',
   'audit_ship',
+  'sync_seal',
 ] as const;
 export type JobId = (typeof JOB_IDS)[number];
 
@@ -99,7 +101,9 @@ async function retentionCleanup(ctx: MonitorContext): Promise<Record<string, num
     [snapCutoff],
   );
   const runs = await ctx.pool.query('DELETE FROM fetch_runs WHERE started_at < $1', [snapCutoff]);
-  const logins = await ctx.pool.query('DELETE FROM login_events WHERE at < $1', [loginCutoff]);
+  // With a log sink in use, only sign-in events already shipped are purged.
+  const shipped = (await shippedCursor(ctx.pool)).login_events;
+  const logins = await ctx.pool.query('DELETE FROM login_events WHERE at < $1 AND id <= $2', [loginCutoff, shipped ?? Number.MAX_SAFE_INTEGER]);
   const sessions = await ctx.pool.query(
     `DELETE FROM sessions WHERE expires_at < $1 OR (revoked_at IS NOT NULL AND revoked_at < $1)`,
     [addMinutes(now, -7 * 1440)],
@@ -148,6 +152,9 @@ async function execute(ctx: MonitorContext, job: JobRow, jobRunId: number): Prom
       return enqueueDueOfferRefreshes(ctx.pool, ctx.clock(), job.config);
     case 'offers_status':
       return enqueueScheduled(ctx, 'offers.recompute', ctx.clock().toISOString().slice(0, 13));
+    // M-E: seals plain or old-key sync documents (dormant accounts too); daily, self-continuing until done.
+    case 'sync_seal':
+      return enqueueScheduled(ctx, 'sync.seal_backfill', ctx.clock().toISOString().slice(0, 10));
     // Copies new audit rows to LOG_SINK_URL (no-op without it); one job per 15-minute slot.
     case 'audit_ship': {
       const t = ctx.clock();
