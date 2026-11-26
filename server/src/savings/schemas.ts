@@ -114,6 +114,9 @@ export function labelProblem(raw: string): string | null {
   if (label.includes('@')) return 'Label looks like an email address or handle';
   if (/(https?:|www\.|:\/\/)/i.test(label) || /\b[a-z0-9-]+\.(com|in|net|org|io|co|app|me|ai|dev|xyz)\b/i.test(label)) return 'Label looks like a web address';
   if (/\d{5,}/.test(label.replace(/[\s.-]/g, ''))) return 'Label has a long number in it';
+  // M6: no digits in any script (Devanagari, Arabic-Indic, full-width ...) and nothing but letters, spaces and & + ' . -
+  if (/\p{N}/u.test(label)) return 'Label has digits in it';
+  if (!/^[\p{L}\p{M}][\p{L}\p{M} &+'.-]*$/u.test(label)) return 'Label may only contain letters, spaces and & + \' . -';
   return null;
 }
 

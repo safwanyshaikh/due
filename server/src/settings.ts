@@ -22,7 +22,8 @@ export const SETTING_SCHEMAS = {
   retention: z
     .object({
       snapshots_days: z.number().int().min(7).max(3650),
-      login_events_days: z.number().int().min(7).max(3650),
+      // At least a year (CERT-In: 180 days; Due keeps 365 for admin sign-in history).
+      login_events_days: z.number().int().min(365).max(3650),
     })
     .strict(),
   notifications: z
@@ -80,7 +81,7 @@ export type Settings = { [K in SettingKey]: z.infer<(typeof SETTING_SCHEMAS)[K]>
 export const DEFAULT_SETTINGS: Settings = {
   frequency_defaults: { critical: 1440, regular: 10080, secondary: 10080 },
   retry: { base_minutes: 30, max_minutes: 1440, max_attempts_before_inaccessible: 8 },
-  retention: { snapshots_days: 365, login_events_days: 180 },
+  retention: { snapshots_days: 365, login_events_days: 365 },
   notifications: { email_enabled: false, recipients: [] },
   business: { app_name: 'Due', support_email: null },
   billing_terms: {

@@ -38,6 +38,7 @@ import type {
   EmailDeliveryState,
 } from './types';
 
+import { PRIVACY_NOTICE_VERSION } from '../../content/privacy';
 import { apiOrigin } from '../platform/config';
 import { authInit, clearSessionToken, setSessionToken } from '../platform/session';
 
@@ -178,7 +179,11 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
     // ---- Sign-in, profile, devices ---------------------------------------------------------------
     requestMagicLink: (email: string) =>
       request<MagicLinkResponse>('POST', '/api/account/magic-link', { email }),
-    verifyMagicLink: async (token: string, deviceLabel?: string) => {
+    /**
+     * Consumes a sign-in link. `ageConfirmed` is the person's "I am 18 or older" declaration (required by the
+     * server for any account that has not made it yet), recorded with the privacy notice version.
+     */
+    verifyMagicLink: async (token: string, deviceLabel?: string, ageConfirmed = false) => {
       // Native builds ask for a bearer session token (no cookies cross-origin); the web build gets the cookie.
       const native = (await authInit()).bearer;
       const res = await request<VerifyResponse & { sessionToken?: string }>(
@@ -188,6 +193,7 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
           token,
           ...(deviceLabel ? { deviceLabel } : {}),
           ...(native ? { tokenTransport: 'bearer' } : {}),
+          ...(ageConfirmed ? { ageConfirmed: true, noticeVersion: PRIVACY_NOTICE_VERSION } : {}),
         },
       );
       if (native && typeof res.sessionToken === 'string') await setSessionToken(res.sessionToken);
@@ -305,8 +311,9 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
       }),
 
     // ---- Telemetry (allow-listed, no PII) ------------------------------------------------------
-    sendTelemetry: (anonId: string, events: TelemetryEvent[]) =>
-      request<{ accepted: number }>('POST', '/api/telemetry', { anonId, events }),
+    /** `optedIn` states the device's analytics opt-in; the server refuses batches without it. */
+    sendTelemetry: (anonId: string, events: TelemetryEvent[], optedIn = false) =>
+      request<{ accepted: number }>('POST', '/api/telemetry', { anonId, events, optedIn }),
 
     // ---- Intake --------------------------------------------------------------------------------
     startIntakeSession: (consentTextVersion: string) =>

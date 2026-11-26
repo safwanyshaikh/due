@@ -9,6 +9,8 @@ declare module 'fastify' {
     account: ConsumerAccount | null;
     accountSessionHash: string | null;
     accountSessionPublicId: string | null;
+    /** When this consumer session was opened (fresh sign-in check for export/delete, L2). */
+    accountSessionCreatedAt: Date | null;
     /** Raw JSON request body text (used for webhook signature verification). */
     rawBody: string | null;
     entitlement: Entitlement | null;
@@ -38,6 +40,18 @@ export function requireFeature(feature: Feature) {
     const ent = await entitlementOf(req);
     if (!ent.features.includes(feature)) throw premiumRequired(feature);
   };
+}
+
+/** Export and deletion need a sign-in this recent (L2): a stolen long-lived session cannot do either. */
+export const RECENT_SIGN_IN_MS = 15 * 60 * 1000;
+
+/** preHandler: a signed-in account whose session was opened within RECENT_SIGN_IN_MS. */
+export async function requireRecentSignIn(req: FastifyRequest): Promise<void> {
+  currentAccount(req);
+  const at = req.accountSessionCreatedAt;
+  if (!at || req.server.deps.clock().getTime() - at.getTime() > RECENT_SIGN_IN_MS) {
+    throw new AppError(403, 'recent_sign_in_required', 'For your security, sign in again with a new email link, then export or delete within 15 minutes.');
+  }
 }
 
 /** preHandler: requires a signed-in consumer account. */

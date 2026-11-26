@@ -96,16 +96,20 @@ describe('Savings screen', () => {
     expect(document.body.textContent).not.toMatch(/guarantee|minimum saving/i);
   });
 
-  it('sends each unknown provider for research once, with no amounts', async () => {
+  it('sends each known provider without a guide for research once, with no amounts (free text never)', async () => {
     const calls = mockFetch();
-    const data = sameer([{ provider: 'Gala Bus', amountPaise: 99_900 }]);
+    const data = sameer([
+      { provider: 'Sony LIV', amountPaise: 99_900 },
+      { provider: 'Gala Bus', amountPaise: 99_900 },
+    ]);
     const { unmount } = renderApp({ data, hash: '#/savings' });
     const research = await screen.findByTestId('research');
     expect(research.textContent).toContain('We’re studying these bills');
-    expect(research.textContent).toContain('Gala Bus');
+    expect(research.textContent).toContain('Sony LIV');
+    expect(research.textContent).not.toContain('Gala Bus');
     await waitFor(() => expect(calls.filter((c) => c.url.includes('/research')).length).toBe(1));
     const body = calls.find((c) => c.url.includes('/research'))!.body as Record<string, unknown>;
-    expect(body.providerLabel).toBe('Gala Bus');
+    expect(body.providerLabel).toBe('Sony LIV');
     expect(JSON.stringify(body)).not.toMatch(/\d{3}/);
     unmount();
   });

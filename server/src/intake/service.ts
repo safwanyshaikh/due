@@ -5,10 +5,10 @@ import type { Pool, Queryable } from '../db.js';
 import { many, one } from '../db.js';
 import { AppError } from '../http/errors.js';
 import { hmacSha256, randomToken, sha256 } from '../util.js';
-import { decryptText, encryptText } from './crypto.js';
+import { decryptText, encryptText, type DataKeyRing } from './crypto.js';
 import { parseMessage, TemplateRules, type ExtractedFields, type ParserTemplate } from './parser.js';
 
-export const INTAKE_COOKIE = 'due_intake';
+export const INTAKE_COOKIE = 'due_intake' as const;
 export const TEMP_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const RAW_RETENTION_DAYS = 7;
 export const MAX_EVENTS_PER_DAY = 100;
@@ -134,7 +134,7 @@ export function messageIdHashOf(messageId: string | null | undefined): string | 
   return messageId ? sha256(messageId.trim().replace(/^<|>$/g, '').toLowerCase()) : null;
 }
 
-export async function ingest(q: Queryable, input: IngestInput, key: Buffer | null, now: Date): Promise<{ duplicate: boolean; event: EventRow }> {
+export async function ingest(q: Queryable, input: IngestInput, key: DataKeyRing | null, now: Date): Promise<{ duplicate: boolean; event: EventRow }> {
   const templates = await activeTemplates(q);
   const parsed = parseMessage({ text: input.text, subject: input.subject, envelopeSenderDomain: input.envelopeSenderDomain }, templates);
   const messageIdHash = input.messageIdHash ?? (input.messageId ? sha256(input.messageId.trim().replace(/^<|>$/g, '').toLowerCase()) : null);
@@ -178,7 +178,7 @@ export async function ingest(q: Queryable, input: IngestInput, key: Buffer | nul
   return { duplicate: false, event };
 }
 
-export function eventView(e: EventRow, key: Buffer | null, includeRaw = false) {
+export function eventView(e: EventRow, key: DataKeyRing | null, includeRaw = false) {
   let rawText: string | null | undefined;
   if (includeRaw) {
     rawText = null;

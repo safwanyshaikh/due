@@ -28,6 +28,17 @@ function defaultUnauthorized() {
 
 let onUnauthorized: UnauthorizedHandler = defaultUnauthorized;
 
+/**
+ * Owner/admin changes need a fresh code from the authenticator app. The server answers 403 reauth_required;
+ * the registered handler asks for a code (and posts /auth/reauth). On success the request is sent once more.
+ */
+type ReauthHandler = () => Promise<boolean>;
+let onReauth: ReauthHandler | null = null;
+
+export function setReauthHandler(fn: ReauthHandler | null) {
+  onReauth = fn;
+}
+
 export function setUnauthorizedHandler(fn: UnauthorizedHandler | null) {
   onUnauthorized = fn ?? defaultUnauthorized;
 }
@@ -71,6 +82,8 @@ export interface RequestOptions {
   raw?: boolean;
   /** Do not trigger the global 401 redirect (used by /auth/me and login). */
   skipAuthRedirect?: boolean;
+  /** Do not ask for a fresh authenticator code on 403 reauth_required (used by /auth/reauth itself). */
+  skipReauth?: boolean;
   signal?: AbortSignal;
 }
 
@@ -119,6 +132,9 @@ export async function request<T = unknown>(path: string, opts: RequestOptions = 
       if (parts.length) message = `${message} (${parts.join('; ')})`;
     }
     if (res.status === 401 && !opts.skipAuthRedirect) onUnauthorized();
+    if (res.status === 403 && code === 'reauth_required' && onReauth && !opts.skipReauth) {
+      if (await onReauth()) return request<T>(path, { ...opts, skipReauth: true });
+    }
     throw new ApiError(res.status, code, message);
   }
   return (opts.raw ? data : camelize(data)) as T;

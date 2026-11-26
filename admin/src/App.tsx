@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { api, setUnauthorizedHandler } from './lib/api';
+import { api, setReauthHandler, setUnauthorizedHandler } from './lib/api';
 import { AuthContext, can, useAuth, type Permission } from './lib/auth';
 import type { Me } from './lib/types';
 import { Layout } from './components/Layout';
-import { ChangePasswordPage, LoginPage, ResetPasswordPage, SetupPage } from './pages/Auth';
+import { ChangePasswordPage, LoginPage, ReauthDialog, ResetPasswordPage, SetupPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
 import { CompaniesPage, CompanyDetailPage } from './pages/Companies';
 import { SourceDetailPage, SourcesPage } from './pages/Sources';
@@ -49,6 +49,25 @@ export function AuthProvider({ children, initialMe }: { children: ReactNode; ini
     return () => setUnauthorizedHandler(null);
   }, [navigate]);
 
+  // Fresh-code prompt for owner/admin changes (server: 403 reauth_required).
+  const [reauthOpen, setReauthOpen] = useState(false);
+  const pending = useRef<((ok: boolean) => void) | null>(null);
+  useEffect(() => {
+    setReauthHandler(
+      () =>
+        new Promise<boolean>((resolve) => {
+          pending.current = resolve;
+          setReauthOpen(true);
+        }),
+    );
+    return () => setReauthHandler(null);
+  }, []);
+  const onReauth = (ok: boolean) => {
+    setReauthOpen(false);
+    pending.current?.(ok);
+    pending.current = null;
+  };
+
   const value = useMemo(() => ({ me, setMe, refresh }), [me, refresh]);
   if (!ready) {
     return (
@@ -57,7 +76,12 @@ export function AuthProvider({ children, initialMe }: { children: ReactNode; ini
       </p>
     );
   }
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <ReauthDialog open={reauthOpen} onResult={onReauth} />
+    </AuthContext.Provider>
+  );
 }
 
 function RequireAuth({ children, perm = 'read' }: { children: ReactNode; perm?: Permission }) {

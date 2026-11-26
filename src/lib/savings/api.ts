@@ -5,7 +5,7 @@
  * or the cached catalog.
  */
 import { apiBase } from '../offers/api';
-import { researchLabel } from './research';
+import { canonicalResearchLabel } from './research';
 import { COMMUNITY_THRESHOLD } from './types';
 import type { CityPack, ResearchNeed, SavingsCatalog, SavingsModule, ValueKind } from './types';
 
@@ -235,7 +235,8 @@ export async function postResearch(
   opts: ApiOpts = {},
 ): Promise<ResearchResponse | null> {
   const cityPack = cityPackArg ?? need.cityPack ?? null;
-  const providerLabel = researchLabel(need.providerLabel);
+  // Canonical provider names only (M6): free text never leaves the device.
+  const providerLabel = canonicalResearchLabel(need.providerLabel);
   if (!providerLabel) return null;
   const body: Record<string, string> = { providerLabel, category: need.category };
   if (cityPack) body.cityPack = cityPack;

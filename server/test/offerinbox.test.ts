@@ -136,7 +136,7 @@ describe('routing', () => {
     expect(await rows('SELECT 1 FROM inbound_messages')).toHaveLength(0);
     expect(await rows('SELECT 1 FROM user_events')).toHaveLength(0);
     const m = (await rows('SELECT * FROM offer_inbox_messages'))[0];
-    expect(m.raw_sealed.startsWith('v1:')).toBe(true);
+    expect(m.raw_sealed.startsWith('v2:')).toBe(true);
     expect(m.raw_sealed).not.toContain('Unlimited 5G');
     expect((await rows(`SELECT type FROM jobs_queue`)).map((j) => j.type)).toEqual(['offers.inbox_parse']);
     // Same Message-ID is deduped.

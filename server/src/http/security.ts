@@ -25,7 +25,7 @@ export const ADMIN_CSP = [
  */
 export const APP_CSP = ADMIN_CSP.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'");
 
-const API_CSP = "default-src 'none'; frame-ancestors 'none'";
+const API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
 /** Policy for a request path: strict API policy, the admin SPA policy, or the consumer app policy. */
 export function cspFor(path: string): string {
@@ -37,6 +37,8 @@ export function cspFor(path: string): string {
 /** API areas the native app may call cross-origin (all others stay same-origin only). */
 const MOBILE_CREDENTIALED_PREFIXES = ['/api/account', '/api/intake', '/api/telemetry'];
 const MOBILE_PUBLIC_PREFIXES = ['/api/public', '/api/health'];
+/** Public endpoints that take a JSON body (no credentials): offer matching keeps the provider and price out of URLs. */
+const MOBILE_PUBLIC_POST = ['/api/public/offers/match'];
 const MOBILE_ALLOWED_HEADERS = 'Authorization, Content-Type, X-Requested-With, Accept';
 
 const underPrefix = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
@@ -65,9 +67,11 @@ export function registerMobileCors(app: FastifyInstance, mobileOrigins: readonly
   const methodsFor = (path: string): string | null =>
     MOBILE_CREDENTIALED_PREFIXES.some((p) => underPrefix(path, p))
       ? 'GET, POST, PUT, PATCH, DELETE'
-      : MOBILE_PUBLIC_PREFIXES.some((p) => underPrefix(path, p))
-        ? 'GET'
-        : null;
+      : MOBILE_PUBLIC_POST.includes(path)
+        ? 'GET, POST'
+        : MOBILE_PUBLIC_PREFIXES.some((p) => underPrefix(path, p))
+          ? 'GET'
+          : null;
 
   app.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
     if (req.method !== 'OPTIONS') return;
@@ -149,11 +153,15 @@ export function registerSecurityHeaders(app: FastifyInstance, isProduction: bool
     reply.header('Referrer-Policy', 'no-referrer');
     reply.header('Cross-Origin-Opener-Policy', 'same-origin');
     reply.header('Cross-Origin-Resource-Policy', 'same-origin');
-    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-    if (isProduction) reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    // L7: two years, subdomains, preload-list eligible (submit the domain at hstspreload.org once it is stable).
+    if (isProduction) reply.header('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    reply.header('X-Permitted-Cross-Domain-Policies', 'none');
     const path = req.url.split('?')[0]!;
     // Admin SPA and the consumer app are both self-contained; API responses get the strict policy.
-    reply.header('Content-Security-Policy', cspFor(path));
+    // L7: in production pages never load anything over plain HTTP (not in development, which runs on http://localhost).
+    const policy = cspFor(path);
+    reply.header('Content-Security-Policy', isProduction && !policy.startsWith("default-src 'none'") ? `${policy}; upgrade-insecure-requests` : policy);
     if (path.startsWith('/api/public')) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
     }

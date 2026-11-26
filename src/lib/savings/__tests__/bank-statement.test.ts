@@ -253,7 +253,7 @@ describe('bank summary: failed auto-debits, morning balances, price steps', () =
     );
     expect(moves).toHaveLength(1);
     expect(moves[0].why).toBe(
-      'EMI bounced 15 times in 12 months: ₹16,950 in bounce charges + ₹13,183 late interest. Your bank charged ₹8,000 for 15 failed auto-debits. On the 3rd your balance was ₹6,810 against ₹1,41,798 of EMIs in 4 of 4 months. Or ask the lender to move the EMI date nearer your income date.',
+      'EMI bounced 15 times in 12 months: ₹16,950 in bounce charges + ₹13,183 late interest. Your bank charged ₹8,000 for 15 failed auto-debits. On the 3rd your balance was ₹6,810 against ₹1,37,105 of EMIs in 4 of 4 months. Or ask the lender to move the EMI date nearer your income date.',
     );
     // (₹16,950 + ₹13,183.16) / 12 + ₹8,000.40 over 4 months
     expect(moves[0].monthlySavingInr).toBe(4511);

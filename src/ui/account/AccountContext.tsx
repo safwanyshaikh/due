@@ -27,8 +27,9 @@ import type { Entitlement } from '../../lib/plans';
 import type { AppData } from '../../lib/types';
 import { useApp } from '../store';
 import { toDomainEntitlement } from '../lib/entitlement';
-import { readJsonPref, writeJsonPref } from '../lib/prefs';
+import { readJsonPref, readPref, writeJsonPref } from '../lib/prefs';
 import { compactAudit } from '../../lib/audit';
+import { mergeLocalDetail, STATEMENT_DETAIL_PREF, syncPayload } from '../../lib/account/syncScope';
 import { normaliseSyncPref, reconcileAction, type SyncPref } from '../../lib/account/sync';
 import { SYNC_BACKUP_CONSENT_VERSION } from '../../content/privacy';
 import { hasReminderConsent } from '../lib/reminderConsent';
@@ -250,7 +251,10 @@ export function AccountProvider({
         const local = current();
         const r = await client.putData(
           baseVersion,
-          compactAudit(local, new Date().toISOString()) as unknown as Record<string, unknown>,
+          syncPayload(
+            compactAudit(local, new Date().toISOString()),
+            readPref(STATEMENT_DETAIL_PREF) === '1',
+          ) as unknown as Record<string, unknown>,
           serverReminders(local),
         );
         markSynced(local, r.version, r.updatedAt, {
@@ -269,8 +273,8 @@ export function AccountProvider({
   /** Adopts the server copy. Refuses (error) when it cannot be read, so nothing unknown replaces local data. */
   const adopt = useCallback(
     (doc: SyncDocument<AppData>) => {
-      const serverData = parseServerData(doc);
-      if (!serverData) {
+      const parsed = parseServerData(doc);
+      if (!parsed) {
         setSync((s) => ({
           ...s,
           status: 'error',
@@ -278,11 +282,13 @@ export function AccountProvider({
         }));
         return;
       }
+      // Statement detail that never leaves this device stays here (see lib/account/syncScope).
+      const serverData = mergeLocalDetail(parsed, current());
       syncedRef.current = serverData;
       replace(serverData);
       markSynced(serverData, doc.version, doc.updatedAt);
     },
-    [replace, markSynced],
+    [replace, markSynced, current],
   );
 
   /** Pulls the server copy and reconciles it with this device (app start, sign-in, "Sync now"). */

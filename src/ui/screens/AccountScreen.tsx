@@ -23,7 +23,8 @@ import { Sheet } from '../components/Sheet';
 import { download } from '../common';
 import { localDateTime } from '../lib/format';
 import { serverAllows } from '../lib/entitlement';
-import { readJsonPref, readPref, writeJsonPref } from '../lib/prefs';
+import { readJsonPref, readPref, writeJsonPref, writePref } from '../lib/prefs';
+import { STATEMENT_DETAIL_PREF } from '../../lib/account/syncScope';
 import { platform, type DeletionStatus } from '../lib/platform';
 import { setTelemetryOptOut, telemetryOptedOut } from '../lib/telemetrySink';
 
@@ -218,8 +219,24 @@ function SyncPanel() {
   const { sync, enableSync, disableSync, syncNow, resolveConflict } = useAccount();
   const { data, today } = useApp();
   const [review, setReview] = useState(false);
+  const [detail, setDetail] = useState(() => readPref(STATEMENT_DETAIL_PREF) === '1');
   return (
     <Panel title="Backup and sync" id="acc-sync">
+      <p className="muted small">
+        Your backup is stored encrypted. Daily balances, overdue-loan recoveries and recurring
+        payment lines from your statements stay on this device unless you choose to back them up.
+      </p>
+      <label className="switch-row">
+        <input
+          type="checkbox"
+          checked={detail}
+          onChange={(e) => {
+            writePref(STATEMENT_DETAIL_PREF, e.target.checked ? '1' : null);
+            setDetail(e.target.checked);
+          }}
+        />
+        <span>Also back up statement detail (daily balances, recoveries, recurring lines)</span>
+      </label>
       {!sync.on ? (
         <>
           {sync.error && <Notice tone="warn">{sync.error}</Notice>}
@@ -541,6 +558,8 @@ function ConsentsPanel() {
   const toast = useToast();
   const [c, setC] = useState<ConsentsResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // The telemetry switch reads this device's opt-in; re-render as soon as it changes.
+  const [, bump] = useState(0);
   const load = useCallback(() => {
     client
       .getConsents()
@@ -572,7 +591,10 @@ function ConsentsPanel() {
                     checked={checked}
                     onChange={(e) => {
                       const granted = e.target.checked;
-                      if (purpose === 'telemetry') setTelemetryOptOut(!granted);
+                      if (purpose === 'telemetry') {
+                        setTelemetryOptOut(!granted);
+                        bump((n) => n + 1);
+                      }
                       return client
                         .recordConsent(purpose, granted, version)
                         .then(() => {
@@ -606,12 +628,42 @@ function ConsentsPanel() {
 }
 
 function DataPanel() {
-  const { client, refresh } = useAccount();
+  const { client, refresh, me } = useAccount();
   const toast = useToast();
   const [req, setReq] = useState<DeleteRequest | null>(null);
   const [typed, setTyped] = useState('');
+  // Export and deletion need a sign-in from the last 15 minutes (the server checks it).
+  const [needFresh, setNeedFresh] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
+  const onErr = (e: unknown) => {
+    if (e instanceof AccountApiError && e.code === 'recent_sign_in_required') setNeedFresh(true);
+    else toast.show({ message: describeApiError(e), tone: 'error' });
+  };
   return (
     <Panel title="Your account data" id="acc-data">
+      {needFresh && (
+        <Notice tone="warn" title="Confirm it’s you">
+          <p>
+            To export or delete your account, sign in again with a new email link. Then come back
+            here within 15 minutes.
+          </p>
+          {me && !linkSent && (
+            <button
+              type="button"
+              className="btn btn-secondary press"
+              onClick={() =>
+                client
+                  .requestMagicLink(me.account.email)
+                  .then(() => setLinkSent(true))
+                  .catch((e) => toast.show({ message: describeApiError(e), tone: 'error' }))
+              }
+            >
+              Email me a sign-in link
+            </button>
+          )}
+          {linkSent && <p role="status">Check your email for the sign-in link.</p>}
+        </Notice>
+      )}
       <div className="btn-row">
         <button
           type="button"
@@ -622,7 +674,7 @@ function DataPanel() {
               .then((r) =>
                 download('due-account-export.json', JSON.stringify(r, null, 2), 'application/json'),
               )
-              .catch((e) => toast.show({ message: describeApiError(e), tone: 'error' }))
+              .catch(onErr)
           }
         >
           Export account data
@@ -636,7 +688,7 @@ function DataPanel() {
             client
               .requestAccountDeletion()
               .then(setReq)
-              .catch((e) => toast.show({ message: describeApiError(e), tone: 'error' }))
+              .catch(onErr)
           }
         >
           Delete my account…
@@ -678,7 +730,7 @@ function DataPanel() {
                     setReq(null);
                     void refresh();
                   })
-                  .catch((e) => toast.show({ message: describeApiError(e), tone: 'error' }))
+                  .catch(onErr)
               }
             >
               Permanently delete account

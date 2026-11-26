@@ -59,10 +59,10 @@ describe('savings api', () => {
     expect(parseSavingsCatalog({ modules: [] })).toBeNull();
   });
 
-  it('postResearch sends only a cleaned label + category (+ city pack)', async () => {
+  it('postResearch sends only a canonical provider name + category (+ city pack)', async () => {
     const fetchImpl = vi.fn<SavingsFetchLike>(() => ok({ status: 'queued' }));
     const r = await postResearch(
-      { providerLabel: 'Acme Gym 98765 me@x.com', category: 'unknown', cityPack: 'in-mmr' },
+      { providerLabel: 'Netflix India 98765 me@x.com', category: 'ott', cityPack: 'in-mmr' },
       null,
       { base: '', fetchImpl },
     );
@@ -72,10 +72,18 @@ describe('savings api', () => {
     expect(init.method).toBe('POST');
     expect(init.credentials).toBe('omit');
     expect(JSON.parse(init.body!)).toEqual({
-      providerLabel: 'Acme Gym',
-      category: 'unknown',
+      providerLabel: 'Netflix',
+      category: 'ott',
       cityPack: 'in-mmr',
     });
+    // Free text that is not a known provider (a person's name, an address) is never sent.
+    expect(
+      await postResearch({ providerLabel: 'Ramesh Kumar tuition', category: 'unknown' }, null, { base: '', fetchImpl }),
+    ).toBeNull();
+    expect(
+      await postResearch({ providerLabel: 'Flat 4B Andheri', category: 'unknown' }, null, { base: '', fetchImpl }),
+    ).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(
       await postResearch({ providerLabel: '12345', category: 'unknown' }, null, {
         base: '',
@@ -83,7 +91,7 @@ describe('savings api', () => {
       }),
     ).toBeNull();
     expect(
-      await postResearch({ providerLabel: 'Acme', category: 'unknown' }, null, {
+      await postResearch({ providerLabel: 'Netflix', category: 'ott' }, null, {
         base: '',
         fetchImpl: () => Promise.reject(new Error('x')),
       }),

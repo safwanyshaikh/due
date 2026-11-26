@@ -1,8 +1,9 @@
 /**
  * Research needs: providers found in the user's data that no module describes yet.
- * Only a cleaned provider label and a category leave the device (no amounts, numbers or emails).
+ * Only the canonical provider name (from Due's own merchant list, never the person's free text) and a category
+ * leave the device (M6): no amounts, numbers, emails, names or addresses.
  */
-import { canonicalMerchant } from '../merchants';
+import { canonicalMerchant, MERCHANT_ALIASES, type MerchantAlias } from '../merchants';
 import type { Commitment } from '../types';
 import type { ResearchNeed, SavingsModule, SavingsState } from './types';
 
@@ -67,12 +68,32 @@ export function researchCategory(ob: Commitment, label: string): ResearchNeed['c
   return 'unknown';
 }
 
-/** Research needs for obligations without a module, grouped by cleaned label. */
+/** The canonical merchant for an obligation (stored key first, then Due's alias list), or null. */
+export function canonicalFor(ob: Pick<Commitment, 'canonicalProvider' | 'provider' | 'nickname'>): MerchantAlias | null {
+  if (ob.canonicalProvider) {
+    const byKey = MERCHANT_ALIASES.find((m) => m.key === ob.canonicalProvider);
+    if (byKey) return byKey;
+  }
+  return canonicalMerchant(ob.provider || ob.nickname) ?? null;
+}
+
+/**
+ * The label to send for research: the canonical display name (letters only), or '' when the provider is not
+ * a known merchant. Free text the person typed never leaves the device.
+ */
+export function canonicalResearchLabel(raw: string): string {
+  const m = canonicalMerchant(raw);
+  return m ? researchLabel(m.displayName) : '';
+}
+
+/** Research needs for obligations without a module, grouped by canonical provider. */
 export function researchNeeds(unmatched: Commitment[]): ResearchNeed[] {
   const byLabel = new Map<string, ResearchNeed>();
   for (const ob of unmatched) {
     if (!RESEARCH_TYPES.has(ob.type)) continue;
-    const label = researchLabel(ob.provider || ob.nickname);
+    const merchant = canonicalFor(ob);
+    if (!merchant) continue;
+    const label = researchLabel(merchant.displayName);
     if (!label) continue;
     const k = label.toLowerCase();
     const prev = byLabel.get(k);

@@ -371,7 +371,7 @@ describe('price_change and trial_end', () => {
 });
 
 describe('research needs', () => {
-  it('unknown providers become PII-free research needs; known ones do not', () => {
+  it('only canonical providers without a module become research needs; free text never does (M6)', () => {
     const { research } = run([
       sub({ id: 'a', provider: 'Netflix', amountPaise: 64_900 }),
       sub({ id: 'b', provider: 'netflix', amountPaise: 19_900 }),
@@ -382,7 +382,6 @@ describe('research needs', () => {
     ]);
     expect(research).toEqual([
       { providerLabel: 'Netflix', category: 'ott', obligationIds: ['a', 'b'] },
-      { providerLabel: 'Tata mg Care+ ref', category: 'unknown', obligationIds: ['d'] },
     ]);
     for (const r of research) {
       expect(r.providerLabel).not.toMatch(/\d|@/);

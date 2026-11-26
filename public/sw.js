@@ -1,7 +1,7 @@
 // Minimal offline cache: app shell only. No user data is ever sent to or cached from a server.
 // API responses (/api/*) are never cached here; the app keeps its own dated copy of the last
 // good catalog response so it can say when data was last updated.
-const CACHE = 'planner-shell-v2';
+const CACHE = 'planner-shell-v3';
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])),
@@ -22,13 +22,22 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.startsWith('/api/')) return;
   // Large on-device OCR assets are fetched only when a photo is read; don't copy them into this cache.
   if (url.pathname.startsWith('/ocr/')) return;
+  // URLs with a query string are never cached: older sign-in and invite links carried tokens there.
+  // Navigations with a query still fall back to the cached app shell when offline.
+  const hasQuery = url.search !== '';
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        if (!hasQuery && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
       })
-      .catch(() => caches.match(e.request).then((r) => r || caches.match('/'))),
+      .catch(() =>
+        (hasQuery ? Promise.resolve(undefined) : caches.match(e.request)).then(
+          (r) => r || caches.match('/'),
+        ),
+      ),
   );
 });

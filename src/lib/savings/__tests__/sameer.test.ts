@@ -168,10 +168,8 @@ describe('Sameer: Navi Mumbai → Thane commuter', () => {
     expect(l.sources.some((s) => s.kind === 'regulator')).toBe(true);
   });
 
-  it('sends the unknown gym for research without digits or emails', () => {
-    expect(research).toEqual([
-      { providerLabel: 'Cult.fit Elite', category: 'unknown', obligationIds: ['gym'] },
-    ]);
+  it('never sends a free-text provider (the gym is not a known merchant) for research (M6)', () => {
+    expect(research).toEqual([]);
   });
 
   it('ranks by saving × confidence and never marks anything sponsored', () => {

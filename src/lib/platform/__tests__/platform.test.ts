@@ -67,13 +67,15 @@ describe('account client: web (unchanged)', () => {
         });
       },
     });
-    await client.verifyMagicLink('t'.repeat(20), 'Chrome on Linux');
+    await client.verifyMagicLink('t'.repeat(20), 'Chrome on Linux', true);
     const { init } = calls[0]!;
     expect(init.credentials).toBe('include');
     expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
     expect(JSON.parse(init.body as string)).toEqual({
       token: 't'.repeat(20),
       deviceLabel: 'Chrome on Linux',
+      ageConfirmed: true,
+      noticeVersion: 'privacy-2026-11',
     });
   });
 });
@@ -187,7 +189,7 @@ describe('native helpers', () => {
   it('app links open only the sign-in confirm screen', () => {
     const t = 'A'.repeat(32);
     expect(signInTarget(new URL(`https://due.karigarai.com/api/account/verify?token=${t}`))).toBe(
-      `/?account=confirm&token=${t}`,
+      `/?account=confirm#token=${t}`,
     );
     expect(
       signInTarget(new URL('https://due.karigarai.com/api/account/verify?token=short')),

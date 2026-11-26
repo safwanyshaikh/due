@@ -85,9 +85,9 @@ describe('statement import: summary step', () => {
   it('Jio Postpaid bill: summary card and "Add this bill"', async () => {
     const card = await paste('jio-postpaid-bill.txt', 'sv-telecom-summary');
     expect(card.textContent).toContain('Jio Postpaid bill');
-    expect(card.textContent).toContain('449 - Prime');
-    expect(card.textContent).toContain('₹1,243');
-    expect(card.textContent).toContain('20 Oct 2026');
+    expect(card.textContent).toContain('399 - Prime');
+    expect(card.textContent).toContain('₹1,032');
+    expect(card.textContent).toContain('16 Oct 2026');
     fireEvent.click(within(card).getByRole('button', { name: 'Add this bill' }));
     await waitFor(() => expect(stored().commitments).toHaveLength(1));
     const d = stored();
@@ -95,8 +95,8 @@ describe('statement import: summary step', () => {
       type: 'bill',
       provider: 'Jio',
       nickname: 'Jio Postpaid',
-      amountPaise: 124273,
-      nextDue: '2026-10-20',
+      amountPaise: 103162,
+      nextDue: '2026-10-16',
       frequency: 'monthly',
     });
     expect(d.savings.telecom?.[0]).toMatchObject({
@@ -110,10 +110,10 @@ describe('statement import: summary step', () => {
     expect(card.textContent).toContain('JioFiber bill');
     expect(card.textContent).toContain('399+200(13 OTT)');
     expect(card.textContent).toContain('13 paid OTT apps (list not printed)');
-    expect(card.textContent).toContain('15 Nov 2026');
+    expect(card.textContent).toContain('12 Nov 2026');
     fireEvent.click(within(card).getByRole('button', { name: 'Add this bill' }));
     await waitFor(() =>
-      expect(stored().commitments[0]).toMatchObject({ nickname: 'JioFiber', amountPaise: 79871 }),
+      expect(stored().commitments[0]).toMatchObject({ nickname: 'JioFiber', amountPaise: 75600 }),
     );
   });
 
@@ -130,17 +130,17 @@ describe('statement import: summary step', () => {
 
   it('Gold loan OD: summary card and "Add this loan"', async () => {
     const card = await paste('sbi-gold-loan-od.txt', 'sv-gold-summary');
-    expect(card.textContent).toContain('₹11,30,000');
-    expect(card.textContent).toContain('₹10,65,120');
+    expect(card.textContent).toContain('₹9,60,000');
+    expect(card.textContent).toContain('₹8,12,584');
     expect(card.textContent).toContain('9.7% a year');
-    expect(card.textContent).toContain('₹9,047');
+    expect(card.textContent).toContain('₹7,612');
     fireEvent.click(within(card).getByRole('button', { name: 'Add this loan' }));
     await waitFor(() => expect(stored().commitments).toHaveLength(1));
     const d = stored();
     expect(d.commitments[0]).toMatchObject({
       type: 'other_loan',
-      amountPaise: 904678,
-      loan: { interestRatePct: 9.7, principalPaise: 106511992, loanType: 'Gold Loan OD' },
+      amountPaise: 761185,
+      loan: { interestRatePct: 9.7, principalPaise: 81258401, loanType: 'Gold Loan OD' },
     });
     expect(d.commitments[0].rule.kind).toBe('end_of_month');
     expect(d.savings.loans?.[0]).toMatchObject({

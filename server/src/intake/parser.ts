@@ -86,11 +86,22 @@ const FREEMAIL = new Set([
  * Applied before any text is stored or parsed.
  */
 export function redactSensitive(text: string): string {
-  return text
-    .replace(/\b(?:\d[ -]?){12,18}(\d{4})\b/g, (m, last4: string) => (m.replace(/\D/g, '').length >= 13 ? `[card ending ${last4}]` : m))
-    .replace(/\b\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, '[redacted 12-digit id]')
-    .replace(/\b[A-Z]{5}\d{4}[A-Z]\b/g, '[redacted PAN]')
-    .replace(/\b(cvv|cvc|otp|upi pin|mpin|pin)\b(\s*(?:is|:|-)?\s*)(\d{3,8})\b/gi, (_m, k: string, sep: string) => `${k}${sep}[redacted]`);
+  return (
+    text
+      .replace(/\b(?:\d[ -]?){12,18}(\d{4})\b/g, (m, last4: string) => (m.replace(/\D/g, '').length >= 13 ? `[card ending ${last4}]` : m))
+      .replace(/\b\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, '[redacted 12-digit id]')
+      .replace(/\b[A-Z]{5}\d{4}[A-Z]\b/g, '[redacted PAN]')
+      .replace(/\b(cvv|cvc|otp|upi pin|mpin|pin)\b(\s*(?:is|:|-)?\s*)(\d{3,8})\b/gi, (_m, k: string, sep: string) => `${k}${sep}[redacted]`)
+      // L4: IFSC codes (bank branch: 4 letters, 0, 6 characters).
+      .replace(/\b[A-Z]{4}0[A-Z0-9]{6}\b/g, '[redacted IFSC]')
+      // Indian mobile numbers (+91 / 0 prefix optional, 10 digits starting 6-9).
+      .replace(/(?<![\w])(?:\+?91[\s-]?|0)?[6-9]\d{4}[\s-]?\d{5}(?![\w])/g, '[redacted mobile]')
+      // Bank account numbers: 9-18 digits (masked ones like XXXX1234 keep the last 4).
+      .replace(/\b(?:a\/c|acct|account)(?:\s*(?:no|number))?\.?\s*[:#-]?\s*[xX*]{2,}(\d{3,4})\b/gi, (_m, last: string) => `[account ending ${last}]`)
+      .replace(/\b\d{9,18}\b/g, '[redacted number]')
+      // E-mail addresses: the local part goes, the domain stays (it names the sender, e.g. a forwarded header).
+      .replace(/\b[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g, '[email]@$1')
+  );
 }
 
 const MONTHS: Record<string, number> = {

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { getLegal, missingLegal } from '../legal/index.js';
 import { consumerAudit, currentAccount, requireAccount, requireFeature } from '../consumer/context.js';
 import { many } from '../db.js';
 import { registerGmailJobs } from '../gmail/index.js';
@@ -12,7 +13,7 @@ import {
   requireGmailConfigured,
   startConnect,
 } from '../gmail/service.js';
-import { notFound, parse } from '../http/errors.js';
+import { AppError, notFound, parse } from '../http/errors.js';
 import { getOwnedIdentity } from '../identities/service.js';
 import { camelAll, normaliseKeys } from '../util.js';
 
@@ -30,6 +31,10 @@ export async function gmailRoutes(app: FastifyInstance): Promise<void> {
     const a = currentAccount(req);
     requireGmailConfigured(config);
     await requireFeature(GMAIL_FEATURE)(req, reply);
+    // M9: no Gmail access in production until the privacy notice and grievance details are published.
+    if (config.isProduction && missingLegal(await getLegal(pool)).length > 0) {
+      throw new AppError(503, 'legal_incomplete', 'Gmail connection is not available yet: the service’s legal and grievance details are still being completed.');
+    }
     const body = parse(z.object({ consentVersion: z.string().trim().min(1).max(64) }).strict(), normaliseKeys(req.body));
     const r = await startConnect(deps, a.id, body.consentVersion);
     await consumerAudit(pool, a.id, 'gmail.connect_started', 'gmail', null, null, { consentVersion: body.consentVersion }, clock());

@@ -33,6 +33,14 @@ describe('setup', () => {
     const ok = await c.post('/api/auth/setup', { ...owner, setupToken: 'setup-token-123456' });
     expect(ok.statusCode).toBe(201);
     expect(ok.json().user).toMatchObject({ email: 'owner@example.com', role: 'owner' });
+    // No session until 2-step verification is set up.
+    expect(c.cookie).toBeNull();
+    expect(ok.json().status).toBe('enrol_required');
+    expect(ok.json().enrolment.qrSvg).toMatch(/^<svg/);
+    expect(ok.json().enrolment.otpauthUrl).toMatch(/^otpauth:\/\/totp\/Due%20Admin%3Aowner%40example\.com\?secret=/);
+    const enrolled = await c.finishSecondStep('owner@example.com', ok);
+    expect(enrolled.statusCode).toBe(200);
+    expect(c.recoveryCodes).toHaveLength(10);
     expect(c.cookie).toBeTruthy();
     const me = await c.get('/api/auth/me');
     expect(me.json()).toMatchObject({ email: 'owner@example.com', role: 'owner' });
@@ -65,7 +73,12 @@ describe('login', () => {
     expect(bad.json().error.message).toBe('Invalid email or password');
     const unknown = await c.post('/api/auth/login', { email: 'nobody@example.com', password: 'wrong password!!' });
     expect(unknown.statusCode).toBe(401);
-    const ok = await c.post('/api/auth/login', { email: 'ED@example.com', password: 'correct horse battery' });
+    const first = await c.post('/api/auth/login', { email: 'ED@example.com', password: 'correct horse battery' });
+    expect(first.statusCode).toBe(200);
+    // The password alone never opens a session.
+    expect(first.json().status).toBe('mfa_required');
+    expect(first.headers['set-cookie']).toBeUndefined();
+    const ok = await c.finishSecondStep('ed@example.com', first);
     expect(ok.statusCode).toBe(200);
     expect(ok.headers['set-cookie']).toMatch(/HttpOnly/i);
     expect(ok.headers['set-cookie']).toMatch(/SameSite=Strict/i);
@@ -73,6 +86,7 @@ describe('login', () => {
     expect(ev.rows.map((r) => [r.success, r.reason])).toEqual([
       [false, 'bad_password'],
       [false, 'unknown_user'],
+      [false, 'password_ok_mfa_pending'],
       [true, null],
     ]);
     // Session token is never stored in clear.
@@ -94,7 +108,7 @@ describe('login', () => {
     // A different email from the same IP is not affected.
     await createUser(pool, 'v@example.com', 'viewer');
     expect((await c.post('/api/auth/login', { email: 'v@example.com', password: 'correct horse battery' })).statusCode).toBe(200);
-    clock.advanceMinutes(16);
+    clock.advanceMinutes(61);
     expect((await c.post('/api/auth/login', { email: 'ed@example.com', password: 'correct horse battery' })).statusCode).toBe(200);
   });
 
@@ -107,22 +121,22 @@ describe('login', () => {
 });
 
 describe('sessions', () => {
-  it('expires after 12h idle and after 7 days absolute; logout revokes', async () => {
+  it('expires after 1h idle and after 12 hours absolute; logout revokes', async () => {
     await createUser(pool, 'a@example.com', 'admin');
     const c = await new Client(app).login('a@example.com');
-    clock.advanceMinutes(11 * 60);
+    clock.advanceMinutes(55);
     expect((await c.get('/api/auth/me')).statusCode).toBe(200);
-    clock.advanceMinutes(11 * 60); // 11h since last seen: still fine
+    clock.advanceMinutes(55); // 55 min since last seen: still fine
     expect((await c.get('/api/auth/me')).statusCode).toBe(200);
-    clock.advanceMinutes(12 * 60 + 1);
+    clock.advanceMinutes(61);
     expect((await c.get('/api/auth/me')).statusCode).toBe(401);
 
     const c2 = await new Client(app).login('a@example.com');
-    for (let i = 0; i < 16; i++) {
-      clock.advanceMinutes(11 * 60);
+    for (let i = 0; i < 14; i++) {
+      clock.advanceMinutes(55);
       await c2.get('/api/auth/me');
     }
-    expect((await c2.get('/api/auth/me')).statusCode).toBe(401); // > 7 days absolute
+    expect((await c2.get('/api/auth/me')).statusCode).toBe(401); // > 12 hours absolute
 
     const c3 = await new Client(app).login('a@example.com');
     const token = c3.cookie;

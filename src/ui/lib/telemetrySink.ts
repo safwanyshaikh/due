@@ -13,8 +13,12 @@ export function wirePropName(k: string): string {
   return k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
 
+/**
+ * Usage analytics are opt-in (M3): off until the person turns them on. When signed in, the server also needs
+ * the account's recorded 'analytics' consent and drops events without it.
+ */
 export function telemetryOptedOut(): boolean {
-  return readPref('telemetry-optout') === '1';
+  return readPref('telemetry-optin') !== '1';
 }
 
 export function toWire(e: TelemetryEvent): WireEvent {
@@ -44,7 +48,7 @@ export function installTelemetry(client: Pick<AccountClient, 'sendTelemetry'>): 
     while (buffer.length) {
       const batch = buffer.slice(0, SEND_MAX);
       buffer = buffer.slice(SEND_MAX);
-      client.sendTelemetry(anonymousId(), batch).catch(() => {
+      client.sendTelemetry(anonymousId(), batch, true).catch(() => {
         /* telemetry is best-effort and never retried with personal data */
       });
     }
@@ -67,7 +71,8 @@ export function installTelemetry(client: Pick<AccountClient, 'sendTelemetry'>): 
 }
 
 export function setTelemetryOptOut(optOut: boolean): void {
-  writePref('telemetry-optout', optOut ? '1' : null);
+  writePref('telemetry-optin', optOut ? null : '1');
+  writePref('telemetry-optout', null);
   setTelemetryEnabled(!optOut);
   if (optOut) setTelemetrySink(null);
 }

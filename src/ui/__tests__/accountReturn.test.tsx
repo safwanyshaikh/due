@@ -59,9 +59,13 @@ describe('magic-link confirmation', () => {
     // The token is removed from the address bar immediately and nothing was consumed yet.
     expect(window.location.search).toBe('');
     expect(verifyMagicLink).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in on this device' }));
+    // The 18+ declaration is required before signing in (DPDP s.9).
+    const signInBtn = screen.getByRole('button', { name: 'Sign in on this device' }) as HTMLButtonElement;
+    expect(signInBtn.disabled).toBe(true);
+    fireEvent.click(screen.getByRole('checkbox', { name: /I am 18 or older/ }));
+    fireEvent.click(signInBtn);
     await waitFor(() => expect(verifyMagicLink).toHaveBeenCalledTimes(1));
-    expect(verifyMagicLink).toHaveBeenCalledWith(TOKEN, expect.any(String));
+    expect(verifyMagicLink).toHaveBeenCalledWith(TOKEN, expect.any(String), true);
     expect(await screen.findByText('You’re signed in')).toBeTruthy();
   });
 
@@ -71,8 +75,22 @@ describe('magic-link confirmation', () => {
       Promise.reject(new AccountApiError(400, 'invalid_token', 'Link used')),
     );
     render(<App client={fakeClient({ verifyMagicLink })} initialData={emptyData()} />);
+    fireEvent.click(await screen.findByRole('checkbox', { name: /I am 18 or older/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Sign in on this device' }));
     expect(await screen.findByText('That sign-in link didn’t work')).toBeTruthy();
+  });
+
+  it('reads the token from the fragment (L1) and removes it from the address bar', async () => {
+    window.history.replaceState(null, '', `/?account=confirm#token=${TOKEN}`);
+    const verifyMagicLink = vi.fn(() =>
+      Promise.resolve({ account: me().account, created: false, entitlements: FREE }),
+    );
+    render(<App client={fakeClient({ verifyMagicLink })} initialData={emptyData()} />);
+    expect(await screen.findByText('Confirm sign-in on this device')).toBeTruthy();
+    expect(window.location.href).not.toContain(TOKEN);
+    fireEvent.click(screen.getByRole('checkbox', { name: /I am 18 or older/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in on this device' }));
+    await waitFor(() => expect(verifyMagicLink).toHaveBeenCalledWith(TOKEN, expect.any(String), true));
   });
 
   it('labels the device without identifying details', () => {

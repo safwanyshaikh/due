@@ -66,8 +66,20 @@ envVarGroups:
         sync: false
       - key: INBOUND_WEBHOOK_SECRET
         sync: false
-      # Optional: 32 random bytes, base64 (openssl rand -base64 32). Without it raw intake text is never stored.
+      # REQUIRED: 32 random bytes, base64 (openssl rand -base64 32), or a ring "kid:key,oldkid:key". Production
+      # refuses to start without it (synced backups, intake text and held mail are encrypted with it).
       - key: DATA_ENCRYPTION_KEY
+        sync: false
+      # Render's proxy is the one trusted hop in front of the app (client IP for rate limits).
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      # Optional: restrict the admin console to office/VPN addresses (comma-separated IPs/CIDRs).
+      - key: ADMIN_ALLOWED_IPS
+        sync: false
+      # Optional: India-region log/audit store (docs/production/INCIDENT_RESPONSE.md).
+      - key: LOG_SINK_URL
+        sync: false
+      - key: LOG_SINK_TOKEN
         sync: false
       # Optional: Gmail OAuth (read-only). See docs/production/GOOGLE_VERIFICATION.md.
       - key: GOOGLE_CLIENT_ID

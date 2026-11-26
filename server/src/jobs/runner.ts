@@ -16,6 +16,7 @@ export const JOB_IDS = [
   'billing_reconcile',
   'offers_refresh',
   'offers_status',
+  'audit_ship',
 ] as const;
 export type JobId = (typeof JOB_IDS)[number];
 
@@ -147,6 +148,11 @@ async function execute(ctx: MonitorContext, job: JobRow, jobRunId: number): Prom
       return enqueueDueOfferRefreshes(ctx.pool, ctx.clock(), job.config);
     case 'offers_status':
       return enqueueScheduled(ctx, 'offers.recompute', ctx.clock().toISOString().slice(0, 13));
+    // Copies new audit rows to LOG_SINK_URL (no-op without it); one job per 15-minute slot.
+    case 'audit_ship': {
+      const t = ctx.clock();
+      return enqueueScheduled(ctx, 'audit.ship', `${t.toISOString().slice(0, 13)}:${Math.floor(t.getUTCMinutes() / 15)}`);
+    }
   }
 }
 

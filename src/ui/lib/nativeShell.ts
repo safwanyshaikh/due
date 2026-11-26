@@ -8,7 +8,7 @@ export function signInTarget(url: URL): string | null {
   const token = url.searchParams.get('token');
   if (url.pathname !== '/api/account/verify' || !token || !/^[A-Za-z0-9_-]{16,256}$/.test(token))
     return null;
-  return `/?account=confirm&token=${encodeURIComponent(token)}`;
+  return `/?account=confirm#token=${encodeURIComponent(token)}`;
 }
 
 /**

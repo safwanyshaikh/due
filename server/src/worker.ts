@@ -1,11 +1,12 @@
 import pino from 'pino';
 import { createMailer } from './alerts.js';
+import { withLogSink } from './app.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db.js';
 import { Scheduler } from './jobs/scheduler.js';
 import { MonitorRuntime } from './monitor/runtime.js';
 import { configureErrorReporter } from './observability/errorReporter.js';
-import { LOG_REDACT_PATHS } from './observability/redact.js';
+import { baseLoggerOptions } from './observability/logging.js';
 import { registerPlatformHandlers } from './queue/handlers.js';
 import { drainQueue, QueueWorker, registeredTypes, type WorkerDeps } from './queue/index.js';
 
@@ -15,7 +16,8 @@ import { drainQueue, QueueWorker, registeredTypes, type WorkerDeps } from './que
  */
 async function main(): Promise<void> {
   const config = loadConfig();
-  const log = pino({ level: config.isProduction ? 'info' : 'debug', base: { service: 'due-worker' }, redact: LOG_REDACT_PATHS });
+  const opts = withLogSink({ ...baseLoggerOptions(config.isProduction), base: { service: 'due-worker' } }, config, 'due-worker');
+  const log = 'stream' in opts ? pino(opts, opts.stream) : pino(opts);
   configureErrorReporter(config.sentryDsn, config.env);
   const pool = createPool(config.databaseUrl, 5);
   const mailer = await createMailer(config.smtpUrl, config.smtpFrom);

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setTelemetrySink, track } from '../../lib/telemetry';
-import { installTelemetry, toWire } from '../lib/telemetrySink';
+import { installTelemetry, setTelemetryOptOut, telemetryOptedOut, toWire } from '../lib/telemetrySink';
 
 // Mirrors server/src/consumer/telemetry.ts: prop names and per-request batch size.
 const SERVER_PROP_NAME = /^[a-z][a-z0-9_]{0,31}$/;
@@ -20,7 +20,18 @@ describe('telemetry sink wire format', () => {
     for (const k of Object.keys(w.props ?? {})) expect(k).toMatch(SERVER_PROP_NAME);
   });
 
+  it('is off until the person opts in (M3): nothing is sent by default', () => {
+    localStorage.clear();
+    expect(telemetryOptedOut()).toBe(true);
+    const send = vi.fn(() => Promise.resolve({ accepted: 0 }));
+    const stop = installTelemetry({ sendTelemetry: send });
+    track('import_ignored', { rawKind: 'csv_row' });
+    stop();
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('never sends more events per request than the server accepts', () => {
+    setTelemetryOptOut(false);
     for (let i = 0; i < 60; i++) track('import_ignored', { rawKind: 'csv_row' });
     const send = vi.fn(() => Promise.resolve({ accepted: 0 }));
     const stop = installTelemetry({ sendTelemetry: send });
@@ -28,5 +39,8 @@ describe('telemetry sink wire format', () => {
     const sizes = send.mock.calls.map((c) => (c as unknown as [string, unknown[]])[1].length);
     expect(sizes.reduce((a, b) => a + b, 0)).toBe(60);
     for (const n of sizes) expect(n).toBeLessThanOrEqual(SERVER_MAX_EVENTS);
+    // Each batch states the opt-in.
+    for (const c of send.mock.calls) expect((c as unknown as unknown[])[2]).toBe(true);
+    setTelemetryOptOut(true);
   });
 });

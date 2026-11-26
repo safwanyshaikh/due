@@ -5,7 +5,20 @@ export interface Me {
   email: string;
   name: string;
   role: Role;
+  mfaEnrolled?: boolean;
+  recoveryCodesRemaining?: number;
+  reauthValidUntil?: string | null;
 }
+
+/** Response of login / setup / reset: the second sign-in step. */
+export type SecondStep =
+  | { status: 'mfa_required'; challengeToken: string; expiresInSeconds: number }
+  | {
+      status: 'enrol_required';
+      challengeToken: string;
+      expiresInSeconds: number;
+      enrolment: { secret: string; otpauthUrl: string; qrSvg: string; issuer: string; account: string };
+    };
 
 export interface Category {
   id: string;
@@ -170,6 +183,8 @@ export interface UserRow {
   status: 'active' | 'disabled';
   createdAt?: string;
   lastLoginAt?: string | null;
+  /** 2-step verification set up. */
+  mfaEnrolled?: boolean;
 }
 
 export interface LoginEvent {

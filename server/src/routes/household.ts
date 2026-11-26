@@ -60,6 +60,25 @@ async function members(q: Queryable, householdId: string) {
  * Household sharing (premium). The owner needs the 'household' plan; members get access through the owner's
  * entitlement. Shared data lives in household_data with the same optimistic concurrency as personal sync.
  */
+/** Household invitations sent per household, and to one address, in 24 hours. */
+export const INVITES_PER_HOUSEHOLD_DAY = 10;
+export const INVITES_PER_EMAIL_DAY = 3;
+
+/**
+ * Names typed by people appear in invitation emails: links, addresses and markup are removed so the email
+ * cannot carry a phishing link in Due's name (L5).
+ */
+export function plainName(raw: string): string {
+  return raw
+    .replace(/\b(?:https?:\/\/|www\.)\S*/gi, '')
+    .replace(/\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|in|net|org|io|co|app|me|ai|dev|xyz|info|link|ly|site|online)\b\S*/gi, '')
+    .replace(/\S+@\S+/g, '')
+    .replace(/[<>"'`\\[\]{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+}
+
 export async function householdRoutes(app: FastifyInstance): Promise<void> {
   const { pool, clock, config } = app.deps;
   const feature = requireFeature('household_sharing');
@@ -144,6 +163,18 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
       ])
     ).rows[0]!.n;
     if (active + pending >= HOUSEHOLD_MAX_MEMBERS) throw new AppError(409, 'household_full', `A household can have up to ${HOUSEHOLD_MAX_MEMBERS} members`);
+    // L5: invitation emails cannot be used to spam: per household and per recipient caps (24 hours).
+    const sent = (
+      await pool.query<{ by_household: number; to_email: number }>(
+        `SELECT count(*) FILTER (WHERE household_id = $1)::int AS by_household, count(*) FILTER (WHERE email = $2)::int AS to_email
+           FROM household_invites WHERE created_at > $3 AND (household_id = $1 OR email = $2)`,
+        [m.household_id, body.email, addMinutes(now, -1440)],
+      )
+    ).rows[0]!;
+    if (sent.by_household >= INVITES_PER_HOUSEHOLD_DAY || sent.to_email >= INVITES_PER_EMAIL_DAY) {
+      reply.header('Retry-After', String(24 * 3600));
+      throw new AppError(429, 'rate_limited', 'Too many invitations today. Try again tomorrow.');
+    }
     const token = randomToken(32);
     const tokenHash = hashInviteToken(config.sessionSecret, token);
     const expiresAt = addMinutes(now, INVITE_TTL_DAYS * 1440);
@@ -154,12 +185,12 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
       now,
       expiresAt,
     ]);
-    const link = `${base}/?household_invite=${encodeURIComponent(token)}`;
+    const link = `${base}/#household_invite=${encodeURIComponent(token)}`;
     try {
       await mailer.send(
         [body.email],
-        `You're invited to share "${m.name}" on Due`,
-        `${a.displayName ?? a.email} invited you to a shared household on Due.\n\nOpen this link and sign in with this email address to accept (expires in ${INVITE_TTL_DAYS} days):\n\n${link}\n\nIf you were not expecting this, ignore this email.\n`,
+        `You're invited to share "${plainName(m.name)}" on Due`,
+        `${plainName(a.displayName ?? '') || a.email} invited you to a shared household on Due.\n\nOpen this link and sign in with this email address to accept (expires in ${INVITE_TTL_DAYS} days):\n\n${link}\n\nIf you were not expecting this, ignore this email.\n`,
       );
     } catch (err) {
       req.log.error({ err }, 'household invite email failed');
@@ -219,7 +250,7 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/account/household/data', { preHandler: gate }, async (req) => {
     const m = await requireMembership(req);
-    return readVersionedDoc(pool, 'household_data', 'household_id', m.household_id);
+    return readVersionedDoc(pool, 'household_data', 'household_id', m.household_id, config.dataEncryptionKey);
   });
 
   app.put('/api/account/household/data', { preHandler: gate, bodyLimit: MAX_SYNC_BYTES + 512 * 1024 }, async (req) => {
@@ -231,7 +262,7 @@ export async function householdRoutes(app: FastifyInstance): Promise<void> {
     if (bytes > MAX_SYNC_BYTES) throw payloadTooLarge();
     const now = clock();
     const w = await withTransaction(pool, async (c) => {
-      const out = await writeVersionedDoc(c, 'household_data', 'household_id', m.household_id, body.baseVersion, body.data, now, { updatedBy: a.id });
+      const out = await writeVersionedDoc(c, 'household_data', 'household_id', m.household_id, body.baseVersion, body.data, now, { updatedBy: a.id, keys: config.dataEncryptionKey });
       await consumerAudit(c, a.id, 'household_data.updated', 'household_data', m.household_id, { version: out.beforeVersion }, { version: out.version, bytes }, now);
       return out;
     });

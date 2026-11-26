@@ -76,6 +76,11 @@ function UsersTab() {
     if (r !== undefined) setLink(extractLink(r));
   }
 
+  async function resetMfa(u: UserRow) {
+    if (!window.confirm(`Reset 2-step verification for ${u.email}? They are signed out and set up an authenticator app at their next sign-in.`)) return;
+    await action.run(() => api.post(`/admin/users/${u.id}/reset-mfa`), `2-step verification reset for ${u.email}.`);
+  }
+
   async function revoke(u: UserRow) {
     if (!window.confirm(`Sign ${u.email} out of all sessions?`)) return;
     await action.run(() => api.post(`/admin/users/${u.id}/revoke-sessions`), `Sessions revoked for ${u.email}.`);
@@ -120,6 +125,7 @@ function UsersTab() {
               <th scope="col">Email</th>
               <th scope="col">Role</th>
               <th scope="col">Status</th>
+              <th scope="col">2-step</th>
               <th scope="col">Last sign-in</th>
               <th scope="col">Actions</th>
             </tr>
@@ -149,6 +155,7 @@ function UsersTab() {
                 <td>
                   <Badge tone={u.status === 'active' ? 'ok' : 'error'}>{humanize(u.status)}</Badge>
                 </td>
+                <td>{u.mfaEnrolled ? <Badge tone="ok">On</Badge> : <Badge tone="review">Not set up</Badge>}</td>
                 <td>{formatIST(u.lastLoginAt)}</td>
                 <td className="row-actions">
                   {canManage(u) ? (
@@ -168,6 +175,11 @@ function UsersTab() {
                       <button className="btn btn-small" type="button" onClick={() => revoke(u)}>
                         Revoke sessions
                       </button>
+                      {u.mfaEnrolled ? (
+                        <button className="btn btn-small" type="button" onClick={() => resetMfa(u)}>
+                          Reset 2-step
+                        </button>
+                      ) : null}
                     </>
                   ) : (
                     <span className="muted small">{u.id === me?.id ? 'You' : 'Owner only'}</span>

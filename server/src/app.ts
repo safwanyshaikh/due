@@ -5,7 +5,9 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Mailer } from './alerts.js';
-import { resolveSession, SESSION_COOKIE } from './auth/sessions.js';
+import { resolveSession } from './auth/sessions.js';
+import { cookieName } from './http/cookies.js';
+import { BlockList, isIP } from 'node:net';
 import { systemClock, type Clock } from './clock.js';
 import type { AppConfig } from './config.js';
 import type { Pool } from './db.js';
@@ -16,7 +18,7 @@ import { bearerToken, isMobileOrigin, registerCsrfGuard, registerMobileCors, reg
 import type { MonitorContext } from './monitor/engine.js';
 import { MonitorRuntime } from './monitor/runtime.js';
 import { SERVER_ROOT } from './paths.js';
-import { ACCOUNT_COOKIE, resolveAccountSession } from './consumer/sessions.js';
+import { resolveAccountSession } from './consumer/sessions.js';
 import { accountRoutes } from './routes/account.js';
 import { adminRoutes } from './routes/admin/index.js';
 import { billingRoutes } from './routes/billing.js';
@@ -25,7 +27,7 @@ import { inboundRoutes } from './routes/inbound.js';
 import { gmailRoutes } from './routes/gmail.js';
 import { identitiesRoutes } from './routes/identities.js';
 import { intakeRoutes } from './routes/intake.js';
-import { INTAKE_COOKIE, resolveTempSession } from './intake/service.js';
+import { resolveTempSession } from './intake/service.js';
 import { telemetryRoutes } from './routes/telemetry.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
@@ -38,7 +40,9 @@ import { legalRoutes } from './legal/index.js';
 import { enterCorrelation, requestIdFrom } from './observability/context.js';
 import { configureErrorReporter, errorReporter } from './observability/errorReporter.js';
 import { metrics } from './observability/metrics.js';
-import { LOG_REDACT_PATHS } from './observability/redact.js';
+import { baseLoggerOptions } from './observability/logging.js';
+import { LogSink } from './observability/logSink.js';
+import pino from 'pino';
 import { registerPlatformHandlers } from './queue/handlers.js';
 import { registerOfferHandlers } from './monitor/handlers.js';
 import type { WorkerDeps } from './queue/index.js';
@@ -59,9 +63,10 @@ export interface BuildAppOptions {
 /**
  * Query parameters that carry bearer secrets: magic-link tokens (`/api/account/verify?token=` and the app's
  * confirmation screen `/?account=confirm&token=`), household-invite tokens (`?household_invite=`), and the Google
- * OAuth authorization code and state on `/api/account/gmail/callback?code=&state=`.
+ * OAuth authorization code and state on `/api/account/gmail/callback?code=&state=`; plus the provider, plan and price
+ * of the legacy GET offer match (M5: what someone pays for is personal).
  */
-const SECRET_QUERY = /([?&](?:token|household_invite|code|state)=)[^&#]*/gi;
+const SECRET_QUERY = /([?&](?:token|household_invite|code|state|provider|price|planCode|serviceType)=)[^&#]*/gi;
 
 /** Request URL as logged: secret query values are replaced so log readers cannot reuse them. */
 export function redactUrl(url: string): string {
@@ -70,10 +75,11 @@ export function redactUrl(url: string): string {
 
 /** Production logger: no cookies/auth headers, and no bearer tokens from query strings. */
 export function loggerOptions(isProduction: boolean) {
+  const base = baseLoggerOptions(isProduction);
   return {
-    level: isProduction ? 'info' : 'debug',
-    redact: LOG_REDACT_PATHS,
+    ...base,
     serializers: {
+      ...base.serializers,
       req: (req: { method: string; url: string; host?: string; ip?: string }) => ({
         method: req.method,
         url: redactUrl(req.url),
@@ -84,13 +90,22 @@ export function loggerOptions(isProduction: boolean) {
   };
 }
 
+/** Adds LOG_SINK_URL shipping (redacted lines, India-region store) next to stdout when configured. */
+export function withLogSink<T extends object>(options: T, config: AppConfig, service: string): T | (T & { stream: pino.MultiStreamRes }) {
+  if (!config.logSink) return options;
+  const sink = new LogSink({ url: config.logSink.url, token: config.logSink.token, service });
+  return { ...options, stream: pino.multistream([{ stream: process.stdout }, { stream: sink }]) };
+}
+
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const { config, pool } = opts;
   const clock = opts.clock ?? systemClock;
   const app = Fastify({
-    logger: opts.logger ?? loggerOptions(config.isProduction),
+    logger: opts.logger ?? withLogSink(loggerOptions(config.isProduction), config, 'due'),
     bodyLimit: 256 * 1024,
-    trustProxy: config.trustProxy,
+    // Trust exactly the platform proxy hop(s); X-Forwarded-For entries to the left of them are ignored.
+    // (Hop i = 0 is the socket peer; with 1 hop, the client IP is the entry the platform proxy appended.)
+    trustProxy: config.trustProxyHops > 0 ? trustHops(config.trustProxyHops) : false,
     routerOptions: { ignoreTrailingSlash: true },
     // Correlation id: a caller's x-request-id is reused only when it is a short opaque token.
     genReqId: (req) => requestIdFrom(req.headers['x-request-id']),
@@ -120,9 +135,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   }
   app.decorateRequest('user', null);
   app.decorateRequest('sessionIdHash', null);
+  app.decorateRequest('sessionMfaAt', null);
   app.decorateRequest('account', null);
   app.decorateRequest('accountSessionHash', null);
   app.decorateRequest('accountSessionPublicId', null);
+  app.decorateRequest('accountSessionCreatedAt', null);
   app.decorateRequest('rawBody', null);
   app.decorateRequest('entitlement', null);
   app.decorateRequest('intakeSession', null);
@@ -149,10 +166,25 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   registerMobileCors(app, config.mobileAppOrigins);
   registerCsrfGuard(app, config.publicBaseUrl, config.mobileAppOrigins);
 
+  // Optional IP allowlist for the admin console and admin API (ADMIN_ALLOWED_IPS). Others get a plain 404.
+  const adminAllow = adminAllowList(config.adminAllowedIps);
+  if (adminAllow) {
+    app.addHook('onRequest', async (req, reply) => {
+      const path = req.url.split('?')[0]!;
+      if (!isAdminPath(path)) return;
+      if (!ipAllowed(adminAllow, req.ip)) {
+        return reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } });
+      }
+    });
+  }
+
+  const adminCookie = cookieName('due_session', config.isProduction);
+  const accountCookie = cookieName('due_acct', config.isProduction);
+  const intakeCookie = cookieName('due_intake', config.isProduction);
   app.addHook('onRequest', async (req) => {
     const path = req.url.split('?')[0]!;
     if (!path.startsWith('/api/admin') && !path.startsWith('/api/auth')) return;
-    const token = req.cookies[SESSION_COOKIE];
+    const token = req.cookies[adminCookie];
     if (!token || token.length > 200) return;
     const s = await resolveSession(
       pool,
@@ -163,6 +195,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     if (s) {
       req.user = s.user;
       req.sessionIdHash = s.idHash;
+      req.sessionMfaAt = s.mfaAt;
     }
   });
 
@@ -172,11 +205,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     if (!path.startsWith('/api/account') && !path.startsWith('/api/intake') && !path.startsWith('/api/telemetry')) return;
     // The native app (Capacitor origin) authenticates with a bearer token only: cookies are never read for it.
     const mobile = isMobileOrigin(req.headers.origin, config.mobileAppOrigins);
-    const intakeToken = mobile ? undefined : req.cookies[INTAKE_COOKIE];
+    const intakeToken = mobile ? undefined : req.cookies[intakeCookie];
     if (intakeToken && intakeToken.length <= 200 && !path.startsWith('/api/telemetry')) {
       req.intakeSession = await resolveTempSession(pool, config.sessionSecret, intakeToken, clock());
     }
-    const token = mobile ? bearerToken(req) : req.cookies[ACCOUNT_COOKIE];
+    const token = mobile ? bearerToken(req) : req.cookies[accountCookie];
     if (!token || token.length > 200) return;
     const s = await resolveAccountSession(
       pool,
@@ -188,6 +221,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       req.account = s.account;
       req.accountSessionHash = s.idHash;
       req.accountSessionPublicId = s.publicId;
+      req.accountSessionCreatedAt = s.createdAt;
     }
   });
 
@@ -263,6 +297,37 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   return app;
+}
+
+/** proxy-addr trust function: the socket peer and the next hops-1 entries are proxies; everything left is not. */
+export function trustHops(hops: number): (addr: string, i: number) => boolean {
+  return (_addr, i) => i < hops;
+}
+
+function isAdminPath(path: string): boolean {
+  const p = path.toLowerCase();
+  return p === '/admin' || p.startsWith('/admin/') || p.startsWith('/api/admin') || p.startsWith('/api/auth');
+}
+
+function adminAllowList(entries: string[]): BlockList | null {
+  if (!entries.length) return null;
+  const list = new BlockList();
+  for (const e of entries) {
+    const [addr, bits] = e.split('/');
+    const type = isIP(addr!) === 6 ? 'ipv6' : 'ipv4';
+    if (bits === undefined) list.addAddress(addr!, type);
+    else list.addSubnet(addr!, Number(bits), type);
+  }
+  return list;
+}
+
+function ipAllowed(list: BlockList, ip: string | undefined): boolean {
+  if (!ip) return false;
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  const addr = mapped ? mapped[1]! : ip;
+  const fam = isIP(addr);
+  if (!fam) return false;
+  return list.check(addr, fam === 6 ? 'ipv6' : 'ipv4');
 }
 
 /** Dependencies for queue handlers, taken from a built app (tests and the in-process worker). */

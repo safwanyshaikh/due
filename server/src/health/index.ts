@@ -115,8 +115,11 @@ export async function checkIntegrations(app: FastifyInstance): Promise<Record<st
   }
 
   out.encryption = config.dataEncryptionKey
-    ? { status: 'ok', detail: 'DATA_ENCRYPTION_KEY set: raw intake content is encrypted at rest (AES-256-GCM)' }
-    : { status: 'not_configured', detail: 'DATA_ENCRYPTION_KEY not set: raw content is never stored (structured fields only)' };
+    ? {
+        status: 'ok',
+        detail: `DATA_ENCRYPTION_KEY set: raw intake content is encrypted at rest (AES-256-GCM, current key id ${config.dataEncryptionKey.current.kid}, ${config.dataEncryptionKey.keys.length} key(s) in the ring)`,
+      }
+    : { status: 'not_configured', detail: 'DATA_ENCRYPTION_KEY not set: inbound mail is not accepted and raw content is never stored' };
 
   const modes = publicModes(config, Boolean(mailer));
   if (modes.smtp === 'not_configured') {

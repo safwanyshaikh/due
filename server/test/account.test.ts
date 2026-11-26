@@ -16,8 +16,7 @@ import {
   signIn,
   TestClock,
   freshDb,
-  testConfig,
-} from './helpers.js';
+  testConfig, AGE } from './helpers.js';
 
 let pool: Pool;
 let app: FastifyInstance;
@@ -56,7 +55,7 @@ describe('magic link sign-in', () => {
     // Token stored only as a hash.
     expect(await n('SELECT count(*) AS n FROM magic_links WHERE token_hash = $1', [token])).toBe(0);
 
-    const v = await c.post('/api/account/verify', { token });
+    const v = await c.post('/api/account/verify', { ...AGE, token });
     expect(v.statusCode).toBe(200);
     expect(v.json()).toMatchObject({
       created: true,
@@ -68,7 +67,7 @@ describe('magic link sign-in', () => {
     expect((await c.get('/api/account/me')).json().account.email).toBe('asha@example.com');
 
     // Second use fails, with a fresh client.
-    const again = await new AppClient(app).post('/api/account/verify', { token });
+    const again = await new AppClient(app).post('/api/account/verify', { ...AGE, token });
     expect(again.statusCode).toBe(400);
     expect(again.json().error.code).toBe('invalid_token');
   });
@@ -78,7 +77,7 @@ describe('magic link sign-in', () => {
     await c.post('/api/account/magic-link', { email: 'b@example.com' });
     const token = mailer.lastToken();
     clock.advanceMinutes(16);
-    const v = await c.post('/api/account/verify', { token });
+    const v = await c.post('/api/account/verify', { ...AGE, token });
     expect(v.statusCode).toBe(400);
     expect(c.cookies.due_acct).toBeUndefined();
   });
@@ -91,7 +90,7 @@ describe('magic link sign-in', () => {
     for (let i = 0; i < 3; i++) {
       const r = await new AppClient(app).get(`/api/account/verify?token=${token}`);
       expect(r.statusCode).toBe(303);
-      expect(r.headers.location).toBe(`/?account=confirm&token=${token}`);
+      expect(r.headers.location).toBe(`/?account=confirm#token=${token}`);
       expect(r.headers['cache-control']).toBe('no-store');
       expect(r.cookies.find((k) => k.name === 'due_acct')).toBeUndefined();
     }
@@ -100,13 +99,13 @@ describe('magic link sign-in', () => {
     expect(await n('SELECT count(*) AS n FROM consumer_sessions')).toBe(0);
 
     // The app's "Confirm sign-in on this device" button POSTs the token: it works once.
-    const ok = await c.post('/api/account/verify', { token, deviceLabel: 'Chrome on Android' });
+    const ok = await c.post('/api/account/verify', { ...AGE, token, deviceLabel: 'Chrome on Android' });
     expect(ok.statusCode).toBe(200);
     expect(c.cookies.due_acct).toBeTruthy();
     expect((await c.get('/api/account/sessions')).json().items[0].deviceLabel).toBe(
       'Chrome on Android',
     );
-    expect((await new AppClient(app).post('/api/account/verify', { token })).statusCode).toBe(400);
+    expect((await new AppClient(app).post('/api/account/verify', { ...AGE, token })).statusCode).toBe(400);
     expect(await n('SELECT count(*) AS n FROM magic_links WHERE used_at IS NOT NULL')).toBe(1);
     // After use the e-mailed link reports an invalid link rather than offering confirmation again.
     expect(
@@ -170,7 +169,7 @@ describe('magic link sign-in', () => {
   });
 
   it('never builds e-mailed links from request headers in production (host-header poisoning)', async () => {
-    const config = { ...testConfig(), isProduction: true, publicBaseUrl: null, trustProxy: true };
+    const config = { ...testConfig(), isProduction: true, publicBaseUrl: null, trustProxyHops: 1 };
     const app2 = await buildApp({ pool, config, clock: clock.fn, mailer, logger: false });
     await app2.ready();
     try {
@@ -265,8 +264,8 @@ describe('sessions and devices', () => {
 
 describe('backup and sync', () => {
   it('uses optimistic concurrency and returns the server copy on conflict', async () => {
-    const a = await signIn(app, mailer, 'sync@example.com');
-    const b = await signIn(app, mailer, 'sync@example.com');
+    const a = await signIn(app, mailer, 'sync@example.com', { syncConsent: true });
+    const b = await signIn(app, mailer, 'sync@example.com', { syncConsent: true });
     expect((await a.get('/api/account/data')).json()).toEqual({
       version: 0,
       data: null,
@@ -293,7 +292,7 @@ describe('backup and sync', () => {
   });
 
   it('rejects non-objects, oversize documents and anonymous access', async () => {
-    const a = await signIn(app, mailer, 'v@example.com');
+    const a = await signIn(app, mailer, 'v@example.com', { syncConsent: true });
     expect((await a.put('/api/account/data', { baseVersion: 0, data: [1, 2] })).statusCode).toBe(
       400,
     );
@@ -733,7 +732,7 @@ describe('reminder delivery worker', () => {
     });
 
   it('records unavailable for Free users, sends for entitled users, and defers during quiet hours', async () => {
-    const c = await signIn(app, mailer, 'rem@example.com');
+    const c = await signIn(app, mailer, 'rem@example.com', { syncConsent: true });
     const put = await c.put('/api/account/data', {
       baseVersion: 0,
       data: {},
@@ -1030,8 +1029,13 @@ describe('consents take effect', () => {
   const consent = (c: AppClient, purpose: string, granted: boolean) =>
     c.post('/api/account/consents', { purpose, granted, textVersion: `${purpose}-2026-10` });
 
-  it("withdrawn 'sync_backup' makes the server refuse uploads (403 consent_required) until granted again", async () => {
+  it("uploads need an explicit 'sync_backup' grant; a withdrawal refuses them (403 consent_required) until granted again", async () => {
     const c = await signIn(app, mailer, 'consent-sync@example.com');
+    // Never granted is not consent.
+    const none = await c.put('/api/account/data', { baseVersion: 0, data: { a: 1 } });
+    expect(none.statusCode).toBe(403);
+    expect(none.json().error.code).toBe('consent_required');
+    await consent(c, 'sync_backup', true);
     expect((await c.put('/api/account/data', { baseVersion: 0, data: { a: 1 } })).statusCode).toBe(
       200,
     );
@@ -1093,7 +1097,14 @@ describe('consents take effect', () => {
 describe('telemetry', () => {
   it('accepts allow-listed events without cookies and rejects unknown names and PII', async () => {
     const post = (body: object) =>
-      app.inject({ method: 'POST', url: '/api/telemetry', payload: body });
+      app.inject({ method: 'POST', url: '/api/telemetry', payload: { optedIn: true, ...body } });
+    // Opt-in only (M3): a batch without the device's opt-in is refused.
+    const off = await app.inject({
+      method: 'POST',
+      url: '/api/telemetry',
+      payload: { anonId: 'anon_12345678', events: [{ name: 'import_ignored', props: {} }] },
+    });
+    expect(off.statusCode).toBe(403);
     const ok = await post({
       anonId: 'anon_12345678',
       events: [{ name: 'first_obligation_completed', props: { source: 'manual', count: 1 } }],
@@ -1136,7 +1147,7 @@ describe('telemetry', () => {
 
 describe('export and delete', () => {
   it('exports everything stored and deletes the account with a confirmation token', async () => {
-    const c = await signIn(app, mailer, 'gone@example.com');
+    const c = await signIn(app, mailer, 'gone@example.com', { syncConsent: true });
     await c.put('/api/account/data', { baseVersion: 0, data: { obligations: [{ id: 'a' }] } });
     await c.patch('/api/account/me', { displayName: 'Gone' });
     const ex = await c.get('/api/account/export');
@@ -1196,16 +1207,42 @@ describe('export and delete', () => {
     expect((await c.get('/api/account/me')).statusCode).toBe(401);
   });
 
-  it('refuses deletion while a paid subscription is active', async () => {
-    const c = await signIn(app, mailer, 'paid@example.com');
-    await pool.query(`UPDATE consumer_accounts SET status = 'active'`);
+  it('stops an active paid subscription at the gateway, then deletes (L8)', async () => {
+    const calls: { url: string; body: string }[] = [];
+    const fetchImpl = (async (url: string, init: RequestInit) => {
+      calls.push({ url: String(url), body: String(init?.body ?? '') });
+      return new Response(JSON.stringify({ id: 'sub_X', status: 'cancelled' }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const app2 = await makeApp(pool, {
+      clock,
+      mailer,
+      fetchImpl,
+      env: { RAZORPAY_KEY_ID: 'rzp_test_abc', RAZORPAY_KEY_SECRET: 'secret', RAZORPAY_WEBHOOK_SECRET: 'whsec' },
+    });
+    const c = await signIn(app2, mailer, 'paid@example.com');
     await pool.query(
       `INSERT INTO entitlements (account_id, plan, billing_period, status, channel, provider_ref)
        SELECT id, 'plus', 'monthly', 'active', 'razorpay', 'sub_X' FROM consumer_accounts`,
     );
     const tok = (await c.post('/api/account/delete-request')).json().confirmationToken;
     const del = await c.del('/api/account', { confirmationToken: tok });
-    expect(del.statusCode).toBe(409);
-    expect(del.json().error.code).toBe('active_subscription');
+    expect(del.statusCode).toBe(202);
+    expect(del.json().subscriptionCancelled).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toContain('/subscriptions/sub_X/cancel');
+    expect(JSON.parse(calls[0]!.body)).toEqual({ cancel_at_cycle_end: 0 });
+    await app2.close();
+  });
+
+  it('export and deletion need a recent sign-in (L2)', async () => {
+    const c = await signIn(app, mailer, 'stale@example.com');
+    expect((await c.get('/api/account/export')).statusCode).toBe(200);
+    clock.advanceMinutes(16);
+    const ex = await c.get('/api/account/export');
+    expect(ex.statusCode).toBe(403);
+    expect(ex.json().error.code).toBe('recent_sign_in_required');
+    expect((await c.post('/api/account/delete-request')).statusCode).toBe(403);
+    const fresh = await signIn(app, mailer, 'stale@example.com');
+    expect((await fresh.post('/api/account/delete-request')).statusCode).toBe(200);
   });
 });

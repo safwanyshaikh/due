@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { cookieName } from '../http/cookies.js';
 import { ACCEPTED_PURPOSES, canonicalPurpose, LEGACY_PURPOSES, recordConsentV2 } from '../consumer/consents.js';
 import { consumerAudit, currentAccount, entitlementOf, requireAccount, requireFeature } from '../consumer/context.js';
 import { FREE_UPLOADS_PER_MONTH, guestUploadsUsed, takeAccountUpload, uploadLimitReached, uploadMonth } from '../consumer/uploads.js';
@@ -93,7 +94,7 @@ async function audit(q: Queryable, owner: Owner, action: string, entityId: strin
 }
 
 function setIntakeCookie(app: FastifyInstance, reply: FastifyReply, token: string): void {
-  reply.setCookie(INTAKE_COOKIE, token, {
+  reply.setCookie(cookieName(INTAKE_COOKIE, app.deps.config.isProduction), token, {
     path: '/',
     httpOnly: true,
     secure: app.deps.config.isProduction,
@@ -375,7 +376,7 @@ export async function intakeRoutes(app: FastifyInstance): Promise<void> {
       await consumerAudit(c, a.id, 'intake.claimed', 'temp_intake', tempId, null, out, now);
       return out;
     });
-    reply.clearCookie(INTAKE_COOKIE, { path: '/', httpOnly: true, secure: config.isProduction, sameSite: 'lax' });
+    reply.clearCookie(cookieName(INTAKE_COOKIE, config.isProduction), { path: '/', httpOnly: true, secure: config.isProduction, sameSite: 'lax' });
     return { ok: true, ...r, alias: aliasView(app, await liveAlias(pool, { kind: 'account', id: a.id })) };
   });
 

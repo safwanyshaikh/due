@@ -238,15 +238,15 @@ describe('A. Jio Postpaid bill', () => {
     expect(bill).toEqual({
       provider: 'Jio',
       service: 'postpaid',
-      planName: '449 - Prime',
-      baseRentalInr: 507.37,
+      planName: '399 - Prime',
+      baseRentalInr: 451.88,
       addOns: [],
       usageChargesInr: 0,
-      taxesInr: 189.57,
-      totalPayableInr: 1242.73,
-      dueDate: '2026-10-20',
-      periodFrom: '2026-09-11',
-      periodTo: '2026-10-10',
+      taxesInr: 157.38,
+      totalPayableInr: 1031.62,
+      dueDate: '2026-10-16',
+      periodFrom: '2026-09-07',
+      periodTo: '2026-10-06',
       dataUsedGb: null,
       planDataGb: null,
       includes: [],
@@ -283,12 +283,12 @@ describe('B. JioFiber bill', () => {
       planName: '399+200(13 OTT)',
       ottAppCount: 13,
       includes: ['13 paid OTT apps (list not printed)'],
-      baseRentalInr: 676.87,
-      taxesInr: 121.84,
-      totalPayableInr: 798.71,
-      dueDate: '2026-11-15',
-      periodFrom: '2026-11-06',
-      periodTo: '2026-12-05',
+      baseRentalInr: 640.68,
+      taxesInr: 115.32,
+      totalPayableInr: 756,
+      dueDate: '2026-11-12',
+      periodFrom: '2026-11-03',
+      periodTo: '2026-12-02',
     });
     expect(parseJioPostpaidBill(fx('jio-fiber-bill.txt'))).toBeNull();
   });
@@ -379,28 +379,28 @@ describe('D. SBI Gold Loan OD', () => {
     expect(g).toMatchObject({
       productKind: 'gold_loan_od',
       product: 'Gold Loan OD',
-      limitInr: 1130000,
-      outstandingInr: 1065119.92,
+      limitInr: 960000,
+      outstandingInr: 812584.01,
       annualRatePct: 9.7,
-      penalChargesInr: 200.01,
+      penalChargesInr: 168.32,
       irregularityCount: 3,
       statementDate: '2026-11-24',
-      disbursementDate: '2026-03-16',
+      disbursementDate: '2026-03-12',
     });
     expect(g.monthlyInterest).toEqual([
-      { month: '2026-03', amountInr: 4705.32 },
-      { month: '2026-04', amountInr: 8846.77 },
-      { month: '2026-05', amountInr: 9160.91 },
-      { month: '2026-06', amountInr: 8923.61 },
-      { month: '2026-07', amountInr: 8969.94 },
-      { month: '2026-08', amountInr: 8864.85 },
-      { month: '2026-09', amountInr: 8746.2 },
-      { month: '2026-10', amountInr: 9046.78 },
+      { month: '2026-03', amountInr: 3912.4 },
+      { month: '2026-04', amountInr: 7456.18 },
+      { month: '2026-05', amountInr: 7702.33 },
+      { month: '2026-06', amountInr: 7515.06 },
+      { month: '2026-07', amountInr: 7598.71 },
+      { month: '2026-08', amountInr: 7487.92 },
+      { month: '2026-09', amountInr: 7390.44 },
+      { month: '2026-10', amountInr: 7611.85 },
     ]);
     expect(g.irregularities).toEqual([
-      { date: '2026-07-06', amountInr: 8655.8, label: 'SMA REC' },
-      { date: '2026-07-24', amountInr: 20547.92, label: 'SMA REC' },
-      { date: '2026-10-06', amountInr: 28356.22, label: 'Irregularity Recovery' },
+      { date: '2026-07-07', amountInr: 7210.45, label: 'SMA REC' },
+      { date: '2026-07-23', amountInr: 17330.6, label: 'SMA REC' },
+      { date: '2026-10-07', amountInr: 24118.9, label: 'Irregularity Recovery' },
     ]);
   });
   it('urgent alert for a recent irregularity; card-vs-gold information move', () => {
@@ -414,7 +414,7 @@ describe('D. SBI Gold Loan OD', () => {
       severity: 'urgent',
       title: 'Your gold loan OD went irregular recently',
     });
-    expect(moves[0].why).toContain('₹28,356 as Irregularity Recovery on 6 Oct 2026');
+    expect(moves[0].why).toContain('₹24,119 as Irregularity Recovery on 7 Oct 2026');
     const x = moves.find((m) => m.id.startsWith('debt_rate:gold-loan'))!;
     expect(x).toMatchObject({
       title:

@@ -716,3 +716,37 @@ dl.kv dd {
     animation: none !important;
   }
 }
+
+/* 2-step verification */
+.totp-qr {
+  display: block;
+  background: #fff;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
+.recovery-codes {
+  columns: 2;
+  font-size: 0.95rem;
+  padding-left: 1.5rem;
+}
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  max-width: 420px;
+  width: calc(100% - 2rem);
+}

@@ -1,30 +1,30 @@
 Welcome Letter for your Loan Account Number: H000000000000000000
 Customer Details   Product & Property Details
-Name:   TEST USER
-Address:   TEST ADDRESS, MUMBAI 400001
+Name:   DEMO CUSTOMER
+Address:   FLAT 7, SAMPLE CHS, MUMBAI 400099
 Mobile Number:   9000000000
-Email ID:   user@example.com
+Email ID:   demo.customer@example.com
 Product:   HOME LOAN
-Property Address:   TEST PROPERTY, NAVI MUMBAI 410206
+Property Address:   SAMPLE PROPERTY, THANE 400601
 Dear Customer,
 Greetings from L&T Finance Limited (formerly known as L&T Finance Holdings Limited) (LTF/L&T Finance),
 We welcome you to the L&T Finance family and thank you for choosing us as your partner in growth.
 Given below are your loan and details.
 Loan Amount (Rs.)   Tenure   EMI Amount (Rs.)   EMI Cycle and Frequency
-Rs. 3,390,000.00/-   228   Rs. 30,761.99/-   3rd - Monthly
+Rs. 2,850,000.00/-   216   Rs. 26,069.02/-   3rd - Monthly
 Loan details   Deductions from disbursement
-Sanction Amount   Rs. 3,390,000.00/-   Processing Fees   Rs. 29,138.18/-
-Disbursement Amount   Rs. 3,390,000.00/-   Broken Period Interest   Rs. 6,576.60/-
-Disbursement Date   26-Jul-2024
+Sanction Amount   Rs. 2,850,000.00/-   Processing Fees   Rs. 24,516.40/-
+Disbursement Amount   Rs. 2,850,000.00/-   Broken Period Interest   Rs. 5,120.33/-
+Disbursement Date   12-Jun-2024
 Disbursement Status   Fully disbursed
-Annualised Interest Rate   08.85% p.a.
+Annualised Interest Rate   08.65% p.a.
 Interest Type   Floating - Monthly
 Scheme   NA
 Subvention End Date   NA
 Repayment details
-Mode of Repayment   Auto Debit   EMI Start Date   03-Sep-2024
-Repayment Bank Name   UNION BANK OF
-INDIA   EMI End Date   03-Aug-2043
+Mode of Repayment   Auto Debit   EMI Start Date   03-Aug-2024
+Repayment Bank Name   SAMPLE BANK OF
+INDIA   EMI End Date   03-Jul-2042
 
 We encourage you to honour the financial commitments as per terms of the agreement. Kindly refer attached repayment
 schedule for repayment details for further terms & conditions.
@@ -42,16 +42,6 @@ of additional charges/bounce charges for non-receipt of payment and ensure a smo
 3. In case your loan is being closed through the process of pre-payment, the upcoming instalment is likely to be presented
 on originally scheduled date. You are requested to issue a 'Stop Payment' instruction to your banker in respect of
 repayment instruments with respect to future loan instalments.
-4. In the event of instalment getting realized upon presentation, the said instalment amount will be refunded within 30
-(thirty) working days from receipt of your request, either by direct credit to the drawee account or through pay -order,
-couriered to your mailing address on record
-5. The Company reserves the right, without assuming any liability and without any prior notice, to cancel the loan if the
-requisite documents as communicated by the Company are not produced within 30 (thirty) days from the date of
-disbursement of the loan.
-6. The figures stated above are system generated, any inaccuracies noticed in this letter need to be reported within 15
-(fifteen) days of receipt of the letter failing which, the contents of this letter would be construed as correct and deemed
-accepted.
-7. Kindly insist for L&T Finance receipt for all your cash payments.
 
 Disclaimer:
 Personal details, NOC and EMI related QR Codes are not applicable for Warehouse Receipt Finance.

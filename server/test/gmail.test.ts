@@ -203,6 +203,19 @@ describe('gmail status and plan gating', () => {
     expect(await n('SELECT count(*) AS n FROM email_identities')).toBe(0);
   });
 
+  it('in production, refuses to connect Gmail until the legal details are complete (M9)', async () => {
+    const c = await plusUser('legal@example.com');
+    app.deps.config.isProduction = true;
+    try {
+      const r = await c.post('/api/account/gmail/connect', { consentVersion: GMAIL_CONSENT_VERSION });
+      expect(r.statusCode).toBe(503);
+      expect(r.json().error.code).toBe('legal_incomplete');
+      expect(await n('SELECT count(*) AS n FROM oauth_states')).toBe(0);
+    } finally {
+      app.deps.config.isProduction = false;
+    }
+  });
+
   it('reports test_mode with its blocker when configured for Google testing', async () => {
     const st = (await new AppClient(app).get('/api/account/gmail/status')).json();
     expect(st.mode).toBe('test_mode');
@@ -446,7 +459,7 @@ describe('gmail scan', () => {
     const e = (await pool.query(`SELECT * FROM user_events WHERE intake_type = 'gmail'`)).rows[0];
     expect(e.extracted_fields.amountInr).toBe(15000);
     expect(e.source_meta.messageClass).toBe('school_fee');
-    expect(e.raw_text).toMatch(/^v1:/);
+    expect(e.raw_text).toMatch(/^v2:k0:/);
     expect(e.raw_retention_until.getTime() - clock.now.getTime()).toBe(3 * 86400_000);
     assertReadOnly();
   });

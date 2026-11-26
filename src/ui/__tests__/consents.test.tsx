@@ -29,10 +29,10 @@ const ME: MeResponse = {
 };
 
 describe('account consents', () => {
-  it('withdrawing the telemetry consent also stops anonymous telemetry on this device', async () => {
+  it('usage analytics are off by default; turning them on records the consent, turning off withdraws it', async () => {
     const consents: ConsentsResponse = { current: {}, history: [] };
     const recordConsent = vi.fn(() =>
-      Promise.resolve({ ok: true, purpose: 'telemetry', granted: false, at: '' }),
+      Promise.resolve({ ok: true, purpose: 'telemetry', granted: true, at: '' }),
     );
     const client = fakeClient({
       me: () => Promise.resolve(ME),
@@ -42,11 +42,16 @@ describe('account consents', () => {
     });
     renderApp({ client, hash: '#/account' });
     const box = (await screen.findByLabelText(/Anonymous usage events/)) as HTMLInputElement;
-    expect(box.checked).toBe(!telemetryOptedOut());
-    expect(telemetryOptedOut()).toBe(false);
+    expect(box.checked).toBe(false);
+    expect(telemetryOptedOut()).toBe(true);
     fireEvent.click(box);
     await waitFor(() => expect(recordConsent).toHaveBeenCalled());
-    expect(recordConsent.mock.calls[0]).toEqual(['telemetry', false, expect.any(String)]);
+    expect(recordConsent.mock.calls[0]).toEqual(['telemetry', true, expect.any(String)]);
+    expect(telemetryOptedOut()).toBe(false);
+    await waitFor(() => expect(box.checked).toBe(true));
+    fireEvent.click(box);
+    await waitFor(() => expect(recordConsent).toHaveBeenCalledTimes(2));
+    expect((recordConsent.mock.calls as unknown[][])[1]).toEqual(['telemetry', false, expect.any(String)]);
     expect(telemetryOptedOut()).toBe(true);
   });
 });

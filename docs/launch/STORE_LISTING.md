@@ -62,29 +62,42 @@ Home with tiles, an upload review card, Plans screen showing "Free during beta",
 
 ## Data safety (Google Play) and App Privacy (Apple)
 
-Based on what the code actually does: the app is local-first. Items live in the browser or app on the device. Only these things reach the server:
+Based on what the code does after the November 2026 security pass. The app is local-first: items live on the device. Nothing below leaves the device unless the person turns the feature on. The iOS privacy manifest is `ios/App/App/PrivacyInfo.xcprivacy`; keep it in step with this page.
 
 | What | When | Purpose | Shared with others? |
 | --- | --- | --- | --- |
-| Email address (and optional name) | Only if you sign in | Account, sign-in links, reminders | No. Email is delivered through Google Workspace SMTP. |
-| Backup copy of your items (amounts, dates, providers, notes) | Only if you sign in and leave backup on | Sync across devices | No. Hosted on Render in a Postgres database. |
-| Gmail messages matching billing searches (read-only) | Only if you connect Gmail | Extract merchant, amount, date for your approval | No. Not used for ads. |
-| Emails you forward to your Due address | Only if you forward | Same | No. Raw message kept for a short retention period, then deleted. |
-| Anonymous usage events (for example "first item added") | Unless you turn them off in Settings | Improve the product | No. Allow-listed, no names, amounts or text. |
-| Offer-matching query (provider name and category only) | When you check offers | Show documented benefits | No. No amounts or account details are sent. |
-| Error reports | Optional (only if error tracking is configured) | Fix crashes | Scrubbed before sending. |
+| Email address (and optional name) | Only if you sign in | Account, sign-in links, reminders | No. Delivered through the SMTP provider acting for Due. |
+| 18+ declaration and the privacy-notice version | At sign-in | Legal record (DPDP Act s.9) | No. |
+| Backup copy of your items (amounts, dates, providers, notes) | Only if you sign in **and** turn on backup (recorded consent) | Sync across devices | No. Stored encrypted. Daily balances, statement lines and recurring-line detail stay on the device unless you opt in. |
+| Gmail messages matching billing searches (read-only) | Only if you connect Gmail | Extract merchant, amount, date for your approval | No. Not used for ads (Google Limited Use). |
+| Emails you forward to your Due address | Only if you forward (recorded consent) | Same | No. Held encrypted until parsed (max 24 h); redacted text kept 7 days. |
+| Usage events (for example "first item added") | **Off by default**; only if you turn them on (and, when signed in, give the analytics consent) | Improve the product | No. Allow-listed names, no amounts or text. Deleted with the account and after 13 months. |
+| Offer-matching query (provider, service type, price) | When you check offers | Show documented benefits | No. Sent in the request body, never stored or logged. |
+| Research label (a known provider name only) | When a known provider has no savings guide yet | Add guides | No. Free text you typed is never sent. |
+| Error reports | Optional (only if error tracking is configured) | Fix crashes | Scrubbed before sending (no bodies, emails, amounts). |
 
-Never collected: card numbers, UPI PINs, bank passwords, PAN, Aadhaar, OTPs, SMS inbox, contacts, location, precise device identifiers, advertising ID. Document text that looks like these is masked on the device. Payments are not taken in the beta; when Razorpay goes live, Razorpay processes card/UPI details and Due never sees them.
+Never collected: card numbers, UPI PINs, bank passwords, PAN, Aadhaar, OTPs, SMS inbox, contacts, location, photos (documents are read on the device), precise device identifiers, advertising ID. Payments: the payment gateway processes card/UPI details; Due never sees them.
 
-Suggested answers:
+### Google Play Data safety form
 
-- Does the app collect or share user data? Collects (optional): yes. Shares with third parties for their own purposes: no. Service providers (hosting, email delivery, Gmail API at the user's request) act on Due's behalf.
-- Data types (Play): Personal info > Email address (optional, account); Financial info > Other financial info (user-entered bills, only if backup is on); App activity > In-app actions (anonymous events); Messages > Emails (only if Gmail or forwarding is enabled). Not collected: location, contacts, photos/files stored on server, device IDs, health.
-- Is data encrypted in transit? Yes (HTTPS).
-- Can users request deletion? Yes: in-app account deletion plus Settings > delete everything; policy under Legal > Deletion.
-- Data used for tracking or advertising? No. No ads, no data sale.
-- Apple "Data Linked to You": email address; user content (backup); usage data (if signed in). "Data Not Linked to You": anonymous usage events when signed out. No tracking.
-- Sensitive: the app handles financial information; the Play "Financial features" declaration applies. State: tracks bills and reminders, no lending, no payments, no loan offers.
-- Google also requires a declaration for Gmail restricted scopes (see `docs/production/GOOGLE_VERIFICATION.md`) before Gmail goes live to the public.
+- Does your app collect or share any of the required user data types? **Yes, collects** (all optional). **Shares: No** (service providers acting for Due are not "sharing").
+- Is all collected data encrypted in transit? **Yes** (HTTPS only; the native app has a CSP that allows only the Due API).
+- Do you provide a way for users to request that their data is deleted? **Yes**: in-app account deletion (Account > Your account data) and a web deletion policy under Legal > Deletion.
+- Data types, each "Collected, not shared, optional, processed ephemerally: No":
+  - Personal info > **Email address**: App functionality, Account management.
+  - Financial info > **Other financial info** (user-entered bills, backup only): App functionality.
+  - Messages > **Emails** (Gmail / forwarding only): App functionality.
+  - App activity > **App interactions** (opt-in analytics): Analytics.
+- Not collected: location, contacts, photos/videos, files and docs (read on device), audio, health, device or other IDs, web browsing, app info and performance (crash logs are server-side only).
+- Financial features declaration: tracks bills and reminders; **no** lending, payments, loan offers or credit decisions.
+- Gmail restricted scopes: complete the Google verification first (`docs/production/GOOGLE_VERIFICATION.md`).
+
+### Apple App Privacy ("nutrition label")
+
+- Tracking: **No** (`NSPrivacyTracking` false, no tracking domains, no ATT prompt).
+- Data Linked to You (all for App Functionality, except as noted): Contact Info > **Email Address**; Financial Info > **Other Financial Info**; User Content > **Emails or Text Messages**, **Other User Content**; Usage Data > **Product Interaction** (Analytics, only when the person opts in).
+- Data Not Linked to You: none (signed-out usage events are only sent after opt-in and carry a random device-local id; declare them as linked to stay conservative).
+- Required-reason APIs declared in the manifest: UserDefaults (CA92.1), file timestamps (C617.1, 3B52.1).
+- Age rating: 17+ is not required, but the app is for adults: sign-in asks for an 18+ declaration.
 
 Before submitting: confirm these answers against the real production configuration (which integrations are live) and the published Privacy notice.

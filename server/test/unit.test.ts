@@ -46,7 +46,8 @@ describe('helpers', () => {
     expect(redactUrl('/api/account/gmail/callback?state=abc123&code=4/0AXyz&scope=x')).toBe('/api/account/gmail/callback?state=[redacted]&code=[redacted]&scope=x');
     expect(redactUrl('/api/account/verify?token=secret')).toBe('/api/account/verify?token=[redacted]');
     expect(redactUrl('/?household_invite=inv&x=1')).toBe('/?household_invite=[redacted]&x=1');
-    expect(redactUrl('/api/public/offers/match?provider=jio')).toBe('/api/public/offers/match?provider=jio');
+    // M5: what someone pays for is masked too.
+    expect(redactUrl('/api/public/offers/match?provider=jio&price=349')).toBe('/api/public/offers/match?provider=[redacted]&price=[redacted]');
   });
   it('private address detection', () => {
     for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.0.1', '169.254.169.254', '::1', 'fd00::1', '::ffff:127.0.0.1']) expect(isPrivateAddress(ip)).toBe(true);
@@ -109,7 +110,7 @@ describe('consumer app CSP', () => {
     const admin = directives((await app.inject({ method: 'GET', url: '/admin/' })).headers['content-security-policy']);
     expect(admin.get('script-src')).toBe("'self'");
     const api = await app.inject({ method: 'GET', url: '/api/public/status' });
-    expect(api.headers['content-security-policy']).toBe("default-src 'none'; frame-ancestors 'none'");
+    expect(api.headers['content-security-policy']).toBe("default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
     await app.close();
     await pool.end();
   });

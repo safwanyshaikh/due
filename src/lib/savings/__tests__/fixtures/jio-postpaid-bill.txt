@@ -1,4 +1,4 @@
-Hi Mr. TEST USER,
+Hi Mr. DEMO CUSTOMER,
 Here is your Invoice Summary.
 or pay via
 Jio.com   MyJio App
@@ -7,12 +7,12 @@ Security Deposit
 Statement Date
 Bill Period
 Due Date
-:   Rs 2394.00
-Rs 1575.00 :
-:   12-Oct-26
-11-Sep-26 :
-20-Oct-26 :
-10-Oct-26
+:   Rs 1900.00
+Rs 1250.00 :
+:   08-Oct-26
+07-Sep-26 :
+16-Oct-26 :
+06-Oct-26
 to
 Jio Mobile Number   000000000
 Statement Number   000000000
@@ -21,12 +21,12 @@ Current Plan
 :
 Scan & Pay
 :
-449 - Prime Rs 0
+399 - Prime Rs 0
 ii.   Payment Received
 Amount (Rs.)
-1,892.09
-iii.   Current Months Charges   1,242.73
-1,892.09 i.   Previous Balance Due
+1,512.40
+iii.   Current Months Charges   1,031.62
+1,512.40 i.   Previous Balance Due
 Connectivity Services
 Monthly Plan Charges
 Other Charges
@@ -39,31 +39,31 @@ Other Credits
 Taxes
 iv.   Previous Balance with RRL
 v.   Current Balance (i - ii + iii + iv)
-vi.   Total Payable   1,242.73
+vi.   Total Payable   1,031.62
 0.00
-1,242.73
-1,053.16
-507.37
+1,031.62
+874.24
+451.88
 0.00
-545.79
-0.00
-0.00
+422.36
 0.00
 0.00
 0.00
-189.57
+0.00
+0.00
+157.38
 You can download your detailed tax invoices on MyJio app / jio.com in the invoice history section.
-Reach Us:   Call 199 from your Jio number | 1800-889-9999 from other networks |   user@example.com
+Reach Us:   Call 199 from your Jio number | 1800-889-9999 from other networks |   demo.customer@example.com
 Manage your world of Jio with   MyJio   app or visit   www.jio.com .
 Invoice Plan Details   Period
 Connectivity Services:
-449 - Prime Rs 0   11-SEP-2026 to 10-OCT-2026
+399 - Prime Rs 0   07-SEP-2026 to 06-OCT-2026
 SEP-26
-Due Amount : 1174.42
-Payment : 2305.40
+Due Amount : 1188.20
+Payment : 1512.40
 AUG-26
-Due Amount : 1805.40
-Payment : 1469.10
+Due Amount : 1650.75
+Payment : 1325.00
 
 Important Information:
 Payments
@@ -79,5 +79,4 @@ l   You can also visit   www.jio.com , login with your Jio ID and password; clic
 Request" option under Profile menu to raise a complaint. To track the status of your existing
 complaint, use your unique Service Request Number.
 l   In the event of non-payment, part payment or late payment of the outstanding amount by the due date,
-Reliance Jio Infocomm Limited (RJIL) and Jio Platforms Limited (JPL) reserves the right to disconnect
-services.
+the service provider reserves the right to disconnect the services.

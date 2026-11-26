@@ -11,7 +11,8 @@ import { AppError, badRequest, conflict, forbidden, notFound, parse } from '../.
 import { camel, camelAll, randomToken, sha256 } from '../../util.js';
 import { count, paging, uuidParam } from './helpers.js';
 
-const USER_COLS = 'id, email, name, role, status, created_at, last_login_at, (password_hash IS NOT NULL) AS has_password';
+const USER_COLS =
+  'id, email, name, role, status, created_at, last_login_at, (password_hash IS NOT NULL) AS has_password, (totp_enrolled_at IS NOT NULL) AS mfa_enrolled';
 const SETUP_LINK_HOURS = 72;
 const RESET_LINK_HOURS = 24;
 
@@ -186,6 +187,25 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       return n;
     });
     return { revoked };
+  });
+
+  /** Clears a user's authenticator and recovery codes; they set up 2-step verification again at next sign-in. */
+  app.post('/users/:id/reset-mfa', admin, async (req) => {
+    const { id } = parse(uuidParam, req.params);
+    const actor = currentUser(req);
+    if (id === actor.id) throw badRequest('Use your own recovery codes, or ask another admin to reset your 2-step verification');
+    const revoked = await withTransaction(pool, async (c) => {
+      const user = await one<UserRow>(c, `SELECT ${USER_COLS} FROM users WHERE id = $1 FOR UPDATE`, [id]);
+      if (!user) throw notFound('User not found');
+      assertCanManage(actor.role, user);
+      await c.query('UPDATE users SET totp_secret_enc = NULL, totp_enrolled_at = NULL, totp_last_step = NULL WHERE id = $1', [id]);
+      await c.query('DELETE FROM admin_recovery_codes WHERE user_id = $1', [id]);
+      await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE user_id = $1 AND used_at IS NULL', [id, clock()]);
+      const n = await revokeUserSessions(c, id, clock());
+      await writeAudit(c, actorOf(req), 'user.reset_mfa', 'user', id, null, { revokedSessions: n });
+      return n;
+    });
+    return { ok: true, revokedSessions: revoked };
   });
 
   const loginEvents = async (req: FastifyRequest) => {

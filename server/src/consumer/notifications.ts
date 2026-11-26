@@ -36,23 +36,52 @@ export const REMINDER_MAX_ATTEMPTS = 4;
 
 // ---- Unsubscribe tokens ----------------------------------------------------------------------------
 
-/** Signed, non-expiring token naming one account and channel. It can only turn that channel off. */
-export function unsubscribeToken(secret: string, accountId: string, channel: Channel): string {
+/**
+ * Unsubscribe tokens (L3). Format `<key version>.<base64url(accountId.channel.issuedDay)>.<hmac>`; the key version
+ * is part of the HMAC context, so bumping UNSUBSCRIBE_KEY_VERSION retires every older link at once. A token works
+ * for UNSUBSCRIBE_TTL_DAYS after the email was sent, and can only ever turn its channel off.
+ * Links from before the key version existed (`<body>.<hmac>`, no expiry) are honoured until LEGACY_UNSUBSCRIBE_UNTIL.
+ */
+export const UNSUBSCRIBE_KEY_VERSION = 'u2';
+export const UNSUBSCRIBE_TTL_DAYS = 400;
+export const LEGACY_UNSUBSCRIBE_UNTIL = new Date('2027-12-31T00:00:00Z');
+const DAY_MS = 86_400_000;
+
+function legacyUnsubscribeToken(secret: string, accountId: string, channel: Channel): string {
   const body = Buffer.from(`${accountId}.${channel}`).toString('base64url');
   return `${body}.${hmacSha256(secret, `unsubscribe:${accountId}:${channel}`).slice(0, 40)}`;
+}
+
+export function unsubscribeToken(secret: string, accountId: string, channel: Channel, now: Date = new Date()): string {
+  const day = Math.floor(now.getTime() / DAY_MS);
+  const body = Buffer.from(`${accountId}.${channel}.${day}`).toString('base64url');
+  const mac = hmacSha256(secret, `unsubscribe:${UNSUBSCRIBE_KEY_VERSION}:${accountId}:${channel}:${day}`).slice(0, 40);
+  return `${UNSUBSCRIBE_KEY_VERSION}.${body}.${mac}`;
 }
 
 export function verifyUnsubscribeToken(
   secret: string,
   token: string,
+  now: Date = new Date(),
 ): { accountId: string; channel: Channel } | null {
+  const valid = (accountId: string | undefined, channel: string | undefined): accountId is string =>
+    !!accountId && /^[0-9a-f-]{36}$/.test(accountId) && CHANNELS.includes(channel as Channel);
+  const v2 = /^(u[0-9]{1,3})\.([A-Za-z0-9_-]{10,160})\.([0-9a-f]{40})$/.exec(token);
+  if (v2) {
+    if (v2[1] !== UNSUBSCRIBE_KEY_VERSION) return null;
+    const [accountId, channel, dayRaw] = Buffer.from(v2[2]!, 'base64url').toString('utf8').split('.');
+    const day = Number(dayRaw);
+    if (!valid(accountId, channel) || !Number.isInteger(day)) return null;
+    const age = now.getTime() - day * DAY_MS;
+    if (age < -DAY_MS || age > UNSUBSCRIBE_TTL_DAYS * DAY_MS) return null;
+    const expected = `${UNSUBSCRIBE_KEY_VERSION}.${v2[2]}.${hmacSha256(secret, `unsubscribe:${UNSUBSCRIBE_KEY_VERSION}:${accountId}:${channel}:${day}`).slice(0, 40)}`;
+    return safeEqual(token, expected) ? { accountId, channel: channel as Channel } : null;
+  }
   const m = /^([A-Za-z0-9_-]{10,120})\.([0-9a-f]{40})$/.exec(token);
-  if (!m) return null;
+  if (!m || now >= LEGACY_UNSUBSCRIBE_UNTIL) return null;
   const [accountId, channel] = Buffer.from(m[1]!, 'base64url').toString('utf8').split('.');
-  if (!accountId || !/^[0-9a-f-]{36}$/.test(accountId) || !CHANNELS.includes(channel as Channel))
-    return null;
-  const expected = unsubscribeToken(secret, accountId, channel as Channel);
-  return safeEqual(token, expected) ? { accountId, channel: channel as Channel } : null;
+  if (!valid(accountId, channel)) return null;
+  return safeEqual(token, legacyUnsubscribeToken(secret, accountId, channel as Channel)) ? { accountId, channel: channel as Channel } : null;
 }
 
 // ---- Preferences -----------------------------------------------------------------------------------
@@ -227,10 +256,11 @@ export function reminderEmail(
   base: string,
   secret: string,
   r: { account_id: string; obligation_ref: string; title: string; due_date: string },
+  now: Date = new Date(),
 ) {
   const due = humanDate(r.due_date);
   const deepLink = `${base}/?open=reminder&ref=${encodeURIComponent(r.obligation_ref)}`;
-  const unsubscribe = `${base}/api/notifications/unsubscribe?token=${unsubscribeToken(secret, r.account_id, 'email')}`;
+  const unsubscribe = `${base}/api/notifications/unsubscribe?token=${unsubscribeToken(secret, r.account_id, 'email', now)}`;
   const subject = `Reminder from Due: an item is due on ${due}`;
   const text =
     `You asked Due to remind you about "${r.title}", due on ${due}.\n\n` +
@@ -392,7 +422,7 @@ export async function deliverReminder(job: JobContext): Promise<void> {
         [r.id, now],
       );
       const deliveryId = await recordDelivery(client, r, job, 'sending', null, null, now);
-      const mail = reminderEmail(config.publicBaseUrl, config.sessionSecret, r);
+      const mail = reminderEmail(config.publicBaseUrl, config.sessionSecret, r, now);
       try {
         const info = await mailer.send([r.email], mail.subject, mail.text, {
           headers: {
@@ -601,7 +631,7 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
    * The signed token only ever turns a channel off.
    */
   const unsubscribe = async (token: string) => {
-    const v = verifyUnsubscribeToken(config.sessionSecret, token);
+    const v = verifyUnsubscribeToken(config.sessionSecret, token, clock());
     if (!v) return null;
     const exists = await one(pool, 'SELECT 1 AS x FROM consumer_accounts WHERE id = $1', [
       v.accountId,
@@ -640,7 +670,7 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
       reply.header('Cache-Control', 'no-store');
       reply.header('Referrer-Policy', 'no-referrer');
       const q = tokenQuery.safeParse(req.query);
-      const v = q.success ? verifyUnsubscribeToken(config.sessionSecret, q.data.token) : null;
+      const v = q.success ? verifyUnsubscribeToken(config.sessionSecret, q.data.token, clock()) : null;
       if (!v || !q.success) return reply.redirect('/?notifications=unsubscribe-invalid', 303);
       const action = `/api/notifications/unsubscribe?token=${encodeURIComponent(q.data.token)}`;
       const label = v.channel === 'email' ? 'email reminders' : `${v.channel} reminders`;

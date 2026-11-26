@@ -101,7 +101,10 @@ export function SettingsScreen() {
               setOptOut(!e.target.checked);
             }}
           />
-          <span>Share anonymous usage events (no names, amounts or text)</span>
+          <span>
+            Share usage events to help improve Due (off by default; no names, amounts or text). If
+            you are signed in, also turn on “Anonymous usage events” under Account &gt; Consents.
+          </span>
         </label>
         <details className="more">
           <summary className="press">{PRIVACY_SUMMARY.heading}</summary>

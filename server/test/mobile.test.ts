@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Pool } from '../src/db.js';
 import { loadConfig } from '../src/config.js';
-import { AppClient, freshDb, makeApp, RecordingMailer, TestClock } from './helpers.js';
+import { AppClient, freshDb, makeApp, RecordingMailer, TestClock, AGE } from './helpers.js';
 
 const IOS = 'capacitor://localhost';
 const ANDROID = 'https://localhost';
@@ -31,7 +31,7 @@ const H = (origin: string, extra: Record<string, string> = {}) => ({ origin, 'x-
 async function nativeSignIn(origin = IOS): Promise<string> {
   const c = new AppClient(app);
   await c.req('POST', '/api/account/magic-link', { email: 'asha@example.com' }, H(origin));
-  const v = await c.req('POST', '/api/account/verify', { token: mailer.lastToken(), tokenTransport: 'bearer', deviceLabel: 'Due on iOS' }, H(origin));
+  const v = await c.req('POST', '/api/account/verify', { ...AGE, token: mailer.lastToken(), tokenTransport: 'bearer', deviceLabel: 'Due on iOS' }, H(origin));
   expect(v.statusCode).toBe(200);
   const body = v.json();
   expect(v.cookies).toHaveLength(0); // no cookie is ever set for the native app
@@ -109,6 +109,13 @@ describe('native bearer-token session', () => {
     expect(me.statusCode).toBe(200);
     expect(me.json().account.email).toBe('asha@example.com');
     expect(me.headers['access-control-allow-origin']).toBe(IOS);
+    const consent = await app.inject({
+      method: 'POST',
+      url: '/api/account/consents',
+      payload: { purpose: 'sync_backup', granted: true, policyVersion: 'sync-backup-v1' },
+      headers: H(IOS, { authorization: `Bearer ${token}` }),
+    });
+    expect(consent.statusCode).toBe(201);
 
     const put = await app.inject({
       method: 'PUT',
@@ -142,7 +149,7 @@ describe('native bearer-token session', () => {
     // A cookie session obtained the normal way (web)...
     const web = new AppClient(app);
     await web.post('/api/account/magic-link', { email: 'asha@example.com' });
-    await web.post('/api/account/verify', { token: mailer.lastToken() });
+    await web.post('/api/account/verify', { ...AGE, token: mailer.lastToken() });
     expect((await web.get('/api/account/me')).statusCode).toBe(200);
     // ...is not honoured when the request comes from the native origin.
     const r = await web.req('GET', '/api/account/me', undefined, { origin: IOS });
@@ -154,12 +161,12 @@ describe('native bearer-token session', () => {
     await c.post('/api/account/magic-link', { email: 'asha@example.com' });
     const token = mailer.lastToken();
     for (const headers of [{}, { origin: WEB }] as Record<string, string>[]) {
-      const v = await c.req('POST', '/api/account/verify', { token, tokenTransport: 'bearer' }, { 'x-requested-with': 'due-app', ...headers });
+      const v = await c.req('POST', '/api/account/verify', { ...AGE, token, tokenTransport: 'bearer' }, { 'x-requested-with': 'due-app', ...headers });
       expect(v.statusCode).toBeGreaterThanOrEqual(400);
       expect(v.json().sessionToken).toBeUndefined();
     }
     // The link was not consumed by the refused attempts: a cookie sign-in still works.
-    expect((await c.post('/api/account/verify', { token })).statusCode).toBe(200);
+    expect((await c.post('/api/account/verify', { ...AGE, token })).statusCode).toBe(200);
   });
 
   it('a Capacitor origin cannot call CSRF-protected admin routes', async () => {

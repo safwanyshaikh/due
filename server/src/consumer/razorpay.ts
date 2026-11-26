@@ -91,6 +91,10 @@ export class RazorpayClient {
   cancelAtCycleEnd(id: string): Promise<RazorpaySubscription> {
     return this.call('POST', `/subscriptions/${encodeURIComponent(id)}/cancel`, { cancel_at_cycle_end: 1 });
   }
+  /** Stops the subscription now (account deletion: no further charges). */
+  cancelNow(id: string): Promise<RazorpaySubscription> {
+    return this.call('POST', `/subscriptions/${encodeURIComponent(id)}/cancel`, { cancel_at_cycle_end: 0 });
+  }
 }
 
 type EntStatus = 'active' | 'cancelled' | 'expired';

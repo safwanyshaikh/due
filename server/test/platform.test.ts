@@ -213,6 +213,7 @@ describe('health and status', () => {
         RAZORPAY_WEBHOOK_SECRET: 'w',
         INBOUND_EMAIL_DOMAIN: 'in.due.test',
         INBOUND_WEBHOOK_SECRET: 'secret-0123456789',
+        DATA_ENCRYPTION_KEY: Buffer.alloc(32, 5).toString('base64'),
       },
     });
     expect((await app2.inject({ method: 'GET', url: '/api/public/status' })).json().integrations).toEqual({

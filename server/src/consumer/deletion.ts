@@ -127,6 +127,12 @@ async function runStep(q: Queryable, step: DeletionStep, accountId: string, emai
       await q.query('DELETE FROM household_invites WHERE email = $1', [email]);
       return;
     case 'audit_trail':
+      // Usage analytics go too: rows of the account and every anonymous id it ever used (M3).
+      await q.query(
+        `DELETE FROM telemetry_events WHERE account_id = $1
+            OR anon_id IN (SELECT DISTINCT anon_id FROM telemetry_events WHERE account_id = $1)`,
+        [accountId],
+      );
       await q.query('DELETE FROM consumer_audit WHERE account_id = $1', [accountId]);
       await q.query('DELETE FROM consent_records WHERE account_id = $1', [accountId]);
       return;

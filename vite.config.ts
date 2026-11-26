@@ -2,7 +2,7 @@
 import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -49,10 +49,52 @@ function ocrAssets(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), ocrAssets()],
+/**
+ * Content Security Policy for the native (Capacitor) build (M10). The web build gets its CSP as an HTTP header
+ * from the Due server; inside the app's WebView there is no server, so the policy goes in a <meta> tag. Only the
+ * app's own files and the Due API origin are allowed (no inline scripts, no third-party origins).
+ * frame-ancestors cannot be set in a meta tag; the WebView does not embed the app in frames anyway.
+ */
+export function nativeCsp(apiOrigin: string): string {
+  const api = apiOrigin.trim().replace(/\/+$/, '');
+  if (api && !/^https:\/\/[A-Za-z0-9.-]+(:\d+)?$/.test(api)) {
+    throw new Error(`VITE_API_ORIGIN must be an https origin for the native build, got "${api}"`);
+  }
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    `connect-src 'self'${api ? ` ${api}` : ''}`,
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'none'",
+  ].join('; ');
+}
+
+function nativeCspMeta(mode: string, apiOrigin: string): Plugin {
+  return {
+    name: 'due-native-csp',
+    transformIndexHtml(html) {
+      if (mode !== 'native') return html;
+      const tag = `<meta http-equiv="Content-Security-Policy" content="${nativeCsp(apiOrigin)}" />`;
+      return html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    ${tag}`);
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    ocrAssets(),
+    nativeCspMeta(mode, loadEnv(mode, root, 'VITE_').VITE_API_ORIGIN ?? loadEnv(mode, root, 'VITE_').VITE_API_BASE ?? ''),
+  ],
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
   },
-});
+}));

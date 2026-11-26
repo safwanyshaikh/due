@@ -202,6 +202,8 @@ describe('offer intelligence engine (Postgres)', () => {
     planHtml = page('Acme 1029 plan', '<p>Acme prepaid plan ₹1,049 with streaming. Offer valid till 31 Dec 2026.</p>');
     clock.advanceMinutes(60);
     expect((await refreshOfferSource(ctx, pageSource)).observationsAdded).toBe(1);
+    // Admin sessions end after 1 hour idle: sign in again.
+    await viewer.login('viewer@due.test');
     const hist = await viewer.get('/api/admin/offers/acme-1029/observations');
     expect(hist.statusCode).toBe(200);
     const items = hist.json().items;
@@ -276,6 +278,9 @@ describe('offer intelligence engine (Postgres)', () => {
 
     // Through the durable queue: the job fails (and will retry) without touching the observation.
     await pool.query(`UPDATE sources SET next_check_at = $1, consecutive_failures = 0`, [clock.now]);
+    // Admin sessions end after 1 hour idle: sign in again.
+    await editor.login('editor@due.test');
+    await viewer.login('viewer@due.test');
     const enq = await editor.post('/api/admin/offers/acme-1029/refresh');
     expect(enq.statusCode).toBe(202);
     expect(enq.json().jobs).toHaveLength(2);
@@ -392,7 +397,19 @@ describe('cross-calculation match endpoint', () => {
     await pool.end();
   });
 
-  const match = (qs: string) => app.inject({ method: 'GET', url: `/api/public/offers/match?${qs}` });
+  // The app POSTs the query in the body (M5); the legacy GET form is checked once below.
+  const match = (qs: string) => {
+    const q = Object.fromEntries(new URLSearchParams(qs));
+    const body: Record<string, unknown> = { ...q };
+    if (q.price !== undefined) body.price = Number(q.price);
+    return app.inject({ method: 'POST', url: '/api/public/offers/match', payload: body });
+  };
+
+  it('keeps the legacy GET form working', async () => {
+    const r = await app.inject({ method: 'GET', url: '/api/public/offers/match?provider=airtel&price=699' });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().query).toMatchObject({ provider: 'airtel', price: 699 });
+  });
 
   it('returns possible benefits with eligibility, expiry, assumptions, confidence and sources', async () => {
     const r = await match('provider=airtel&serviceType=prepaid&planCode=699&price=699');

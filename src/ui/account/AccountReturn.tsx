@@ -55,6 +55,7 @@ export function AccountReturn() {
   const [confirmToken, setConfirmToken] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmErr, setConfirmErr] = useState<string | null>(null);
+  const [adult, setAdult] = useState(false);
   const [invite, setInvite] = useState<string | null>(() => readPref('household-invite'));
   const [inviteBusy, setInviteBusy] = useState(false);
   const handled = useRef(false);
@@ -63,9 +64,13 @@ export function AccountReturn() {
     if (handled.current) return;
     handled.current = true;
     const params = new URLSearchParams(window.location.search);
+    // Links put secrets in the fragment (never sent to the server, never in a cache key or access log):
+    // `/?account=confirm#token=…` and `/#household_invite=…`. Older links used the query string.
+    const frag = /^#(token|household_invite)=([A-Za-z0-9_-]{16,256})$/.exec(window.location.hash);
     const account = params.get('account');
-    const inviteToken = params.get('household_invite');
-    const token = params.get('token');
+    const inviteToken =
+      params.get('household_invite') ?? (frag?.[1] === 'household_invite' ? frag[2]! : null);
+    const token = params.get('token') ?? (frag?.[1] === 'token' ? frag[2]! : null);
     if (!account && !inviteToken) return;
     if (inviteToken) writePref('household-invite', inviteToken);
     // Secrets leave the address bar (and history) at once.
@@ -76,8 +81,9 @@ export function AccountReturn() {
     window.history.replaceState(
       null,
       '',
-      `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`,
+      `${window.location.pathname}${qs ? `?${qs}` : ''}${frag ? '#/' : window.location.hash}`,
     );
+    if (frag) window.dispatchEvent(new HashChangeEvent('hashchange'));
     queueMicrotask(() => {
       if (inviteToken) setInvite(inviteToken);
       if (account === 'link-invalid') setBanner('link-invalid');
@@ -97,12 +103,14 @@ export function AccountReturn() {
     setConfirming(true);
     setConfirmErr(null);
     try {
-      await client.verifyMagicLink(confirmToken, deviceLabel());
+      await client.verifyMagicLink(confirmToken, deviceLabel(), adult);
       setConfirmToken(null);
       setWelcome(true);
       await refresh();
     } catch (e) {
-      if (e instanceof AccountApiError && e.status === 400) {
+      if (e instanceof AccountApiError && e.code === 'age_confirmation_required') {
+        setConfirmErr('Due accounts are for people aged 18 or older. Tick the box to continue.');
+      } else if (e instanceof AccountApiError && e.status === 400) {
         setConfirmToken(null);
         setBanner('link-invalid');
       } else setConfirmErr(e instanceof AccountApiError ? e.message : 'Sign-in failed. Try again.');
@@ -145,12 +153,18 @@ export function AccountReturn() {
             You opened a Due sign-in link. Sign in on this device? Only continue if you asked for
             this link just now.
           </p>
+          <label className="switch-row">
+            <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
+            <span>
+              I am 18 or older. I have read the <a href="#/legal">privacy notice</a>.
+            </span>
+          </label>
           {confirmErr && <Notice tone="warn">{confirmErr}</Notice>}
           <div className="stack-8">
             <button
               type="button"
               className="btn btn-primary btn-block press"
-              disabled={confirming}
+              disabled={confirming || !adult}
               onClick={() => void confirmSignIn()}
             >
               {confirming ? 'Signing in…' : 'Sign in on this device'}

@@ -5,7 +5,7 @@ import { formatINR } from '../../lib/money';
 import { safeHref } from '../lib/markdown';
 import { Badge } from './ui';
 
-/** One possible benefit from GET /api/public/offers/match (Agent D). Fields are optional for safety. */
+/** One possible benefit from POST /api/public/offers/match. Fields are optional for safety. */
 export interface OfferMatchItem {
   offerId: string;
   provider?: string;
@@ -49,11 +49,14 @@ export async function fetchOfferMatches(q: {
   serviceType?: string;
   price?: number;
 }): Promise<OfferMatchResponse> {
-  const p = new URLSearchParams({ provider: q.provider.slice(0, 60) });
+  // Sent in a POST body, never in the URL, so the provider and price are not in access logs or caches (M5).
+  const body: { provider: string; serviceType?: string; price?: number } = {
+    provider: q.provider.slice(0, 60),
+  };
   if (q.serviceType && (SERVICE_TYPES as readonly string[]).includes(q.serviceType))
-    p.set('serviceType', q.serviceType);
-  if (q.price !== undefined) p.set('price', String(q.price));
-  const r = await request<OfferMatchResponse>('GET', `/api/public/offers/match?${p}`);
+    body.serviceType = q.serviceType;
+  if (q.price !== undefined) body.price = q.price;
+  const r = await request<OfferMatchResponse>('POST', '/api/public/offers/match', body);
   return { disclaimer: r?.disclaimer, matches: Array.isArray(r?.matches) ? r.matches : [] };
 }
 

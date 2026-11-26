@@ -86,6 +86,8 @@ describe('free public beta', () => {
     clock.set('2026-11-25T18:31:00Z'); // 00:01 IST on the 26th
     expect((await computeEntitlement(pool, accountId, clock.fn())).plan).toBe('free');
     expect((await status()).beta).toEqual({ plusFree: false, endsOn: '2026-11-25' });
+    // Admin sessions end after 1 hour idle: sign in again.
+    await admin.login('admin@example.com');
     await setBeta(admin, 'beta.ends_on', null);
     expect((await c.get('/api/account/entitlements')).json().plan).toBe('plus');
     await setBeta(admin, 'beta.plus_free', false);

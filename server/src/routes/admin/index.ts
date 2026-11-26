@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../../http/context.js';
+import { breachRoutes } from './breach.js';
 import { categoryRoutes } from './categories.js';
 import { companyRoutes } from './companies.js';
 import { consumerAdminRoutes } from './consumer.js';
@@ -41,4 +42,5 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   await app.register(notificationAdminRoutes);
   await app.register(savingsAdminRoutes);
   await app.register(offerInboxAdminRoutes);
+  await app.register(breachRoutes);
 }

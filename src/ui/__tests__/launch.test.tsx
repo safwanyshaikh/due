@@ -144,11 +144,13 @@ describe('platform helpers', () => {
     expect(soften('Guaranteed Prime for 3 months')).toBe('possible Prime for 3 months');
   });
 
-  it('offer matching never sends a Due category as the telecom service type', async () => {
+  it('offer matching never sends a Due category as the telecom service type, and keeps it out of the URL', async () => {
     const urls: string[] = [];
+    const bodies: string[] = [];
     const orig = globalThis.fetch;
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       urls.push(String(input));
+      bodies.push(String(init?.body ?? ''));
       return new Response(JSON.stringify({ matches: [] }), { status: 200 });
     }) as typeof fetch;
     try {
@@ -157,9 +159,10 @@ describe('platform helpers', () => {
     } finally {
       globalThis.fetch = orig;
     }
-    expect(urls[0]).toContain('/api/public/offers/match?provider=Jio&price=349');
-    expect(urls[0]).not.toContain('serviceType');
-    expect(urls[1]).toContain('serviceType=prepaid');
+    expect(urls[0]).toMatch(/\/api\/public\/offers\/match$/);
+    expect(urls[0]).not.toContain('Jio');
+    expect(JSON.parse(bodies[0]!)).toEqual({ provider: 'Jio', price: 349 });
+    expect(JSON.parse(bodies[1]!)).toEqual({ provider: 'Jio', serviceType: 'prepaid' });
   });
 });
 

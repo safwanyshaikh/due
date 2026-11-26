@@ -1,4 +1,7 @@
-/** Regression tests on anonymised real statement text (amounts scaled; no personal data). */
+/**
+ * Regression tests on statement text. The Jio bills, the welcome letter and the gold loan statement are fully
+ * synthetic (scripts/generate-statement-fixtures.mjs); see the M7 fix status for the others.
+ */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -354,15 +357,15 @@ describe('loan statement (SOA) and welcome letter', () => {
     expect(parseLoanStatement(WELCOME)).toMatchObject({
       source: 'welcome_letter',
       lender: 'L&T Finance',
-      loanAmountInr: 3390000,
-      loanTenureMonths: 228,
-      emiInr: 30761.99,
-      annualRatePct: 8.85,
+      loanAmountInr: 2850000,
+      loanTenureMonths: 216,
+      emiInr: 26069.02,
+      annualRatePct: 8.65,
       rateType: 'floating',
       emiDueDay: 3,
-      processingFeeInr: 29138.18,
-      disbursementDate: '2024-07-26',
-      instalmentEndDate: '2043-08-03',
+      processingFeeInr: 24516.4,
+      disbursementDate: '2024-06-12',
+      instalmentEndDate: '2042-07-03',
       bounceCount: 0,
     });
     expect(parseLoanStatement('Grocery list')).toBeNull();

@@ -1,7 +1,7 @@
 import type { Queryable } from '../db.js';
 import { hmacSha256, randomToken } from '../util.js';
 
-export const ACCOUNT_COOKIE = 'due_acct';
+export const ACCOUNT_COOKIE = 'due_acct' as const;
 
 export interface ConsumerAccount {
   id: string;
@@ -85,7 +85,7 @@ export async function resolveAccountSession(
   policy: AccountSessionPolicy,
   token: string,
   now: Date,
-): Promise<{ account: ConsumerAccount; idHash: string; publicId: string } | null> {
+): Promise<{ account: ConsumerAccount; idHash: string; publicId: string; createdAt: Date } | null> {
   const idHash = hashAccountToken(policy.secret, token);
   const r = await q.query<{
     public_id: string;
@@ -116,5 +116,6 @@ export async function resolveAccountSession(
     account: { id: s.account_id, email: s.email, displayName: s.display_name },
     idHash,
     publicId: s.public_id,
+    createdAt: s.created_at,
   };
 }

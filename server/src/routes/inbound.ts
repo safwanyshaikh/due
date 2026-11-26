@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { consentWithdrawn } from '../consumer/consents.js';
+import { hasConsent } from '../consumer/consents.js';
 import { computeEntitlement } from '../consumer/entitlements.js';
 import { withTransaction, one } from '../db.js';
 import { AppError } from '../http/errors.js';
@@ -8,7 +8,7 @@ import { ALIAS_RE, MAX_EVENTS_PER_DAY, messageIdHashOf, ownerWhere, type Owner }
 import { metrics } from '../observability/metrics.js';
 import { enqueue } from '../queue/index.js';
 import { sealInbound } from '../queue/handlers.js';
-import { safeEqual } from '../util.js';
+import { safeEqual, sha256 } from '../util.js';
 import { getSettings } from '../settings.js';
 import { ingestResearchMail } from '../offerinbox/service.js';
 
@@ -152,6 +152,9 @@ export function parseMultipart(body: Buffer, contentType: string): Record<string
  * Routes only by the unique alias of a Plus account, stores a minimal sealed message, dedupes by Message-ID and
  * enqueues inbound.parse (which also dedupes by fingerprint). Never follows links and never replies.
  */
+/** Mailgun signatures older (or newer) than this are refused. */
+export const MAILGUN_WINDOW_SECONDS = 5 * 60;
+
 export async function inboundRoutes(app: FastifyInstance): Promise<void> {
   const { pool, clock, config } = app.deps;
   const unknownAliases = new UnknownAliasLimiter();
@@ -165,7 +168,12 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
     done(null, parseMultipart(body as Buffer, String(req.headers['content-type'] ?? '')));
   });
 
-  function authenticated(req: FastifyRequest, secret: string, fields: Record<string, unknown>): boolean {
+  /**
+   * Order of preference: X-Due-Signature (HMAC-SHA256 of the exact raw body: binds the content), Basic auth
+   * (Postmark, over TLS), then Mailgun's timestamp/token signature. Mailgun's signature does not cover the body, so
+   * each token is accepted once (webhook_replay_tokens, M12) and only within 5 minutes of its timestamp.
+   */
+  async function authenticated(req: FastifyRequest, secret: string, fields: Record<string, unknown>): Promise<boolean> {
     const auth = req.headers.authorization;
     if (typeof auth === 'string' && auth.startsWith('Basic ')) {
       const decoded = Buffer.from(auth.slice(6), 'base64').toString('utf8');
@@ -179,8 +187,15 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
     const { timestamp, token, signature } = fields as { timestamp?: unknown; token?: unknown; signature?: unknown };
     if (typeof timestamp === 'string' && typeof token === 'string' && typeof signature === 'string') {
       const ts = Number(timestamp);
-      const fresh = Number.isFinite(ts) && Math.abs(clock().getTime() / 1000 - ts) <= 15 * 60;
-      if (fresh && hexEqual(signature, createHmac('sha256', secret).update(timestamp + token).digest('hex'))) return true;
+      const fresh = Number.isFinite(ts) && Math.abs(clock().getTime() / 1000 - ts) <= MAILGUN_WINDOW_SECONDS;
+      if (fresh && token.length <= 200 && hexEqual(signature, createHmac('sha256', secret).update(timestamp + token).digest('hex'))) {
+        const r = await pool.query('INSERT INTO webhook_replay_tokens (token_hash, seen_at) VALUES ($1, $2) ON CONFLICT DO NOTHING', [
+          sha256(`mailgun:${token}`),
+          clock(),
+        ]);
+        if (r.rowCount) return true;
+        metrics.inc('inbound.rejected', { reason: 'replayed_token' });
+      }
     }
     return false;
   }
@@ -190,7 +205,7 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
       throw new AppError(503, 'intake_unavailable', 'Inbound email is not configured on this server');
     }
     const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
-    if (!authenticated(req, config.inboundWebhookSecret, body)) {
+    if (!(await authenticated(req, config.inboundWebhookSecret, body))) {
       metrics.inc('inbound.rejected', { reason: 'invalid_signature' });
       throw new AppError(401, 'invalid_signature', 'Webhook authentication failed');
     }
@@ -242,7 +257,7 @@ export async function inboundRoutes(app: FastifyInstance): Promise<void> {
       metrics.inc('inbound.rejected', { reason: 'premium_required' });
       return reject('premium_required', 'Email forwarding needs a Plus plan');
     }
-    if (await consentWithdrawn(pool, accountId, 'forwarding')) return reject('consent_withdrawn', 'Forwarding consent was withdrawn');
+    if (!(await hasConsent(pool, accountId, 'forwarding'))) return reject('consent_withdrawn', 'Forwarding needs consent (it was withdrawn or never given)');
     if (Buffer.byteLength(msg.text, 'utf8') > MAX_INBOUND_TEXT_BYTES) {
       metrics.inc('inbound.rejected', { reason: 'too_large' });
       return reject('message_too_large', 'Message text is too large');

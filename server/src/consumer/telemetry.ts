@@ -49,6 +49,8 @@ export const TelemetryBatch = z
       )
       .min(1)
       .max(25),
+    /** The device's analytics opt-in (off by default in the app). Batches without it are refused (M3). */
+    optedIn: z.boolean().optional(),
   })
   .strict();
 export type TelemetryBatch = z.infer<typeof TelemetryBatch>;

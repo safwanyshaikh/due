@@ -2,7 +2,8 @@ import type { Queryable } from '../db.js';
 import { hmacSha256, randomToken } from '../util.js';
 import type { Role } from './roles.js';
 
-export const SESSION_COOKIE = 'due_session';
+/** Base name of the admin session cookie (`__Host-due_session` in production, see http/cookies.ts). */
+export const SESSION_COOKIE = 'due_session' as const;
 
 export interface AuthUser {
   id: string;
@@ -29,19 +30,20 @@ export async function createSession(
   now: Date,
   ip: string | null,
   userAgent: string | null,
+  mfaAt: Date | null = null,
 ): Promise<{ token: string; expiresAt: Date }> {
   const token = randomToken(32);
   const expiresAt = new Date(Math.min(now.getTime() + policy.idleMs, now.getTime() + policy.maxMs));
   await q.query(
-    `INSERT INTO sessions (id_hash, user_id, created_at, expires_at, last_seen_at, ip, user_agent)
-     VALUES ($1,$2,$3,$4,$3,$5,$6)`,
-    [hashSessionToken(policy.secret, token), userId, now, expiresAt, ip, userAgent?.slice(0, 512) ?? null],
+    `INSERT INTO sessions (id_hash, user_id, created_at, expires_at, last_seen_at, ip, user_agent, mfa_at)
+     VALUES ($1,$2,$3,$4,$3,$5,$6,$7)`,
+    [hashSessionToken(policy.secret, token), userId, now, expiresAt, ip, userAgent?.slice(0, 512) ?? null, mfaAt],
   );
   return { token, expiresAt };
 }
 
 /**
- * Resolves a session token to an active user. Enforces revoke, idle (12h) and absolute (7d) expiry,
+ * Resolves a session token to an active user. Enforces revoke, idle (1h) and absolute (12h) expiry,
  * and slides the idle window (written at most once a minute).
  */
 export async function resolveSession(
@@ -49,7 +51,7 @@ export async function resolveSession(
   policy: SessionPolicy,
   token: string,
   now: Date,
-): Promise<{ user: AuthUser; idHash: string } | null> {
+): Promise<{ user: AuthUser; idHash: string; mfaAt: Date | null } | null> {
   const idHash = hashSessionToken(policy.secret, token);
   const r = await q.query<{
     user_id: string;
@@ -57,12 +59,13 @@ export async function resolveSession(
     expires_at: Date;
     last_seen_at: Date;
     revoked_at: Date | null;
+    mfa_at: Date | null;
     email: string;
     name: string;
     role: Role;
     status: string;
   }>(
-    `SELECT s.user_id, s.created_at, s.expires_at, s.last_seen_at, s.revoked_at, u.email, u.name, u.role, u.status
+    `SELECT s.user_id, s.created_at, s.expires_at, s.last_seen_at, s.revoked_at, s.mfa_at, u.email, u.name, u.role, u.status
        FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = $1`,
     [idHash],
   );
@@ -80,7 +83,7 @@ export async function resolveSession(
       expiresAt,
     ]);
   }
-  return { user: { id: s.user_id, email: s.email, name: s.name, role: s.role }, idHash };
+  return { user: { id: s.user_id, email: s.email, name: s.name, role: s.role }, idHash, mfaAt: s.mfa_at };
 }
 
 export async function revokeSession(q: Queryable, idHash: string, now: Date): Promise<void> {

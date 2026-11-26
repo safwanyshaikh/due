@@ -13,7 +13,10 @@ This page records what the server enforces today, where in the code, and how to 
 - **Caching.** Private paths (`/api/admin`, `/api/auth`, `/api/account`, `/api/intake`, `/api/billing`, `/api/inbound`) send `Cache-Control: no-store`.
 - **Error pages** never include stack traces, SQL, tokens or provider payloads. Unhandled errors return `{ error: { code: 'internal_error' } }` and are logged in redacted form. Error reports (`SENTRY_DSN`) are scrubbed by `beforeSend` in `server/src/observability/errorReporter.ts`, so they never carry request bodies, users, mail or document content, or amounts.
 - **Correlation ids.** Each request gets an id (a valid incoming `x-request-id` is accepted; otherwise one is generated). It is returned as `x-request-id` and copied onto every job the request enqueues.
-- **Logs** use pino with redaction paths for cookies, authorization headers, webhook signatures, `*.token`, `*.password`, `*.secret`, `*.text`, `*.body`, `*.subject` and OAuth tokens (`server/src/observability/redact.ts`). Secret query values (`token=`, `household_invite=`) are removed from logged URLs.
+- **Logs** use pino with redaction paths for cookies, authorization headers, webhook signatures, `*.token`, `*.password`, `*.secret`, `*.text`, `*.body`, `*.subject` and OAuth tokens (`server/src/observability/redact.ts`). On top of that (`server/src/observability/logging.ts`): the `err` serializer keeps only the error type, codes and stack frames and redacts the message (e-mail addresses, tokens, long numbers, amounts), dropping SMTP `rejected`/`response` and pg `detail`/`where`; every other log field goes through `redactObject`; string messages are redacted too. Secret and personal query values (`token`, `household_invite`, `code`, `state`, and the offer-match `provider`/`price`/`planCode`/`serviceType`) are removed from logged URLs.
+- **Log shipping (India).** Optional `LOG_SINK_URL` + `LOG_SINK_TOKEN`: redacted log lines and new audit rows (every 15 minutes) are POSTed as NDJSON to an India-region write-once store. See `INCIDENT_RESPONSE.md`.
+- **Client IP.** `TRUST_PROXY_HOPS` (default 1 in production, 0 elsewhere): only that many proxy hops are trusted, so the client IP is the address Render's proxy appended, never a client-supplied `X-Forwarded-For` entry.
+- **Production-only headers:** `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`, `upgrade-insecure-requests` on pages, `X-Permitted-Cross-Domain-Policies: none`. The native app sets its own CSP in a `<meta>` tag (only the app and the Due API origin).
 
 ## CORS
 
@@ -21,12 +24,12 @@ Only `GET /api/public/*` (catalog, plans, status, legal) is cross-origin readabl
 
 ## CSRF
 
-The app and admin use cookies (`SameSite=Lax`, `HttpOnly`, and `Secure` in production). Every state-changing request under `/api/admin`, `/api/auth`, `/api/account` and `/api/intake` must send `X-Requested-With` (`due-admin` or `due-app`); a browser cannot send this header cross-site without a preflight the server never grants. When the browser sends `Origin`, it must be this server's own origin.
+The app and admin use cookies (`HttpOnly`, `Secure` in production; `SameSite=Strict` for admin, `Lax` for the app). In production their names carry the `__Host-` prefix (`__Host-due_session`, `__Host-due_acct`, `__Host-due_intake`): the browser accepts them only with `Secure`, `Path=/` and no `Domain`, so a sibling subdomain cannot plant them. Cookies under the old names are ignored (people sign in once more). Every state-changing request under `/api/admin`, `/api/auth`, `/api/account` and `/api/intake` must send `X-Requested-With` (`due-admin` or `due-app`); a browser cannot send this header cross-site without a preflight the server never grants. When the browser sends `Origin`, it must be this server's own origin.
 
 Exceptions are signature-authenticated machine endpoints:
 
 - `/api/billing/razorpay/webhook`: HMAC of the raw body.
-- `/api/inbound/email`: Basic auth, a Mailgun signature with a 15-minute replay window, or an HMAC.
+- `/api/inbound/email`: preferably `X-Due-Signature` (HMAC-SHA256 of the raw body), else Basic auth (Postmark), else a Mailgun signature: 5-minute window and each token accepted once (`webhook_replay_tokens`).
 - `POST /api/notifications/unsubscribe?token=`: an HMAC-signed token that can only turn a channel *off*.
 
 Gmail OAuth uses `state` (HMAC-stored, single use, 10 minutes) and PKCE (see `GOOGLE_VERIFICATION.md`).
@@ -40,8 +43,10 @@ Source monitoring (`server/src/monitor/net.ts`) resolves DNS before connecting a
 | Surface | Limit |
 | --- | --- |
 | Every route (per IP) | 600 requests a minute |
-| Admin login | 10 failed attempts per IP+email per 15 minutes, with login events audited |
-| Magic link | 30 requests per IP per 15 minutes; 5 per IP+email per 15 minutes; 10 per email per hour |
+| Admin login (password and second step) | 10 failed attempts per IP+email per 15 minutes; **20 per email from any IP per hour**; 50 per IP across emails per 15 minutes; 5 codes per sign-in challenge; all login events audited |
+| Magic link | 30 requests per IP per 15 minutes; 5 per IP+email per 15 minutes; 10 per email per hour; **20 per email per day** (any IP) |
+| Household invites | 10 per household and 3 per recipient address per 24 hours; names in the email have links removed |
+| Breach notices (admin) | 10 calls per hour, 1,000 accounts per call |
 | Guest intake session | 10 per IP per hour |
 | Inbound webhook | 300 requests a minute; 30 unknown aliases per IP per minute (then 429); 100 events per owner per day; 512 KB of text per message |
 | Uploads | Free: 5 documents a month (`POST /api/account/uploads/count`, 402 when exceeded) |
@@ -49,9 +54,24 @@ Source monitoring (`server/src/monitor/net.ts`) resolves DNS before connecting a
 
 Alert thresholds for abuse are listed in `RUNBOOK.md`.
 
+## Admin console
+
+- **2-step verification is mandatory** for every admin user (TOTP, RFC 6238, any authenticator app). A correct password never opens a session by itself: it returns a 5-minute challenge for the code, or a first-time enrolment with a QR code. Enrolment returns 10 recovery codes once; only their SHA-256 hashes are stored. TOTP secrets are stored encrypted (AES-256-GCM, key derived from `SESSION_SECRET`); a used code cannot be replayed. After a `SESSION_SECRET` rotation, each admin signs in with a recovery code and sets up the app again. Owners/admins can reset another user's 2-step verification (Users page).
+- **Re-authentication.** Every change that needs the admin or owner role (users, settings, plans, incident, breach notices, recovery codes, password change) needs a code entered in the last 10 minutes; the console asks for it and retries.
+- **Sessions:** 1 hour idle, 12 hours absolute; all sessions from before 2-step verification were revoked by migration 012.
+- **Optional `ADMIN_ALLOWED_IPS`** (IPs or CIDRs): `/admin`, `/api/admin` and `/api/auth` answer 404 to everyone else.
+
+## Consent and age
+
+- Every non-essential purpose (sync/backup, forwarding, reminders, analytics, Gmail, household) needs an explicit, unrevoked grant; "never withdrawn" is not consent. Sign-in records an 18+ declaration and the notice version (`age_18_plus`, `account`).
+- In production, new accounts and Gmail connections are refused until the legal details (Admin > Legal) are complete.
+- Usage analytics are off by default (opt-in), need the account's `analytics` consent when signed in, are deleted with the account and after 13 months.
+- Export (`GET /api/account/export`, format 2, covers every account table; a test fails when a new table is missing) and deletion need a sign-in from the last 15 minutes. Deleting an account stops an active subscription at the gateway first.
+
 ## Data protection
 
-- Raw intake text is encrypted with AES-256-GCM (`DATA_ENCRYPTION_KEY`). It is kept for 7 days and then purged by `retention.purge`.
+- `DATA_ENCRYPTION_KEY` is **required in production** (the server refuses to start without it). It encrypts raw intake text (kept 7 days), held inbound mail, Gmail excerpts and synced backups (per-account / per-household keys, see `E2E_SYNC_PLAN.md`). There is no plain-text fallback: without a key (development only) inbound mail is not accepted.
+- Intake redaction (before anything is stored) masks card numbers, 12-digit ids, PAN, OTP/CVV/PIN values, IFSC codes, Indian mobile numbers, bank account numbers and e-mail local parts.
 - Forwarded messages are held sealed in `inbound_messages` only until `inbound.parse` runs. The body is wiped immediately after parsing, and any leftover is wiped after 24 h at most.
 - Job payloads may only hold ids. `enqueue` rejects keys such as `text`, `body`, `subject` and `token`, and caps a payload at 8 KB. Job error messages are redacted.
 - Gmail tokens are encrypted with `GMAIL_TOKEN_KEYS` (key ring). Account deletion revokes Google tokens before it deletes identities.
@@ -83,14 +103,14 @@ It keys the HMACs for admin and consumer session ids, magic links, guest intake 
 3. Effects: every admin and consumer session ends (people sign in again). Outstanding magic links, invites, unsubscribe links in emails already sent, and deletion-status tokens stop working. Deletion jobs themselves still finish.
 4. Post an `info` incident banner beforehand ("You will be asked to sign in again").
 
-### `DATA_ENCRYPTION_KEY` (single key, AES-256-GCM)
+### `DATA_ENCRYPTION_KEY` (key ring, AES-256-GCM)
 
-Key versioning is not implemented yet. Rotating the key therefore throws away raw text that is at most 7 days old. Structured fields, reviews and confirmations are not affected.
+The value is one base64 key (key id `k0`) or a ring `kid:base64,oldkid:base64`; the first entry is current. Ciphertexts carry their key id (`v2:<kid>:` for intake/mail, `d1:<kid>:` for synced documents), so rotation needs no downtime:
 
-1. Pause intake: rotate `INBOUND_WEBHOOK_SECRET` (see below) or post an incident banner, then wait for the queue to drain (`inbound.parse` count 0 in queue stats).
-2. Run `UPDATE user_events SET raw_text = NULL, raw_retention_until = NULL WHERE raw_text IS NOT NULL; UPDATE inbound_messages SET body = NULL, status = 'failed', error_code = 'key_rotated' WHERE body IS NOT NULL;`
-3. Set the new key (`openssl rand -base64 32`), redeploy web and worker, and re-enable intake.
-4. If the old key may have leaked, also treat any database backup taken while it was current as containing readable raw text, and expire those backups early.
+1. Prepend a new key: `k2027:$(openssl rand -base64 32),k0:<old>`. Redeploy web and worker.
+2. New data uses the new key. Synced documents are re-sealed as they are read. Raw intake text and held mail expire within 7 days.
+3. After 7 days, and once `SELECT count(*) FROM account_data WHERE data_enc NOT LIKE 'd1:k2027:%' AND version > 0` (and the same for `household_data`) is 0, remove the old key and redeploy.
+4. If the old key may have leaked, also treat any database backup taken while it was current as readable, and expire those backups early.
 
 ### `GMAIL_TOKEN_KEYS` (key ring `kid:base64key,...`, first entry current)
 

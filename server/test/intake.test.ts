@@ -2,11 +2,11 @@ import type { FastifyInstance } from 'fastify';
 import { createHmac } from 'node:crypto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Pool } from '../src/db.js';
-import { decryptText } from '../src/intake/crypto.js';
+import { decryptText, encryptText, parseDataKeys } from '../src/intake/crypto.js';
 import { parseDate, parseMessage, redactSensitive } from '../src/intake/parser.js';
 import { generateAlias } from '../src/intake/service.js';
 import { startJob } from '../src/jobs/runner.js';
-import { AppClient, drain, freshDb, grantPlan, loggedIn, makeApp, monitorCtx, RecordingMailer, signIn, TestClock } from './helpers.js';
+import { AppClient, drain, freshDb, grantPlan, loggedIn, makeApp, monitorCtx, RecordingMailer, signIn, TestClock, AGE } from './helpers.js';
 
 let pool: Pool;
 let app: FastifyInstance;
@@ -231,7 +231,7 @@ describe('inbound webhook', () => {
     expect(await n('SELECT count(*) AS n FROM user_events')).toBe(0);
     const stored = (await pool.query('SELECT body, status FROM inbound_messages')).rows[0];
     expect(stored.status).toBe('received');
-    expect(stored.body.startsWith('v1:')).toBe(true);
+    expect(stored.body.startsWith('v2:k0:')).toBe(true);
     expect(stored.body).not.toContain('Netflix');
     const job = (await pool.query(`SELECT type, payload, status, correlation_id FROM jobs_queue`)).rows[0];
     expect(job).toMatchObject({ type: 'inbound.parse', status: 'queued', payload: { inboundMessageId: r.json().inboundMessageId } });
@@ -255,7 +255,7 @@ describe('inbound webhook', () => {
     expect(ev).toMatchObject({ intakeType: 'forwarded_email', sourceDomain: 'mailer.netflix.com', rawAvailable: true });
 
     const row = (await pool.query('SELECT raw_text, raw_retention_until FROM user_events')).rows[0];
-    expect(row.raw_text.startsWith('v1:')).toBe(true);
+    expect(row.raw_text.startsWith('v2:k0:')).toBe(true);
     expect(row.raw_text).not.toContain('Netflix');
     expect(row.raw_retention_until.toISOString()).toBe('2026-11-06T10:00:00.000Z');
     const plain = decryptText(Buffer.from(KEY_B64, 'base64'), row.raw_text);
@@ -278,23 +278,30 @@ describe('inbound webhook', () => {
   it('accepts Mailgun signed form posts and rejects bad signatures with 406/401', async () => {
     const { c, alias } = await forwarder('mg@example.com');
     const timestamp = String(Math.floor(clock.now.getTime() / 1000));
-    const token = 'tok-abc';
-    const signature = createHmac('sha256', SECRET).update(timestamp + token).digest('hex');
-    const form = (sig: string, recipient = alias.address) =>
+    const sign = (token: string, ts = timestamp) => createHmac('sha256', SECRET).update(ts + token).digest('hex');
+    let token = 'tok-abc';
+    const form = (sig: string, recipient = alias.address, ts = timestamp) =>
       new URLSearchParams({
         recipient,
         sender: 'me@gmail.com',
         subject: 'Fwd: Trial ending',
         'body-plain': 'From: Spotify <no-reply@spotify.com>\nYour free trial ends on 05/11/2026. Then ₹119/month.',
         'Message-Id': '<mg-1@x>',
-        timestamp,
+        timestamp: ts,
         token,
         signature: sig,
       }).toString();
     const send = (payload: string) => app.inject({ method: 'POST', url: '/api/inbound/email', payload, headers: { 'content-type': 'application/x-www-form-urlencoded' } });
     expect((await send(form('0'.repeat(64)))).statusCode).toBe(401);
-    expect((await send(form(signature, 'unknown@inbox.due.test'))).statusCode).toBe(406);
-    const ok = await send(form(signature));
+    expect((await send(form(sign(token), 'unknown@inbox.due.test'))).statusCode).toBe(406);
+    // M12: a token is accepted once; a replay of the same signed token is refused.
+    expect((await send(form(sign(token)))).statusCode).toBe(401);
+    // Older than 5 minutes is refused.
+    token = 'tok-old';
+    const stale = String(Math.floor(clock.now.getTime() / 1000) - 6 * 60);
+    expect((await send(form(sign(token, stale), alias.address, stale))).statusCode).toBe(401);
+    token = 'tok-def';
+    const ok = await send(form(sign(token)));
     expect(ok.statusCode).toBe(200);
     await drain(app);
     const ev = (await c.get('/api/intake/events')).json().items[0];
@@ -303,19 +310,28 @@ describe('inbound webhook', () => {
     expect(elsewhere.statusCode).toBe(415);
   });
 
-  it('stores structured fields only when DATA_ENCRYPTION_KEY is missing (the held message is wiped after parsing)', async () => {
+  it('never holds forwarded mail in plain text: without DATA_ENCRYPTION_KEY inbound mail is not accepted', async () => {
     const app2 = await makeApp(pool, { clock, mailer, env: { INBOUND_EMAIL_DOMAIN: 'inbox.due.test', INBOUND_WEBHOOK_SECRET: SECRET } });
-    const { c, alias } = await forwarder('nokey@example.com', app2);
-    expect((await sendPostmark(app2, postmark(alias.address))).statusCode).toBe(200);
-    expect((await pool.query('SELECT body FROM inbound_messages')).rows[0].body.startsWith('plain:')).toBe(true);
-    await drain(app2);
-    expect((await pool.query('SELECT body FROM inbound_messages')).rows[0].body).toBeNull();
-    const row = (await pool.query('SELECT raw_text, raw_retention_until, extracted_fields FROM user_events')).rows[0];
-    expect(row.raw_text).toBeNull();
-    expect(row.raw_retention_until).toBeNull();
-    expect(row.extracted_fields.amountInr).toBe(649);
-    expect((await c.get('/api/intake/events')).json().rawStorage).toBe('disabled');
+    const c = await signIn(app2, mailer, 'nokey@example.com');
+    const st = (await c.get('/api/intake/alias')).json();
+    expect(st.live).toBe(false);
+    const r = await sendPostmark(app2, postmark('u84kd@inbox.due.test'));
+    expect(r.statusCode).toBeGreaterThanOrEqual(400);
+    expect((await pool.query('SELECT count(*)::int AS n FROM inbound_messages')).rows[0].n).toBe(0);
     await app2.close();
+  });
+
+  it('seals held mail with a key id (v2:<kid>:) and still reads older v1 ciphertexts after rotation', async () => {
+    const oldKey = Buffer.from(KEY_B64, 'base64');
+    const legacy = 'v1:' + encryptText(oldKey, 'old secret').split(':').slice(2).join(':');
+    const ring = parseDataKeys(`new26:${Buffer.alloc(32, 3).toString('base64')},k0:${KEY_B64}`)!;
+    expect(ring.current.kid).toBe('new26');
+    const sealed = encryptText(ring, 'hello');
+    expect(sealed.startsWith('v2:new26:')).toBe(true);
+    expect(decryptText(ring, sealed)).toBe('hello');
+    expect(decryptText(ring, legacy)).toBe('old secret');
+    expect(decryptText(ring, encryptText(oldKey, 'x'))).toBe('x');
+    expect(() => decryptText(parseDataKeys(Buffer.alloc(32, 4).toString('base64'))!, sealed)).toThrow();
   });
 
   it('uses an admin parser template for the sender domain', async () => {
@@ -360,7 +376,7 @@ describe('review actions, export and delete', () => {
     const ex = await c.get(`/api/intake/events/${id}/export`);
     expect(ex.headers['content-disposition']).toMatch(/attachment/);
     expect(ex.json().record).toMatchObject({ id, fields: { amountInr: 499 } });
-    expect(JSON.stringify(ex.json())).not.toContain('v1:');
+    expect(JSON.stringify(ex.json())).not.toContain('v2:');
 
     expect((await c.del(`/api/intake/events/${id}/raw`)).statusCode).toBe(200);
     expect((await pool.query('SELECT raw_text FROM user_events')).rows[0].raw_text).toBeNull();
@@ -500,7 +516,7 @@ describe('temporary session lifecycle', () => {
     await t.c.post('/api/intake/events', { intakeType: 'document', text: netflixText() });
     const r = await t.c.post('/api/account/magic-link', { email: 'claim@example.com' });
     expect(r.statusCode).toBe(202);
-    await t.c.post('/api/account/verify', { token: mailer.lastToken() });
+    await t.c.post('/api/account/verify', { ...AGE, token: mailer.lastToken() });
     const claim = await t.c.post('/api/account/claim-intake');
     expect(claim.statusCode).toBe(200);
     expect(claim.json()).toMatchObject({ moved: 1, aliasTransferred: false, alias: { alias: null } });
@@ -543,6 +559,14 @@ describe('parser units', () => {
     const red = redactSensitive('Aadhaar 1234 5678 9012, PAN ABCDE1234F, CVV: 123, card 5555-5555-5555-4444');
     expect(red).not.toMatch(/1234 5678 9012|ABCDE1234F|: 123\b|5555-5555-5555-4444/);
     expect(red).toContain('[card ending 4444]');
+    // L4: account numbers, mobiles, e-mail addresses and IFSC codes.
+    const more = redactSensitive(
+      'A/c no XXXX4321 debited. Account 123456789012345. Call +91 98765 43210 or 9123456789. Mail asha.k@example.in. IFSC HDFC0001234. Amount Rs 649 on 12/12/2026.',
+    );
+    expect(more).not.toMatch(/123456789012345|98765 43210|9123456789|asha\.k@|HDFC0001234/);
+    expect(more).toContain('[account ending 4321]');
+    expect(more).toContain('[email]@example.in');
+    expect(more).toContain('Rs 649 on 12/12/2026');
     const p = parseMessage({ text: 'Thanks for your order', subject: 'hi', envelopeSenderDomain: 'gmail.com' });
     expect(p.unreadable).toBe(true);
     expect(p.sourceDomain).toBeNull();

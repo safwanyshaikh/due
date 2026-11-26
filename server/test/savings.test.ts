@@ -56,7 +56,15 @@ const pub = (method: 'GET' | 'POST', url: string, payload?: unknown) => app.inje
 describe('PII guard and rounding (pure)', () => {
   it('rejects labels that could carry personal data', () => {
     expect(labelProblem('Uber One')).toBeNull();
-    expect(labelProblem('Jio 5G')).toBeNull();
+    // M6: any digit (any script) or other symbol is refused; letters & + ' . - are allowed.
+    expect(labelProblem('Jio 5G')).toMatch(/digits/);
+    expect(labelProblem('९८७६५४३२१०')).toMatch(/digits/);
+    expect(labelProblem('HDFC 1234')).toMatch(/digits/);
+    expect(labelProblem('9876/543/210')).toBeTruthy();
+    expect(labelProblem('Tata Play')).toBeNull();
+    expect(labelProblem("Marks & Spencer's")).toBeNull();
+    expect(labelProblem('Swiggy One+')).toBeNull();
+    expect(labelProblem('ज़ी फ़ाइव')).toBeNull();
     expect(labelProblem('a'.repeat(61))).toMatch(/60/);
     expect(labelProblem('me@example.com')).toMatch(/email/);
     expect(labelProblem('@handle')).toBeTruthy();
@@ -65,7 +73,7 @@ describe('PII guard and rounding (pure)', () => {
     expect(labelProblem('shop.com')).toBeTruthy();
     expect(labelProblem('Acct 98765')).toBeTruthy();
     expect(labelProblem('98765 43210')).toBeTruthy();
-    expect(labelProblem('Plan 1234')).toBeNull();
+    expect(labelProblem('Plan 1234')).toMatch(/digits/);
     expect(labelProblem('   ')).toBeTruthy();
   });
   it('rounds saved amounts to the nearest 10', () => {

@@ -69,6 +69,8 @@ export const GMAIL_SCOPE_LABELS: Record<string, string> = {
 };
 
 /** Version of the consent text shown before creating a forwarding address. */
+/** Version of the privacy notice shown at sign-in; sent with the 18+ declaration and recorded by the server. */
+export const PRIVACY_NOTICE_VERSION = 'privacy-2026-11';
 export const EMAIL_INTAKE_CONSENT_VERSION = 'email-intake-2026-10';
 export const TELEMETRY_CONSENT_VERSION = 'telemetry-2026-10';
 /** Consent text versions for the account's backup/sync and email reminders switches. */

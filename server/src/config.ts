@@ -1,5 +1,7 @@
+import { isIP } from 'node:net';
 import { z } from 'zod';
 import { parseTokenKeys, type TokenKeyRing } from './gmail/keys.js';
+import { parseDataKeys, type DataKeyRing } from './intake/crypto.js';
 
 const boolish = z
   .string()
@@ -33,7 +35,14 @@ const EnvSchema = z.object({
   RUN_SCHEDULER: boolish,
   SMTP_URL: z.string().optional(),
   SMTP_FROM: z.string().optional(),
-  TRUST_PROXY: boolish,
+  /**
+   * Number of reverse-proxy hops in front of this server whose X-Forwarded-For entries are trusted.
+   * Default 1 in production (Render's load balancer), 0 otherwise. Never "trust all": the left-most
+   * X-Forwarded-For entries are client-controlled and would let anyone pick their own IP for rate limits.
+   */
+  TRUST_PROXY_HOPS: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).max(5).optional()),
+  /** Optional comma-separated IPs/CIDRs allowed to reach the admin console and admin API. Unset: any IP. */
+  ADMIN_ALLOWED_IPS: z.string().optional(),
   ADMIN_DIST: z.string().optional(),
   APP_DIST: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().optional(),
@@ -48,7 +57,10 @@ const EnvSchema = z.object({
   CASHFREE_ENV: z.enum(['sandbox', 'production']).optional(),
   INBOUND_EMAIL_DOMAIN: z.string().optional(),
   INBOUND_WEBHOOK_SECRET: z.string().optional(),
-  /** 32 random bytes, base64. Without it raw intake text is never stored (structured fields only). */
+  /**
+   * 32 random bytes, base64, or a key ring "kid:base64,oldkid:base64" (first = current). Required in production
+   * when inbound mail or Gmail is configured; without it (outside production) inbound mail is not accepted.
+   */
   DATA_ENCRYPTION_KEY: z.string().optional(),
   /** Gmail OAuth (read-only). All four are required; otherwise Gmail reports mode 'not_configured'. */
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -59,6 +71,10 @@ const EnvSchema = z.object({
   GMAIL_OAUTH_MODE: z.string().optional(),
   /** Optional Sentry-compatible DSN for privacy-scrubbed error reports. */
   SENTRY_DSN: z.string().optional(),
+  /** Optional HTTPS endpoint (India region) that receives redacted logs and audit rows as NDJSON (H4). */
+  LOG_SINK_URL: optionalUrl,
+  /** Bearer token for LOG_SINK_URL. */
+  LOG_SINK_TOKEN: z.string().optional(),
   /** Run the durable-queue worker inside the web process (single-service deployments only). */
   RUN_QUEUE_WORKER: boolish,
 });
@@ -159,11 +175,17 @@ export interface AppConfig {
   runScheduler: boolean;
   smtpUrl: string | null;
   smtpFrom: string | null;
-  trustProxy: boolean;
+  /** Trusted proxy hop count (0 = ignore X-Forwarded-For). */
+  trustProxyHops: number;
+  /** Admin console/API IP allowlist (IPs or CIDRs); empty = no restriction. */
+  adminAllowedIps: string[];
   adminDist: string | null;
   appDist: string | null;
+  /** Admin console sessions: 1 hour idle, 12 hours absolute. */
   sessionIdleMs: number;
   sessionMaxMs: number;
+  /** Owner/admin changes need a TOTP check this recent on the session (re-authentication). */
+  adminReauthMs: number;
   /** Consumer (due_acct) sessions: 30 days idle, 180 days absolute. */
   accountSessionIdleMs: number;
   accountSessionMaxMs: number;
@@ -176,9 +198,12 @@ export interface AppConfig {
   /** Forwarding-alias domain (e.g. inbox.example.com); intake is "live" only with this and the webhook secret. */
   inboundEmailDomain: string | null;
   inboundWebhookSecret: string | null;
-  dataEncryptionKey: Buffer | null;
+  /** Key ring for data at rest (see intake/crypto.ts); null when DATA_ENCRYPTION_KEY is unset. */
+  dataEncryptionKey: DataKeyRing | null;
   gmail: GmailConfig;
   sentryDsn: string | null;
+  /** Log/audit shipping to an India-region store; null when LOG_SINK_URL is unset. */
+  logSink: { url: string; token: string | null } | null;
   runQueueWorker: boolean;
   schedulerTickMs: number;
   monitor: MonitorOptions;
@@ -189,11 +214,22 @@ export function userAgentFor(publicBaseUrl: string | null): string {
   return `DueSourceMonitor/1.0 (+https://${host}/about-monitoring)`;
 }
 
-function parseEncryptionKey(v: string | undefined): Buffer | null {
-  if (!v?.trim()) return null;
-  const key = Buffer.from(v.trim(), 'base64');
-  if (key.length !== 32) throw new Error('Invalid environment: DATA_ENCRYPTION_KEY must be 32 bytes, base64-encoded');
-  return key;
+
+/** Parses "203.0.113.4, 198.51.100.0/24, 2001:db8::/32"; throws on an invalid entry (fail closed at boot). */
+export function parseIpList(v: string | undefined): string[] {
+  const items = (v ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const item of items) {
+    const [addr, bits] = item.split('/');
+    const fam = isIP(addr ?? '');
+    const max = fam === 4 ? 32 : 128;
+    if (!fam || (bits !== undefined && (!/^\d{1,3}$/.test(bits) || Number(bits) > max))) {
+      throw new Error(`Invalid environment: ADMIN_ALLOWED_IPS entry "${item}" is not an IP address or CIDR range`);
+    }
+  }
+  return items;
 }
 
 export const DEFAULT_MOBILE_APP_ORIGINS = ['capacitor://localhost', 'https://localhost'];
@@ -214,6 +250,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   const e = parsed.data;
   const isProduction = e.NODE_ENV === 'production';
+  const dataKeys = parseDataKeys(e.DATA_ENCRYPTION_KEY);
+  const gmail = loadGmailConfig(e);
+  const inboundDomain = e.INBOUND_EMAIL_DOMAIN?.trim() ? e.INBOUND_EMAIL_DOMAIN.trim().toLowerCase() : null;
+  const inboundSecret = e.INBOUND_WEBHOOK_SECRET?.trim() ? e.INBOUND_WEBHOOK_SECRET.trim() : null;
+  // M2: mail content is only ever held encrypted. Production refuses to start rather than store it in clear;
+  // elsewhere inbound mail is simply not accepted without a key.
+  // H3: synced backups are sealed with it too, so production never runs without it.
+  if (isProduction && !dataKeys) {
+    const needs = [
+      inboundDomain || inboundSecret ? 'inbound email (INBOUND_EMAIL_DOMAIN / INBOUND_WEBHOOK_SECRET)' : null,
+      gmail.mode !== 'not_configured' ? 'Gmail' : null,
+      'backup and sync',
+    ].filter(Boolean);
+    throw new Error(`Invalid environment: DATA_ENCRYPTION_KEY is required in production (${needs.join(', ')})`);
+  }
+  const inboundLive = Boolean(inboundDomain && inboundSecret && dataKeys);
+  if (e.LOG_SINK_URL && !/^https:\/\//i.test(e.LOG_SINK_URL) && isProduction) {
+    throw new Error('Invalid environment: LOG_SINK_URL must be an https:// URL');
+  }
   return {
     env: e.NODE_ENV,
     isProduction,
@@ -236,11 +291,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     runScheduler: e.RUN_SCHEDULER ?? false,
     smtpUrl: e.SMTP_URL?.trim() ? e.SMTP_URL.trim() : null,
     smtpFrom: e.SMTP_FROM?.trim() ? e.SMTP_FROM.trim() : null,
-    trustProxy: e.TRUST_PROXY ?? isProduction,
+    trustProxyHops: e.TRUST_PROXY_HOPS ?? (isProduction ? 1 : 0),
+    adminAllowedIps: parseIpList(e.ADMIN_ALLOWED_IPS),
     adminDist: e.ADMIN_DIST ?? null,
     appDist: e.APP_DIST ?? null,
-    sessionIdleMs: 12 * 60 * 60 * 1000,
-    sessionMaxMs: 7 * 24 * 60 * 60 * 1000,
+    sessionIdleMs: 60 * 60 * 1000,
+    sessionMaxMs: 12 * 60 * 60 * 1000,
+    adminReauthMs: 10 * 60 * 1000,
     accountSessionIdleMs: 30 * 24 * 60 * 60 * 1000,
     accountSessionMaxMs: 180 * 24 * 60 * 60 * 1000,
     razorpay:
@@ -257,11 +314,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
             env: e.CASHFREE_ENV ?? 'sandbox',
           }
         : null,
-    inboundEmailDomain: e.INBOUND_EMAIL_DOMAIN?.trim() ? e.INBOUND_EMAIL_DOMAIN.trim().toLowerCase() : null,
-    inboundWebhookSecret: e.INBOUND_WEBHOOK_SECRET?.trim() ? e.INBOUND_WEBHOOK_SECRET.trim() : null,
-    dataEncryptionKey: parseEncryptionKey(e.DATA_ENCRYPTION_KEY),
-    gmail: loadGmailConfig(e),
+    inboundEmailDomain: inboundLive ? inboundDomain : null,
+    inboundWebhookSecret: inboundLive ? inboundSecret : null,
+    dataEncryptionKey: dataKeys,
+    gmail,
     sentryDsn: e.SENTRY_DSN?.trim() ? e.SENTRY_DSN.trim() : null,
+    logSink: e.LOG_SINK_URL ? { url: e.LOG_SINK_URL, token: e.LOG_SINK_TOKEN?.trim() || null } : null,
     runQueueWorker: e.RUN_QUEUE_WORKER ?? false,
     schedulerTickMs: 60_000,
     monitor: {

@@ -1,54 +1,54 @@
-Mr. TEST USER
-TEST ADDRESS
-TEST ADDRESS
-TESTAREA 410206
-Navi Mumbai Raigarh Maharashtra India
+Mr. DEMO CUSTOMER
+FLAT 7, SAMPLE CHS
+SAMPLE ROAD
+SAMPLE NAGAR 400099
+Sample City Maharashtra India
 Scan & Pay
 Amount (`) Summary Of Charges
 Jio Number   000000000 Statement Number   000000000
-Activation Date   02-MAY-2025
+Activation Date   14-JUN-2025
 Current Plan
 : :
 :
 :
 Account Number   000000000
 :
-Billing Cycle Date   : 06-NOV-2026
-Email: user@example.com
+Billing Cycle Date   : 03-NOV-2026
+Email: demo.customer@example.com
 Registered Mobile Number: +000000000
 JioFiber Bill Summary
 399+200(13 OTT) 1M
-Pay By : 15-NOV-2026
-Total Payable : 798.71
-Previous Balance Due   772.10
-Payment Received   772.10
-Total Current Month Charges   798.71
+Pay By : 12-NOV-2026
+Total Payable : 756.00
+Previous Balance Due   731.40
+Payment Received   731.40
+Total Current Month Charges   756.00
 Advance Payment Received   0.00
-Current Balance   798.71
-Total Payable   798.71
+Current Balance   756.00
+Total Payable   756.00
 399+200(13 OTT) 1M:   1)Unlimited Data @ 30 Mbps 2)Unlimited Voice 3)Subscription to 13 PAID OTT apps 4)Connectivity Rental includes
 provision of all CPE(s)
 Note: This plan is an advance rental plan.
 Plan Details :
-(`) 798.71 Total Current Charges (A+B)
+(`) 756.00 Total Current Charges (A+B)
 A.   Plan Charges (Excluding Taxes)
 Sr.No.   Description   Services   From Date   To Date   No. Of Days   Amount (`)
-1   Monthly Plan Charges   Connectivity   06-NOV-2026   05-DEC-2026   30   558.22
-2   Monthly Plan Charges   Platform   06-NOV-2026   05-DEC-2026   30   118.65
-Total   676.87
+1   Monthly Plan Charges   Connectivity   03-NOV-2026   02-DEC-2026   30   507.62
+2   Monthly Plan Charges   Platform   03-NOV-2026   02-DEC-2026   30   133.06
+Total   640.68
 B.   Taxes
 Sr.No.   Description   Charges (`)   CGST (`)   SGST (`)   Amount (`)
-1   Tax   676.87   60.92   60.92   121.84
+1   Tax   640.68   57.66   57.66   115.32
 Payment History
-05-OCT   05-SEP
-` 798.71   ` 798.71
+02-OCT   02-SEP
+` 756.00   ` 756.00
 Your Payment History
 Bill History
-05-OCT   05-SEP
-` 772.10   ` 798.71
+02-OCT   02-SEP
+` 731.40   ` 756.00
 Page Repeat
 Reach Us :
-o   1800-89-69999 ( from other networks) or Call 199 (from Jio Fixed Line Number) Write to user@example.com Manage your world of Jio with MyJio app Visit
+o   1800-89-69999 ( from other networks) or Call 199 (from Jio Fixed Line Number) Write to demo.customer@example.com Manage your world of Jio with MyJio app Visit
 www.jio.com
 o   You can now download your detailed tax invoices on MyJio / jio.com in the invoice history section.
 o   Current month charges reflect the charges levied in any bill period including taxes as applicable.

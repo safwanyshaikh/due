@@ -1,27 +1,30 @@
 import { addMinutes } from '../clock.js';
 import { reconcileBilling } from '../consumer/billing-reconcile.js';
-import { consentWithdrawn } from '../consumer/consents.js';
+import { hasConsent } from '../consumer/consents.js';
 import { deleteAccountJob } from '../consumer/deletion.js';
 import { deliverReminder, reconcileReminders } from '../consumer/notifications.js';
 import { one, withTransaction } from '../db.js';
-import { decryptText, encryptText } from '../intake/crypto.js';
+import { decryptText, encryptText, type DataKeyRing } from '../intake/crypto.js';
 import { ingest, MAX_EVENTS_PER_DAY, ownerWhere, runIntakePurge, type Owner } from '../intake/service.js';
 import { metrics } from '../observability/metrics.js';
+import { shipAuditRows } from '../observability/auditShip.js';
 import { purgeOfferInbox } from '../offerinbox/service.js';
 import { PermanentJobError, registerHandler, type JobContext } from './index.js';
 
-/** Minimal forwarded message kept until `inbound.parse` runs (sealed when DATA_ENCRYPTION_KEY is set). */
+/** Minimal forwarded message kept until `inbound.parse` runs (always sealed with DATA_ENCRYPTION_KEY). */
 export interface SealedInbound {
   subject: string | null;
   text: string;
 }
 
-export function sealInbound(key: Buffer | null, m: SealedInbound): string {
-  const json = JSON.stringify(m);
-  return key ? encryptText(key, json) : `plain:${json}`;
+export function sealInbound(key: DataKeyRing | null, m: SealedInbound): string {
+  // There is no plain-text fallback: inbound mail is not accepted without a key (see config.ts).
+  if (!key) throw new Error('DATA_ENCRYPTION_KEY is required to hold inbound mail');
+  return encryptText(key, JSON.stringify(m));
 }
 
-export function openInbound(key: Buffer | null, stored: string): SealedInbound {
+export function openInbound(key: DataKeyRing | null, stored: string): SealedInbound {
+  // Rows written before the plain-text writer was removed (wiped within 24 h anyway).
   if (stored.startsWith('plain:')) return JSON.parse(stored.slice(6)) as SealedInbound;
   if (!key) throw new PermanentJobError('encryption_key_missing', 'The message was sealed with DATA_ENCRYPTION_KEY, which is no longer configured');
   return JSON.parse(decryptText(key, stored)) as SealedInbound;
@@ -53,7 +56,7 @@ export async function parseInbound(job: JobContext): Promise<void> {
       return status;
     };
     if (!m.account_id || !m.body) return finish('rejected', 'no_owner');
-    if (await consentWithdrawn(c, m.account_id, 'forwarding')) return finish('rejected', 'consent_withdrawn');
+    if (!(await hasConsent(c, m.account_id, 'forwarding'))) return finish('rejected', 'consent_withdrawn');
     const owner: Owner = { kind: 'account', id: m.account_id };
     const recent = (
       await c.query<{ n: number }>(`SELECT count(*)::int AS n FROM user_events WHERE ${ownerWhere(owner, 1)} AND created_at > $2`, [owner.id, addMinutes(now, -1440)])
@@ -95,8 +98,15 @@ export async function retentionPurge(job: JobContext): Promise<void> {
   const jobs = await pool.query(`DELETE FROM jobs_queue WHERE status = 'succeeded' AND finished_at < $1`, [addMinutes(now, -30 * 1440)]);
   const deadJobs = await pool.query(`DELETE FROM jobs_queue WHERE status = 'dead' AND finished_at < $1`, [addMinutes(now, -90 * 1440)]);
   const beats = await pool.query('DELETE FROM queue_heartbeats WHERE beat_at < $1', [addMinutes(now, -1440)]);
+  await pool.query('DELETE FROM webhook_replay_tokens WHERE seen_at < $1', [addMinutes(now, -1440)]);
   const reconcile = await pool.query('DELETE FROM reminder_reconcile_runs WHERE run_at < $1', [addMinutes(now, -90 * 1440)]);
   const deletions = await pool.query(`DELETE FROM deletion_requests WHERE status = 'completed' AND completed_at < $1`, [addMinutes(now, -90 * 1440)]);
+  // H4: audit trails are kept for a year (and shipped to the India-region store), then removed (minimisation).
+  const auditCutoff = addMinutes(now, -AUDIT_RETENTION_DAYS * 1440);
+  const audit = await pool.query('DELETE FROM audit_log WHERE at < $1', [auditCutoff]);
+  const consumerAuditRows = await pool.query('DELETE FROM consumer_audit WHERE at < $1', [auditCutoff]);
+  // M3: usage analytics are kept at most 13 months.
+  const telemetry = await pool.query('DELETE FROM telemetry_events WHERE at < $1', [addMinutes(now, -TELEMETRY_RETENTION_DAYS * 1440)]);
   log.info(
     {
       ...intake,
@@ -107,9 +117,25 @@ export async function retentionPurge(job: JobContext): Promise<void> {
       heartbeats_deleted: beats.rowCount ?? 0,
       reconcile_runs_deleted: reconcile.rowCount ?? 0,
       deletion_requests_deleted: deletions.rowCount ?? 0,
+      audit_rows_deleted: (audit.rowCount ?? 0) + (consumerAuditRows.rowCount ?? 0),
+      telemetry_events_deleted: telemetry.rowCount ?? 0,
     },
     'retention purge finished',
   );
+}
+
+/** Audit rows (admin and consumer) and admin login history: 365 days. */
+export const AUDIT_RETENTION_DAYS = 365;
+/** Usage analytics: 13 months. */
+export const TELEMETRY_RETENTION_DAYS = 396;
+
+/** `audit.ship`: new audit rows to LOG_SINK_URL (see observability/auditShip.ts). */
+export async function auditShip(job: JobContext): Promise<void> {
+  const { pool, config, log } = job.deps;
+  if (!config.logSink) return;
+  const r = await shipAuditRows(pool, { url: config.logSink.url, token: config.logSink.token, service: 'due-worker' });
+  if (Object.values(r).some((v) => v < 0)) throw new Error('log sink rejected an audit batch');
+  log.info(r, 'audit rows shipped');
 }
 
 let registered = false;
@@ -122,6 +148,7 @@ export function registerPlatformHandlers(): void {
   registerHandler('reminder.deliver', deliverReminder);
   registerHandler('reminder.reconcile', reconcileReminders);
   registerHandler('retention.purge', retentionPurge);
+  registerHandler('audit.ship', auditShip);
   registerHandler('account.delete', deleteAccountJob);
   registerHandler('billing.reconcile', reconcileBilling);
 }

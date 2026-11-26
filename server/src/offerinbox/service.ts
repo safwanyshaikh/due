@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { writeAudit, type AuditActor } from '../audit.js';
 import { many, one, withTransaction, type Pool, type PoolClient, type Queryable } from '../db.js';
-import { decryptText, encryptText } from '../intake/crypto.js';
+import { decryptText, encryptText, type DataKeyRing } from '../intake/crypto.js';
 import { messageIdHashOf } from '../intake/service.js';
 import { proposeChanges, type OfferRow } from '../monitor/offers.js';
 import type { ObservationFields } from '../monitor/parser.js';
@@ -25,8 +25,11 @@ interface RawMail {
   droppedAttachments: number;
 }
 
-const seal = (key: Buffer | null, v: unknown) => (key ? encryptText(key, JSON.stringify(v)) : `plain:${JSON.stringify(v)}`);
-function unseal(key: Buffer | null, s: string): RawMail {
+function seal(key: DataKeyRing | null, v: unknown): string {
+  if (!key) throw new Error('DATA_ENCRYPTION_KEY is required to hold inbound mail');
+  return encryptText(key, JSON.stringify(v));
+}
+function unseal(key: DataKeyRing | null, s: string): RawMail {
   if (s.startsWith('plain:')) return JSON.parse(s.slice(6)) as RawMail;
   if (!key) throw new PermanentJobError('encryption_key_missing', 'The message was sealed with DATA_ENCRYPTION_KEY, which is no longer configured');
   return JSON.parse(decryptText(key, s)) as RawMail;
@@ -50,7 +53,7 @@ export function keepAttachments(list: NonNullable<InboundMessage['attachments']>
 /** Webhook side: store the sealed raw mail and enqueue `offers.inbox_parse`. Nothing here touches user intake tables. */
 export async function ingestResearchMail(
   pool: Pool,
-  key: Buffer | null,
+  key: DataKeyRing | null,
   msg: InboundMessage,
   recipient: string,
   now: Date,

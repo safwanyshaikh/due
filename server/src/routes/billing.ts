@@ -38,6 +38,37 @@ interface RazorpayPayment {
 export const CANCELLATION_PATH = 'Account > Plan > Cancel subscription in the Due app (takes effect at the end of the paid period).';
 
 /**
+ * L8: deleting an account stops its paid subscription at the gateway first (no further charges), instead of
+ * refusing the deletion. Throws 409 subscription_cancel_failed when the gateway cannot be reached.
+ */
+export async function cancelSubscriptionForDeletion(app: FastifyInstance, accountId: string, now: Date): Promise<boolean> {
+  const { pool, config } = app.deps;
+  const ent = await one<{ provider_ref: string | null; channel: string | null; status: string }>(
+    pool,
+    'SELECT provider_ref, channel, status FROM entitlements WHERE account_id = $1',
+    [accountId],
+  );
+  if (!ent || (ent.channel !== 'razorpay' && ent.channel !== 'cashfree') || ent.status !== 'active' || !ent.provider_ref) return false;
+  const fetchImpl = ((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => (app.deps.fetchImpl ?? globalThis.fetch)(input, init)) as typeof fetch;
+  try {
+    if (ent.channel === 'cashfree') {
+      if (!config.cashfree) throw new Error('cashfree not configured');
+      await new CashfreeClient(config.cashfree, fetchImpl).cancel(ent.provider_ref);
+    } else {
+      if (!config.razorpay) throw new Error('razorpay not configured');
+      await new RazorpayClient(config.razorpay, fetchImpl).cancelNow(ent.provider_ref);
+    }
+  } catch {
+    throw new AppError(409, 'subscription_cancel_failed', 'We could not stop your subscription with the payment provider just now, so the account was not deleted. Try again in a few minutes.');
+  }
+  await withTransaction(pool, async (c) => {
+    await c.query(`UPDATE entitlements SET status = 'cancelled', updated_at = $2 WHERE account_id = $1`, [accountId, now]);
+    await consumerAudit(c, accountId, 'subscription.cancelled_for_deletion', 'entitlement', accountId, { status: 'active' }, { status: 'cancelled' }, now);
+  });
+  return true;
+}
+
+/**
  * Plans, checkout (Razorpay Subscriptions), restore, cancel and the provider webhook.
  * Without Razorpay credentials and plan ids every payment path returns 503 payments_unavailable.
  */

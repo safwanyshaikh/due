@@ -28,6 +28,15 @@ export const LEGACY_PURPOSES: Record<string, ConsentPurpose> = {
 };
 export const ACCEPTED_PURPOSES = [...CONSENT_PURPOSES_V2, ...Object.keys(LEGACY_PURPOSES)] as [string, ...string[]];
 
+/**
+ * Recorded by the server itself, never through POST /api/account/consents: the 18+ self-declaration made at
+ * sign-in (DPDP Act s.9), with the version of the notice the person saw.
+ */
+export const AGE_PURPOSE = 'age_18_plus';
+
+/** Purposes needed to provide the service at all. Every other purpose needs an explicit, unrevoked grant. */
+export const ESSENTIAL_PURPOSES: readonly string[] = ['account'];
+
 export function canonicalPurpose(p: string): ConsentPurpose {
   return (LEGACY_PURPOSES[p] ?? p) as ConsentPurpose;
 }
@@ -74,14 +83,9 @@ export async function consentState(q: Queryable, accountId: string, purpose: str
 }
 
 /**
- * True when the account's most recent consent record for `purpose` is a withdrawal.
- * No record at all is not a withdrawal (use hasConsent where explicit opt-in is required).
+ * True only with an explicit, unrevoked grant. There is deliberately no "not withdrawn" helper: silence is
+ * never consent for a non-essential purpose (M9).
  */
-export async function consentWithdrawn(q: Queryable, accountId: string, purpose: string): Promise<boolean> {
-  return (await consentState(q, accountId, purpose)).state === 'revoked';
-}
-
-/** True only with an explicit, unrevoked grant. */
 export async function hasConsent(q: Queryable, accountId: string, purpose: string): Promise<boolean> {
   return (await consentState(q, accountId, purpose)).state === 'granted';
 }
