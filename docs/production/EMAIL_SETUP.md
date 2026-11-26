@@ -90,3 +90,17 @@ Without these, mail is more likely to land in spam. Add them where your DNS is m
 - Replies to `saas@karigarai.com` land in that inbox: someone must read it, or set `Reply-To` / an alias later.
 - To rotate the password: create a new App Password, update `SMTP_URL` in `due-shared`, delete the old App Password in Google.
 - Never share the App Password in chat or email. If it leaks, delete it in Google at once.
+
+## Recommended: AWS SES (Safco Skill Academy Pvt Ltd already has SES production access)
+
+SES is built for bulk and transactional mail, so use it instead of a Google Workspace mailbox. No code change: the mailer accepts any SMTP URL.
+
+1. AWS console → SES, region **ap-south-1 (Mumbai)** → Verified identities → add domain `karigarai.com` → add the 3 DKIM CNAME records at your DNS provider → wait for "Verified".
+2. SES → SMTP settings → Create SMTP credentials (an IAM user is created; note the SMTP username and password once).
+3. Render env group `due-shared`:
+   - `SMTP_URL` = `smtps://<SMTP_USERNAME>:<URL-ENCODED_SMTP_PASSWORD>@email-smtp.ap-south-1.amazonaws.com:465`
+   - `SMTP_FROM` = `Due <due@karigarai.com>` (any address on the verified domain; no mailbox needed)
+4. DNS: one SPF record for karigarai.com that includes both Google Workspace and SES, e.g. `v=spf1 include:_spf.google.com include:amazonses.com ~all` (merge, never two SPF records); keep the DMARC record.
+5. Optional: a custom MAIL FROM subdomain (e.g. `mail.karigarai.com`) in SES for full SPF alignment.
+6. Admin → Health → "Send test email".
+7. SES → Configuration sets → enable bounce and complaint notifications (SNS → email) so bad addresses are noticed.
