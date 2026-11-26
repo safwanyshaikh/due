@@ -1,6 +1,5 @@
 /**
- * Regression tests on statement text. The Jio bills, the welcome letter and the gold loan statement are fully
- * synthetic (scripts/generate-statement-fixtures.mjs); see the M7 fix status for the others.
+ * Regression tests on statement text. Every fixture is fully synthetic (scripts/generate-statement-fixtures.mjs).
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -41,33 +40,33 @@ describe('SBI Card statement lines', () => {
 
   it('1. amount is the last money value before C/D, never the "(EXCL TAX …)" figure', () => {
     expect(find(b, /FIN CHARGE/)[0]).toMatchObject({
-      amountInr: 13244.58,
-      taxInr: 2384.03,
+      amountInr: 14310.62,
+      taxInr: 2575.91,
       lineKind: 'interest',
     });
     expect(find(b, /LATE PAYMENT/)[0]).toMatchObject({
-      amountInr: 1469,
-      taxInr: 264.42,
+      amountInr: 1180,
+      taxInr: 212.4,
       lineKind: 'fee',
     });
     expect(find(b, /ANNUAL FEE/)[0]).toMatchObject({
-      amountInr: -11298.87,
-      taxInr: 2033.8,
+      amountInr: -3399,
+      taxInr: 611.82,
       lineKind: 'reversal',
     });
   });
 
   it('2. foreign-currency lines keep the INR amount; USD is metadata', () => {
     expect(find(b, /ANTHROPIC/)[0]).toMatchObject({
-      amountInr: 2520.92,
-      foreignAmount: 26.67,
+      amountInr: 2631.8,
+      foreignAmount: 27.84,
       foreignCurrency: 'USD',
       narration: 'ANTHROPIC* CLAUDE SUB ANTHROPIC.COM CA',
     });
     const a = parseStatementText(A11, 'card');
     expect(find(a, /ANTHROPIC/).map((l) => [l.amountInr, l.foreignAmount])).toEqual([
-      [1267.57, 13.33],
-      [540.93, 5.67],
+      [1310.6, 13.85],
+      [568.2, 6.02],
     ]);
   });
 
@@ -81,7 +80,7 @@ describe('SBI Card statement lines', () => {
     const a9 = parseStatementText(A09, 'card');
     expect(a9[a9.length - 1]).toMatchObject({
       narration: 'UPI-Facebook India Onliervices Private L',
-      amountInr: 2260,
+      amountInr: 2399,
     });
     expect(b).toHaveLength(11);
     expect(a9).toHaveLength(19);
@@ -89,14 +88,14 @@ describe('SBI Card statement lines', () => {
 
   it('4. undated fee rows belong to the previous date', () => {
     expect(find(b, /FORGN CURR MARKUP/)[0]).toMatchObject({
-      date: '2026-09-15',
-      amountInr: 50.16,
-      taxInr: 9.03,
+      date: '2026-09-18',
+      amountInr: 52.64,
+      taxInr: 9.48,
       lineKind: 'fee',
     });
     expect(find(b, /IGST/)[0]).toMatchObject({
-      date: '2026-09-15',
-      amountInr: 623.68,
+      date: '2026-09-18',
+      amountInr: 2585.39,
       lineKind: 'tax',
     });
   });
@@ -105,10 +104,10 @@ describe('SBI Card statement lines', () => {
     const fees = b
       .filter((l) => l.lineKind !== 'purchase' && l.amountInr > 0)
       .reduce((s, l) => s + l.amountInr, 0);
-    expect(Math.round(fees * 100) / 100).toBe(15387.42);
+    expect(Math.round(fees * 100) / 100).toBe(18128.65);
     const a9 = parseStatementText(A09, 'card');
     const credits = a9.filter((l) => l.amountInr < 0).reduce((s, l) => s - l.amountInr, 0);
-    expect(Math.round(credits * 100) / 100).toBe(23479.99);
+    expect(Math.round(credits * 100) / 100).toBe(17508.78);
     expect(a9.every((l) => l.statementPeriod === '2026-09')).toBe(true);
   });
 });
@@ -148,7 +147,7 @@ describe('recurring detection on SBI Card statements', () => {
     expect(by.lovable).toMatchObject({
       kind: 'subscription',
       cadence: 'monthly',
-      averageInr: 2834.83,
+      averageInr: 2947.35,
       occurrences: 4,
       confidence: 'medium',
     });
@@ -166,41 +165,41 @@ describe('8. card statement summary', () => {
     expect(parseCardStatementSummary(B09)).toEqual({
       issuer: 'SBI Card',
       last4: '00',
-      statementDate: '2026-09-15',
-      dueDate: '2026-10-05',
-      creditLimit: 340130,
-      availableCredit: 0,
-      totalDue: 352153.2,
-      minimumDue: 24115.33,
-      previousBalance: 368871.54,
-      payments: 40606.35,
-      purchases: 8500.94,
-      feesTaxesInterest: 15387.42,
-      financeChargeInr: 13244.58,
-      lateFeeInr: 1469,
-      forexMarkupInr: 50.16,
+      statementDate: '2026-09-18',
+      dueDate: '2026-10-08',
+      creditLimit: 410000,
+      availableCredit: 20239.03,
+      totalDue: 389760.97,
+      minimumDue: 19488.05,
+      previousBalance: 396214.37,
+      payments: 31299.25,
+      purchases: 6717.2,
+      feesTaxesInterest: 18128.65,
+      financeChargeInr: 14310.62,
+      lateFeeInr: 1180,
+      forexMarkupInr: 52.64,
       annualFeeInr: null,
-      annualFeeReversedInr: 11298.87,
+      annualFeeReversedInr: 3399,
       annualFeeWaiver: null,
       monthlyRatePct: 3.75,
-      foreignSpendInr: 2520.92,
+      foreignSpendInr: 2631.8,
     });
   });
   it('other months', () => {
     expect(parseCardStatementSummary(A09)).toMatchObject({
-      totalDue: 19779.52,
-      minimumDue: 1275.77,
-      dueDate: '2026-10-05',
-      creditLimit: 22600,
-      financeChargeInr: 761.13,
+      totalDue: 20465.75,
+      minimumDue: 1023.29,
+      dueDate: '2026-10-02',
+      creditLimit: 85000,
+      financeChargeInr: 648.2,
       forexMarkupInr: null,
     });
     expect(parseCardStatementSummary(A11)).toMatchObject({
-      totalDue: 6791.3,
-      dueDate: '2026-12-05',
-      financeChargeInr: 395.96,
-      forexMarkupInr: 63.29,
-      foreignSpendInr: 1808.5,
+      totalDue: 2435.82,
+      dueDate: '2026-12-02',
+      financeChargeInr: 412.8,
+      forexMarkupInr: 58.35,
+      foreignSpendInr: 1878.8,
     });
   });
   it('labelled text fallback; non-statements → null', () => {
@@ -233,19 +232,19 @@ describe('9. fee_leak moves from card summaries', () => {
     const by = Object.fromEntries(moves.map((m) => [m.id, m]));
     expect(by['fee_leak:interest:card-sbi-card-00']).toMatchObject({
       kind: 'fee_leak',
-      title: 'You paid ₹13,245 interest this month',
-      monthlySavingInr: 13245,
+      title: 'You paid ₹14,311 interest this month',
+      monthlySavingInr: 14311,
       moduleId: CARD_BT.id,
       legalNote: "Information only. Check your bank's own offer.",
     });
     expect(by['fee_leak:interest:card-sbi-card-00'].why).toMatch(/14–22%/);
     expect(by['fee_leak:late_fee:card-sbi-card-00']).toMatchObject({
       title: 'Set an autopay for at least the minimum due',
-      monthlySavingInr: 1469,
+      monthlySavingInr: 1180,
     });
     expect(by['fee_leak:forex:card-sbi-card-00']).toMatchObject({
-      title: '₹50 a month in forex markup + GST',
-      monthlySavingInr: 50,
+      title: '₹53 a month in forex markup + GST',
+      monthlySavingInr: 53,
     });
     expect(by['fee_leak:forex:card-sbi-card-00'].why).toMatch(/zero-forex card or paying in INR/);
     // The annual fee was reversed: nothing to save.
@@ -257,8 +256,8 @@ describe('9. fee_leak moves from card summaries', () => {
     const { moves } = computeMoves(withStatements(A09, A10, A11), catalogWith(CARD_BT), NOW);
     const fees = moves.filter((m) => m.kind === 'fee_leak');
     expect(fees.map((m) => [m.id, m.monthlySavingInr])).toEqual([
-      ['fee_leak:interest:card-sbi-card-00', 396],
-      ['fee_leak:forex:card-sbi-card-00', 63],
+      ['fee_leak:interest:card-sbi-card-00', 413],
+      ['fee_leak:forex:card-sbi-card-00', 58],
     ]);
   });
 
@@ -290,17 +289,17 @@ describe('10. adding the card bill', () => {
     expect(c).toMatchObject({
       type: 'credit_card',
       provider: 'SBI Card',
-      amountPaise: 2179318,
-      nextDue: '2026-11-04',
+      amountPaise: 2244944,
+      nextDue: '2026-11-01',
     });
-    expect(c.statement).toMatchObject({ cardNickname: 'SBI Card ••00', periodEnd: '2026-10-15' });
+    expect(c.statement).toMatchObject({ cardNickname: 'SBI Card ••00', periodEnd: '2026-10-12' });
     expect(r.data.savings.statements).toEqual([{ ...s, obligationId: r.obligationId }]);
     expect(r.data.audit).toHaveLength(1);
     const later = emptyIfNull(parseCardStatementSummary(A11));
     const r2 = addCardBill(r.data, later, { now: NOW });
     expect(r2.obligationId).toBe(r.obligationId);
     expect(r2.data.commitments).toHaveLength(1);
-    expect(r2.data.commitments[0]).toMatchObject({ amountPaise: 679130, nextDue: '2026-12-05' });
+    expect(r2.data.commitments[0]).toMatchObject({ amountPaise: 243582, nextDue: '2026-12-02' });
     expect(r2.data.savings.statements).toHaveLength(2);
   });
 });
@@ -314,42 +313,40 @@ describe('loan statement (SOA) and welcome letter', () => {
       lender: 'L&T Finance',
       product: 'HOME LOAN',
       rateType: 'floating',
-      annualRatePct: 8.4,
-      emiInr: 111036.06,
+      annualRatePct: 8.15,
+      emiInr: 52777.89,
       emiDueDay: 3,
-      loanAmountInr: 12656000,
-      loanTenureMonths: 232,
-      balanceTenureMonths: 196,
-      futurePrincipalInr: 11802043.36,
-      overdueInstalmentInr: 111036.06,
-      latePaymentChargesInr: 13183.16,
-      bounceCount: 21,
-      bounceChargesInr: 22035,
-      processingFeeInr: 12470.68,
-      disbursementDate: '2023-10-31',
-      instalmentEndDate: '2043-03-03',
+      loanAmountInr: 6240000,
+      loanTenureMonths: 240,
+      balanceTenureMonths: 210,
+      futurePrincipalInr: 5895304.26,
+      overdueInstalmentInr: 52777.89,
+      latePaymentChargesInr: 2702.23,
+      bounceCount: 19,
+      bounceChargesInr: 19470,
+      processingFeeInr: 14751.2,
+      disbursementDate: '2024-04-30',
+      instalmentEndDate: '2044-05-03',
       statementDate: '2026-11-24',
     });
     expect(soa.bounceMonths).toEqual([
-      '2024-08',
       '2024-09',
       '2024-10',
-      '2025-07',
-      '2025-09',
+      '2024-11',
+      '2025-08',
       '2025-10',
       '2026-01',
       '2026-02',
       '2026-03',
-      '2026-04',
-      '2026-06',
+      '2026-05',
       '2026-07',
       '2026-08',
       '2026-09',
       '2026-10',
       '2026-11',
     ]);
-    expect(soa.bounceCharges).toHaveLength(13);
-    expect(bouncesIn12Months(soa, '2026-11-24')).toBe(15);
+    expect(soa.bounceCharges).toHaveLength(11);
+    expect(bouncesIn12Months(soa, '2026-11-24')).toBe(14);
     expect(JSON.stringify(soa)).not.toMatch(/H0000|xxxx|example\.com/i);
   });
 
@@ -378,13 +375,13 @@ describe('loan statement (SOA) and welcome letter', () => {
     expect(b).toMatchObject({
       title: 'Keep the EMI amount in the account 1 day before the due date',
       effort: 'habit',
-      // (10 × ₹1,695 + ₹13,183.16) / 12
-      monthlySavingInr: 2511,
+      // (9 × ₹1,770 + ₹2,702.23) / 12
+      monthlySavingInr: 1553,
     });
     expect(b.why).toBe(
-      'EMI bounced 15 times in 12 months: ₹16,950 in bounce charges + ₹13,183 late interest. Or ask the lender to move the EMI date nearer your income date.',
+      'EMI bounced 14 times in 12 months: ₹15,930 in bounce charges + ₹2,702 late interest. Or ask the lender to move the EMI date nearer your income date.',
     );
-    // 8.40% is within 0.5 of the published 8.1%: no switch move.
+    // 8.15% is within 0.5 of the published 8.1%: no switch move.
     expect(moves.some((m) => m.kind === 'loan_switch')).toBe(false);
   });
 
@@ -394,8 +391,8 @@ describe('loan statement (SOA) and welcome letter', () => {
     const l = computeMoves(data, catalogWith(cheaper), NOW).moves.find(
       (m) => m.kind === 'loan_switch',
     )!;
-    const p = 11802043.36;
-    expect(l.monthlySavingInr).toBe(Math.round(emi(p, 8.4, 196) - emi(p, 7.5, 196)));
+    const p = 5895304.26;
+    expect(l.monthlySavingInr).toBe(Math.round(emi(p, 8.15, 210) - emi(p, 7.5, 210)));
     expect(l.confidence).toBe('low');
     expect(l.why).toContain(BOUNCE_TRANSFER_NOTE);
     expect(l.legalNote).toMatch(/RBI/);
@@ -409,13 +406,13 @@ describe('loan statement (SOA) and welcome letter', () => {
       type: 'emi',
       provider: 'L&T Finance',
       rail: 'bank_mandate',
-      amountPaise: 11103606,
+      amountPaise: 5277789,
       nextDue: '2026-12-03',
-      remainingOccurrences: 196,
+      remainingOccurrences: 210,
       loan: {
         rateType: 'variable',
-        interestRatePct: 8.4,
-        principalPaise: 1180204336,
+        interestRatePct: 8.15,
+        principalPaise: 589530426,
         loanType: 'Home Loan',
       },
     });

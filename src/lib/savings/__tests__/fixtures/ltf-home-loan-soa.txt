@@ -1,451 +1,424 @@
-Loan account statement of H000000000000000000 for the period 31-OCT-2023 to 24-Nov-2026 Dated 24-Nov-2026
+Loan account statement of H000000000000000000 for the period 30-APR-2024 to 24-Nov-2026 Dated 24-Nov-2026
 Click here To Update Contact Details
 Click here to pay overdue
 Customer Name & Contact Details   Product & Property Details
-TEST USER
-TEST ADDRESS, MUMBAI 400001
+DEMO CUSTOMER
+FLAT 7, SAMPLE CHS, MUMBAI 400099
 Phone No.:   900XXXXX00
 Mobile No.:   900XXXXX00
-Email:   usXXXXXXr@example.com
+Email:   deXXXXXXr@example.com
 Customer GSTIN ID:   NA
 State Code:   27
 Product:   HOME LOAN
-Property Address:   TEST PROPERTY, NAVI MUMBAI
+Property Address:   SAMPLE PROPERTY, THANE 400601
 HSN Code:   997113
 Customer & Bank Details   Loan Details   Instalment and Payment Details
-Applicant name:   TEST USER
+Applicant name:   DEMO CUSTOMER
 Agreement No:   H000000000000000000
 Customer ID: 00000000
-LTF GSTIN ID:   27AABCL5046R1ZZ
+LTF GSTIN ID:   27AAAAA0000A1ZZ
 Central KYC:   XXXXXXXXXX0000
 CKYC) Id
-Branch:   THANE-MUMBAI-199
+Branch:   SAMPLE-MUMBAI-100
 Co-Applicant Name(s): CO APPLICANT
 Place of Supply   MAHARASHTRA
 _________________________________________
 Bank Name:   UNION BANK OF INDIA
 Bank Account:   xxxxxxxxxxxx000
 Mandate Status:   REGISTERED
-Disbursement Date   31-OCT-2023
-Amount Sanctioned (Rs)   12,656,000.00
-Amount Disbursed (Rs):   12,656,000.00
-Annualised Interest Rate %   8.40
+Disbursement Date   30-APR-2024
+Amount Sanctioned (Rs)   6,240,000.00
+Amount Disbursed (Rs):   6,240,000.00
+Annualised Interest Rate %   8.15
 Interest Rate Type   Floating
-Loan Tenure (Months)   232
-Balance Tenure (Months)   196
+Loan Tenure (Months)   240
+Balance Tenure (Months)   210
 Subvention   NA
 Subvention Period(Months)   0
 Loan Status   Active
 Currency   INR
 Moratorium:   N
-EMI Amount (Rs)   111,036.06
-BPI Amount (Rs)   7963
-Instalment start date   03-DEC-2023
-Instalment End date   03-MAR-2043
+EMI Amount (Rs)   52,777.89
+BPI Amount (Rs)   7226
+Instalment start date   03-JUN-2024
+Instalment End date   03-MAY-2044
 Frequency   MONTHLY
 BPI Due Date   NA
 EMI Due Date   3rd of Every Month
 Repayment Mode   AUTO-DEBIT
 ________________________________________
-Principal Paid (Rs)   825,732.46
-Interest Paid (Rs)   3,060,529.64
-Instalment overdue (Rs)   111,036.06
-Late Payment Charges (Rs) 13,183.16
+Principal Paid (Rs)   332,042.73
+Interest Paid (Rs)   1,198,516.08
+Instalment overdue (Rs)   52,777.89
+Late Payment Charges (Rs) 2,702.23
 Excess amount   0.00
 Amount Under Clearance   0.00
 Loan Finance Summary as on 24-Nov-2026
 Particulars   Instalments / Pre-payments   Late Payment Charges   Misc. Charges*   Total
 PRIN   INT
 Op.Bal   .00   .00   .00   .00   .00
-Debits   853,956.64   3,143,341.52   13,619.90   .00   4,032,953.06
-Credits   825,732.46   3,060,529.64   386.50   .00   3,891,784.31
-Cl.Bal.   28,224.18   82,811.88   13,183.16   .00   141,168.75
+Debits   344,695.74   1,238,640.96   2,885.90   20,208.89   1,606,431.49
+Credits   332,042.73   1,198,516.08   183.67   .00   1,530,742.48
+Cl.Bal.   12,653.01   40,124.88   2,702.23   20,208.89   75,689.01
 Current OS   Excess   Receivable   Accrued Interest   Future Principal   Total Receivable
-141,168.75   .00   141,168.75   57,830.02   11,802,043.36   12,001,042.14
+75,689.01   .00   75,689.01   28,027.26   5,895,304.26   5,999,020.53
 DISBURSEMENT SUMMARY
 Disbursal No   Disbursal Date   Disbursal Amount   Particulars
-1   31-OCT-2023   641,841.13   FIRST DISBURSMENT
-2   31-OCT-2023   12,014,158.87   SECOND DISBURSMENT
+1   30-APR-2024   312,000.00   FIRST DISBURSMENT
+2   30-APR-2024   5,928,000.00   SECOND DISBURSMENT
 
 Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
-31-OCT-2023   31-OCT-2023   Processing Fees- Due (Incl. Tax)   12,470.68   0.00   12,470.68
-31-OCT-2023   31-OCT-2023   Broken Period Interest-   8,998.19   0.00   21,468.87
-31-OCT-2023   31-OCT-2023
-Net Amount Transferred In Favour Of:TEST USER
-641,841.13   0.00   663,310.00
-31-OCT-2023   31-OCT-2023
-Net Amount Transferred In Favour Of:BUILDER
-Enterprise   11,992,690.00   0.00   12,656,000.00
-31-OCT-2023   31-OCT-2023   Amt Financed   0.00   641,841.13   12,014,158.87
-31-OCT-2023   31-OCT-2023   Amt Financed   0.00   12,014,158.87   0.00
-03-DEC-2023   03-DEC-2023   Due For Instalment   1   111,036.06   0.00   111,036.06
-04-DEC-2023   03-DEC-2023
-Cheque Pmnt Rcvd Vide MN0000000~ Receipt No.   MN0000000
-Clear DEC/2023   0.00   111,036.06   0.00
-03-JAN-2024   03-JAN-2024   Due For Instalment   2   111,036.06   0.00   111,036.06
-03-JAN-2024   03-JAN-2024
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear JAN/2024   0.00   111,036.06   0.00
-03-FEB-2024   03-FEB-2024   Due For Instalment   3   111,036.06   0.00   111,036.06
-03-FEB-2024   03-FEB-2024
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear FEB/2024   0.00   111,036.06   0.00
-03-MAR-2024   03-MAR-2024   Due For Instalment   4   111,036.06   0.00   111,036.06
-03-MAR-2024   03-MAR-2024
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear MAR/2024   0.00   111,036.06   0.00
-03-APR-2024   03-APR-2024   Due For Instalment   5   111,036.06   0.00   111,036.06
-03-APR-2024   03-APR-2024
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear APR/2024   0.00   111,036.06   0.00
-03-MAY-2024   03-MAY-2024   Due For Instalment   6   111,036.06   0.00   111,036.06
-03-MAY-2024   03-MAY-2024
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear MAY/2024   0.00   111,036.06   0.00
-03-JUN-2024   03-JUN-2024   Due For Instalment   7   111,036.06   0.00   111,036.06
+30-APR-2024   30-APR-2024   Processing Fees- Due (Incl. Tax)   14,751.20   0.00   14,751.20
+30-APR-2024   30-APR-2024   Broken Period Interest-   7,226.45   0.00   21,977.65
+30-APR-2024   30-APR-2024
+Net Amount Transferred In Favour Of:DEMO CUSTOMER   3,12,000.00   0.00   3,33,977.65
+30-APR-2024   30-APR-2024
+Net Amount Transferred In Favour Of:ACME BUILDERS
+Private Limited   59,06,022.35   0.00   62,40,000.00
+30-APR-2024   30-APR-2024   Amt Financed   0.00   3,12,000.00   59,28,000.00
+30-APR-2024   30-APR-2024   Amt Financed   0.00   59,28,000.00   0.00
+03-JUN-2024   03-JUN-2024   Due For Instalment   1   52,777.89   0.00   52,777.89
 03-JUN-2024   03-JUN-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear JUN/2024   0.00   111,036.06   0.00
-03-JUL-2024   03-JUL-2024   Due For Instalment   8   111,036.06   0.00   111,036.06
+Clear JUN/2024   0.00   52,777.89   0.00
+03-JUL-2024   03-JUL-2024   Due For Instalment   2   52,777.89   0.00   52,777.89
 03-JUL-2024   03-JUL-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear JUL/2024   0.00   111,036.06   0.00
-03-AUG-2024   03-AUG-2024   Due For Instalment   9   111,036.06   0.00   111,036.06
+Clear JUL/2024   0.00   52,777.89   0.00
+03-AUG-2024   03-AUG-2024   Due For Instalment   3   52,777.89   0.00   52,777.89
 03-AUG-2024   03-AUG-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced AUG/2024   0.00   111,036.06   0.00
-
-Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
-04-AUG-2024   03-AUG-2024
-E0000000~ Receipt No. E0000000   Bounced
-Miscellaneous KYC Doc Pending   111,036.06   0.00   111,036.06
-08-AUG-2024   08-AUG-2024
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-AUG/2024   0.00   111,036.06   0.00
-31-AUG-2024   31-AUG-2024
-Late Payment Charges Due (Incl. Tax)03 AUG 24 Installment
-No : 9   386.50   386.50   0.00
-03-SEP-2024   03-SEP-2024   Due For Instalment   10   111,036.06   0.00   111,036.06
+Clear AUG/2024   0.00   52,777.89   0.00
+03-SEP-2024   03-SEP-2024   Due For Instalment   4   52,777.89   0.00   52,777.89
 03-SEP-2024   03-SEP-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced SEP/2024   0.00   111,036.06   0.00
+Bounced SEP/2024   0.00   52,777.89   0.00
 04-SEP-2024   03-SEP-2024
-E0000000~ Receipt No. E0000000   Bounced   Misc KYC
-documents pending   111,036.06   0.00   111,036.06
-04-SEP-2024   04-SEP-2024
-Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 98
-648.50 For Instalment   10   Clear SEP/2024   0.00   111,036.06   0.00
-03-OCT-2024   03-OCT-2024   Due For Instalment   11   111,036.06   0.00   111,036.06
+E0000000~ Receipt No. E0000000   Bounced
+Miscellaneous KYC Doc Pending   52,777.89   0.00   52,777.89
+08-SEP-2024   08-SEP-2024
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+SEP/2024   0.00   52,777.89   0.00
+30-SEP-2024   30-SEP-2024
+Late Payment Charges Due (Incl. Tax)03 SEP 24 Installment
+No : 4   183.67   183.67   0.00
+03-OCT-2024   03-OCT-2024   Due For Instalment   5   52,777.89   0.00   52,777.89
 03-OCT-2024   03-OCT-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced OCT/2024   0.00   111,036.06   0.00
+Bounced OCT/2024   0.00   52,777.89   0.00
 04-OCT-2024   03-OCT-2024
 E0000000~ Receipt No. E0000000   Bounced
-Miscellaneous KYC Doc Pending   111,036.06   0.00   111,036.06
-04-OCT-2024   04-OCT-2024
+Miscellaneous KYC Doc Pending   52,777.89   0.00   52,777.89
+08-OCT-2024   08-OCT-2024
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-OCT/2024   0.00   111,036.06   0.00
-03-NOV-2024   03-NOV-2024   Due For Instalment   12   111,036.06   0.00   111,036.06
+OCT/2024   0.00   52,777.89   0.00
+03-NOV-2024   03-NOV-2024   Due For Instalment   6   52,777.89   0.00   52,777.89
 03-NOV-2024   03-NOV-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear NOV/2024   0.00   111,036.06   0.00
-03-DEC-2024   03-DEC-2024   Due For Instalment   13   111,036.06   0.00   111,036.06
+Bounced NOV/2024   0.00   52,777.89   0.00
+04-NOV-2024   03-NOV-2024
+E0000000~ Receipt No. E0000000   Bounced
+Miscellaneous KYC Doc Pending   52,777.89   0.00   52,777.89
+08-NOV-2024   08-NOV-2024
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+NOV/2024   0.00   52,777.89   0.00
+03-DEC-2024   03-DEC-2024   Due For Instalment   7   52,777.89   0.00   52,777.89
 03-DEC-2024   03-DEC-2024
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear DEC/2024   0.00   111,036.06   0.00
-03-JAN-2025   03-JAN-2025   Due For Instalment   14   111,036.06   0.00   111,036.06
+Clear DEC/2024   0.00   52,777.89   0.00
+03-JAN-2025   03-JAN-2025   Due For Instalment   8   52,777.89   0.00   52,777.89
 03-JAN-2025   03-JAN-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear JAN/2025   0.00   111,036.06   0.00
-03-FEB-2025   03-FEB-2025   Due For Instalment   15   111,036.06   0.00   111,036.06
+Clear JAN/2025   0.00   52,777.89   0.00
+03-FEB-2025   03-FEB-2025   Due For Instalment   9   52,777.89   0.00   52,777.89
 03-FEB-2025   03-FEB-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear FEB/2025   0.00   111,036.06   0.00
-03-MAR-2025   03-MAR-2025   Due For Instalment   16   111,036.06   0.00   111,036.06
+Clear FEB/2025   0.00   52,777.89   0.00
+03-MAR-2025   03-MAR-2025   Due For Instalment   10   52,777.89   0.00   52,777.89
 03-MAR-2025   03-MAR-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear MAR/2025   0.00   111,036.06   0.00
-06-MAR-2025   06-MAR-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-MAR/2025   0.00   33,900.00   -33,900.00
-03-APR-2025   03-APR-2025   Due For Instalment   17   111,036.06   0.00   77,136.06
+Clear MAR/2025   0.00   52,777.89   0.00
+03-APR-2025   03-APR-2025   Due For Instalment   11   52,777.89   0.00   52,777.89
 03-APR-2025   03-APR-2025
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No   . E0000000
-INR 98 262.00 For Instalment   17   Clear APR/2025   0.00   77,136.06   0.00
+Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
+Clear APR/2025   0.00   52,777.89   0.00
+03-MAY-2025   03-MAY-2025   Due For Instalment   12   52,777.89   0.00   52,777.89
+03-MAY-2025   03-MAY-2025
+Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
+Clear MAY/2025   0.00   52,777.89   0.00
+03-JUN-2025   03-JUN-2025   Due For Instalment   13   52,777.89   0.00   52,777.89
 
 Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
-03-APR-2025   03-APR-2025
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No   . E0000000
-INR 98 262.00   Clear APR/2025   0.00   33,900.00   -33,900.00
-03-MAY-2025   03-MAY-2025   Due For Instalment   18   111,036.06   0.00   77,136.06
-03-MAY-2025   03-MAY-2025
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No   . E0000000
-INR 98 262.00 For Instalment   18   Clear MAY/2025   0.00   77,136.06   0.00
-03-MAY-2025   03-MAY-2025
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No   . E0000000
-INR 98 262.00   Clear MAY/2025   0.00   33,900.00   -33,900.00
-19-MAY-2025   19-MAY-2025
-Amount Paid Vide AXISCN0978240204~ Receipt No.
-AXISCN0978240204   33,900.00   0.00   0.00
-03-JUN-2025   03-JUN-2025   Due For Instalment   19   111,036.06   0.00   111,036.06
 03-JUN-2025   03-JUN-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear JUN/2025   0.00   111,036.06   0.00
-03-JUL-2025   03-JUL-2025   Due For Instalment   20   111,036.06   0.00   111,036.06
+Clear JUN/2025   0.00   52,777.89   0.00
+03-JUL-2025   03-JUL-2025   Due For Instalment   14   52,777.89   0.00   52,777.89
 03-JUL-2025   03-JUL-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced JUL/2025   0.00   111,036.06   0.00
-03-JUL-2025   03-JUL-2025
-E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   111,036.06
-03-JUL-2025   03-JUL-2025   Bounce Charges-Installment20- NA   1,695.00   1,695.00   111,036.06
-03-JUL-2025   03-JUL-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUL/2025   0.00   56,500.00   54,536.06
-03-JUL-2025   03-JUL-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUL/2025   0.00   28,250.00   26,286.06
-03-JUL-2025   03-JUL-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUL/2025   0.00   11,300.00   14,986.06
-03-JUL-2025   03-JUL-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUL/2025   0.00   11,300.00   3,686.06
-03-JUL-2025   03-JUL-2025
-Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 4
-762.00 For Instalment   20   Clear JUL/2025   0.00   3,686.06   0.00
-03-AUG-2025   03-AUG-2025   Due For Instalment   21   111,036.06   0.00   111,036.06
+Clear JUL/2025   0.00   52,777.89   0.00
+03-AUG-2025   03-AUG-2025   Due For Instalment   15   52,777.89   0.00   52,777.89
 03-AUG-2025   03-AUG-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear AUG/2025   0.00   111,036.06   0.00
-03-SEP-2025   03-SEP-2025   Due For Instalment   22   111,036.06   0.00   111,036.06
+Bounced AUG/2025   0.00   52,777.89   0.00
+03-AUG-2025   03-AUG-2025
+E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
+BALANCE   52,777.89   0.00   52,777.89
+03-AUG-2025   03-AUG-2025   Bounce Charges-Installment15- NA   1,770.00   0.00   54,547.89
+15-AUG-2025   15-AUG-2025
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+AUG/2025   0.00   29,027.84   25,520.05
+18-AUG-2025   18-AUG-2025
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+AUG/2025   0.00   13,194.47   12,325.58
+21-AUG-2025   21-AUG-2025
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   15   Clear AUG/2025   0.00   10,555.58   1,770.00
+31-AUG-2025   31-AUG-2025
+Late Payment Interest 03 AUG 25 Installment No : 15
+306.11   0.00   2,076.11
+03-SEP-2025   03-SEP-2025   Due For Instalment   16   52,777.89   0.00   54,854.00
 03-SEP-2025   03-SEP-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced SEP/2025   0.00   111,036.06   0.00
-03-SEP-2025   03-SEP-2025
-E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   111,036.06
-03-SEP-2025   03-SEP-2025   Bounce Charges-Installment22- NA   1,695.00   1,695.00   111,036.06
-03-SEP-2025   03-SEP-2025
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-SEP/2025   0.00   111,036.06   0.00
-03-OCT-2025   03-OCT-2025   Due For Instalment   23   111,036.06   0.00   111,036.06
-
-Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
+Clear SEP/2025   0.00   52,777.89   2,076.11
+03-OCT-2025   03-OCT-2025   Due For Instalment   17   52,777.89   0.00   54,854.00
 03-OCT-2025   03-OCT-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced OCT/2025   0.00   111,036.06   0.00
+Bounced OCT/2025   0.00   52,777.89   2,076.11
 03-OCT-2025   03-OCT-2025
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   111,036.06
-03-OCT-2025   03-OCT-2025   Bounce Charges-Installment23- NA   1,695.00   1,695.00   111,036.06
-09-OCT-2025   09-OCT-2025
+BALANCE   52,777.89   0.00   54,854.00
+03-OCT-2025   03-OCT-2025   Bounce Charges-Installment17- NA   1,770.00   0.00   56,624.00
+15-OCT-2025   15-OCT-2025
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-OCT/2025   0.00   45,200.00   65,836.06
-13-OCT-2025   13-OCT-2025
-Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 61
-262.00 For Instalment   23   Clear OCT/2025   0.00   65,836.06   0.00
+OCT/2025   0.00   29,027.84   27,596.16
+18-OCT-2025   18-OCT-2025
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+OCT/2025   0.00   13,194.47   14,401.69
+21-OCT-2025   21-OCT-2025
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   17   Clear OCT/2025   0.00   10,555.58   3,846.11
 31-OCT-2025   31-OCT-2025
-Late Payment Interest 03 OCT 25 Installment No : 23
-548.41   0.00   548.41
-03-NOV-2025   03-NOV-2025   Due For Instalment   24   111,036.06   0.00   111,655.76
+Late Payment Interest 03 OCT 25 Installment No : 17
+263.89   0.00   4,110.00
+03-NOV-2025   03-NOV-2025   Due For Instalment   18   52,777.89   0.00   56,887.89
 03-NOV-2025   03-NOV-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear NOV/2025   0.00   111,036.06   548.41
-03-DEC-2025   03-DEC-2025   Due For Instalment   25   111,036.06   0.00   111,655.76
+Clear NOV/2025   0.00   52,777.89   4,110.00
+03-DEC-2025   03-DEC-2025   Due For Instalment   19   52,777.89   0.00   56,887.89
 03-DEC-2025   03-DEC-2025
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear DEC/2025   0.00   111,036.06   548.41
-03-JAN-2026   03-JAN-2026   Due For Instalment   26   111,036.06   0.00   111,655.76
+Clear DEC/2025   0.00   52,777.89   4,110.00
+03-JAN-2026   03-JAN-2026   Due For Instalment   20   52,777.89   0.00   56,887.89
 03-JAN-2026   03-JAN-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced JAN/2026   0.00   111,036.06   548.41
+Bounced JAN/2026   0.00   52,777.89   4,110.00
 03-JAN-2026   03-JAN-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   111,655.76
-03-JAN-2026   03-JAN-2026   Bounce Charges-Installment26- NA   1,695.00   0.41   113,350.30
-14-JAN-2026   14-JAN-2026
+BALANCE   52,777.89   0.00   56,887.89
+03-JAN-2026   03-JAN-2026   Bounce Charges-Installment20- NA   1,770.00   0.00   58,657.89
+15-JAN-2026   15-JAN-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JAN/2026   0.00   2,260.00   111,090.30
-17-JAN-2026   17-JAN-2026
+JAN/2026   0.00   29,027.84   29,630.05
+18-JAN-2026   18-JAN-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JAN/2026   0.00   97,530.76   13,559.54
-19-JAN-2026   19-JAN-2026
-Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 9
-952.00 For Instalment   26   Clear JAN/2026   0.00   11,245.30   2,314.24
+JAN/2026   0.00   13,194.47   16,435.58
+21-JAN-2026   21-JAN-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   20   Clear JAN/2026   0.00   10,555.58   5,880.00
 31-JAN-2026   31-JAN-2026
-Late Payment Interest 03 JAN 26 Installment No : 26
-926.38   0.00   3,361.05
-03-FEB-2026   03-FEB-2026   Due For Instalment   27   111,036.06   0.00   114,397.11
+Late Payment Interest 03 JAN 26 Installment No : 20
+242.78   0.00   6,122.78
+03-FEB-2026   03-FEB-2026   Due For Instalment   21   52,777.89   0.00   58,900.67
 03-FEB-2026   03-FEB-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced FEB/2026   0.00   111,036.06   3,361.05
+Bounced FEB/2026   0.00   52,777.89   6,122.78
 03-FEB-2026   03-FEB-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   114,397.11
-03-FEB-2026   03-FEB-2026   Bounce Charges-Installment27- NA   1,695.00   0.00   116,092.11
-19-FEB-2026   19-FEB-2026
+BALANCE   52,777.89   0.00   58,900.67
+03-FEB-2026   03-FEB-2026   Bounce Charges-Installment21- NA   1,770.00   0.00   60,670.67
+15-FEB-2026   15-FEB-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-FEB/2026   0.00   93,491.68   22,600.43
+FEB/2026   0.00   29,027.84   31,642.83
 
 Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
-19-FEB-2026   19-FEB-2026
+18-FEB-2026   18-FEB-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-FEB/2026   0.00   17,544.38   5,056.05
+FEB/2026   0.00   13,194.47   18,448.36
+21-FEB-2026   21-FEB-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   21   Clear FEB/2026   0.00   10,555.58   7,892.78
 28-FEB-2026   28-FEB-2026
-Late Payment Interest 03 FEB 26 Installment No : 27
-1,184.39   0.00   6,240.44
-03-MAR-2026   03-MAR-2026   Due For Instalment   28   111,036.06   0.00   117,276.50
+Late Payment Interest 03 FEB 26 Installment No : 21
+263.89   0.00   8,156.67
+03-MAR-2026   03-MAR-2026   Due For Instalment   22   52,777.89   0.00   60,934.56
 03-MAR-2026   03-MAR-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced MAR/2026   0.00   111,036.06   6,240.44
+Bounced MAR/2026   0.00   52,777.89   8,156.67
 03-MAR-2026   03-MAR-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   117,276.50
-03-MAR-2026   03-MAR-2026   Bounce Charges-Installment28- NA   1,695.00   0.00   118,971.50
-09-MAR-2026   09-MAR-2026
+BALANCE   52,777.89   0.00   60,934.56
+03-MAR-2026   03-MAR-2026   Bounce Charges-Installment22- NA   1,770.00   0.00   62,704.56
+15-MAR-2026   15-MAR-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-MAR/2026   0.00   77,136.06   41,835.44
-16-MAR-2026   16-MAR-2026
+MAR/2026   0.00   29,027.84   33,676.72
+18-MAR-2026   18-MAR-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-MAR/2026   0.00   33,900.00   7,935.44
+MAR/2026   0.00   13,194.47   20,482.25
+21-MAR-2026   21-MAR-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   22   Clear MAR/2026   0.00   10,555.58   9,926.67
 31-MAR-2026   31-MAR-2026
-Late Payment Interest 03 MAR 26 Installment No : 28
-533.05   0.00   8,537.78
-03-APR-2026   03-APR-2026   Due For Instalment   29   111,036.06   0.00   119,573.84
+Late Payment Interest 03 MAR 26 Installment No : 22
+285.00   0.00   10,211.67
+03-APR-2026   03-APR-2026   Due For Instalment   23   52,777.89   0.00   62,989.56
 03-APR-2026   03-APR-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced APR/2026   0.00   111,036.06   8,537.78
-03-APR-2026   03-APR-2026
-E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   119,573.84
-03-APR-2026   03-APR-2026   Bounce Charges-Installment29- NA   1,695.00   0.00   121,268.84
-25-APR-2026   25-APR-2026
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-APR/2026   0.00   111,036.06   10,232.78
-30-APR-2026   30-APR-2026
-Late Payment Interest 03 APR 26 Installment No : 29
-1,628.53   0.00   11,861.32
-03-MAY-2026   03-MAY-2026   Due For Instalment   30   111,036.06   0.00   122,897.38
+Clear APR/2026   0.00   52,777.89   10,211.67
+03-MAY-2026   03-MAY-2026   Due For Instalment   24   52,777.89   0.00   62,989.56
 03-MAY-2026   03-MAY-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Clear MAY/2026   0.00   111,036.06   11,861.32
-03-JUN-2026   03-JUN-2026   Due For Instalment   31   111,036.06   0.00   122,897.38
-03-JUN-2026   03-JUN-2026
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced JUN/2026   0.00   111,036.06   11,861.32
-03-JUN-2026   03-JUN-2026
+Bounced MAY/2026   0.00   52,777.89   10,211.67
+03-MAY-2026   03-MAY-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   122,897.38
-03-JUN-2026   03-JUN-2026   Bounce Charges-Installment31- NA   1,695.00   0.00   124,592.38
-25-JUN-2026   25-JUN-2026
+BALANCE   52,777.89   0.00   62,989.56
+03-MAY-2026   03-MAY-2026   Bounce Charges-Installment24- NA   1,770.00   0.00   64,759.56
+15-MAY-2026   15-MAY-2026
 Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUN/2026   0.00   111,036.06   13,556.32
-30-JUN-2026   30-JUN-2026
-Late Payment Interest 03 JUN 26 Installment No : 31
-1,628.53   0.00   15,184.85
-03-JUL-2026   03-JUL-2026   Due For Instalment   32   111,036.06   0.00   126,220.91
-
-Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
+MAY/2026   0.00   29,027.84   35,731.72
+18-MAY-2026   18-MAY-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+MAY/2026   0.00   13,194.47   22,537.25
+21-MAY-2026   21-MAY-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   24   Clear MAY/2026   0.00   10,555.58   11,981.67
+31-MAY-2026   31-MAY-2026
+Late Payment Interest 03 MAY 26 Installment No : 24
+242.78   0.00   12,224.45
+03-JUN-2026   03-JUN-2026   Due For Instalment   25   52,777.89   0.00   65,002.34
+03-JUN-2026   03-JUN-2026
+Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
+Clear JUN/2026   0.00   52,777.89   12,224.45
+03-JUL-2026   03-JUL-2026   Due For Instalment   26   52,777.89   0.00   65,002.34
 03-JUL-2026   03-JUL-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced JUL/2026   0.00   111,036.06   15,184.85
+Bounced JUL/2026   0.00   52,777.89   12,224.45
 03-JUL-2026   03-JUL-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   126,220.91
-03-JUL-2026   03-JUL-2026   Bounce Charges-Installment32- NA   1,695.00   0.00   127,915.91
-14-JUL-2026   14-JUL-2026
+BALANCE   52,777.89   0.00   65,002.34
+03-JUL-2026   03-JUL-2026   Bounce Charges-Installment26- NA   1,770.00   0.00   66,772.34
+13-JUL-2026   13-JUL-2026
 Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
-Bounced JUL/2026   0.00   111,036.06   16,879.85
-14-JUL-2026   14-JUL-2026
+Bounced JUL/2026   0.00   52,777.89   13,994.45
+13-JUL-2026   13-JUL-2026
 R0000000~ Receipt No. R0000000   Bounced   Insufficient
-Balance   111,036.06   0.00   127,915.91
+Balance   52,777.89   0.00   66,772.34
+15-JUL-2026   15-JUL-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+JUL/2026   0.00   29,027.84   37,744.50
+18-JUL-2026   18-JUL-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+JUL/2026   0.00   13,194.47   24,550.03
 21-JUL-2026   21-JUL-2026
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-JUL/2026   0.00   111,036.06   16,879.85
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   26   Clear JUL/2026   0.00   10,555.58   13,994.45
 31-JUL-2026   31-JUL-2026
-Late Payment Interest 03 JUL 26 Installment No : 32
-1,332.43   0.00   18,212.28
-03-AUG-2026   03-AUG-2026   Due For Instalment   33   111,036.06   0.00   129,248.34
+Late Payment Interest 03 JUL 26 Installment No : 26
+285.00   0.00   14,279.45
+03-AUG-2026   03-AUG-2026   Due For Instalment   27   52,777.89   0.00   67,057.34
 03-AUG-2026   03-AUG-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced AUG/2026   0.00   111,036.06   18,212.28
+Bounced AUG/2026   0.00   52,777.89   14,279.45
 03-AUG-2026   03-AUG-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   129,248.34
-03-AUG-2026   03-AUG-2026   Bounce Charges-Installment33- NA   1,695.00   0.00   130,943.34
-12-AUG-2026   12-AUG-2026
+BALANCE   52,777.89   0.00   67,057.34
+03-AUG-2026   03-AUG-2026   Bounce Charges-Installment27- NA   1,770.00   0.00   68,827.34
+13-AUG-2026   13-AUG-2026
 Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
-Bounced AUG/2026   0.00   111,036.06   19,907.28
-13-AUG-2026   12-AUG-2026
-R0000000~ Receipt No. R0000000   Bounced   Insufficient
-Balance   111,036.06   0.00   130,943.34
-31-AUG-2026   31-AUG-2026
-Late Payment Interest 03 AUG 26 Installment No : 33
-1,998.65   0.00   132,941.99
-31-AUG-2026   31-AUG-2026
-Cheque Pmnt Rcvd Vide 222677~ Receipt No.   FR0000000
-Clear AUG/2026   0.00   111,036.06   21,905.93
-03-SEP-2026   03-SEP-2026   Due For Instalment   34   111,036.06   0.00   132,941.99
-03-SEP-2026   03-SEP-2026
-Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced SEP/2026   0.00   111,036.06   21,905.93
-03-SEP-2026   03-SEP-2026
-E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   132,941.99
-03-SEP-2026   03-SEP-2026   Bounce Charges-Installment34- NA   1,695.00   0.00   134,636.99
-16-SEP-2026   16-SEP-2026
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-SEP/2026   0.00   88,436.06   46,200.93
-21-SEP-2026   18-SEP-2026
-Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
-Bounced SEP/2026   0.00   22,600.00   23,600.93
-21-SEP-2026   18-SEP-2026
-R0000000~ Receipt No. R0000000   Bounced   Insufficient
-Balance   22,600.00   0.00   46,200.93
-28-SEP-2026   28-SEP-2026
-Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
-SEP/2026   0.00   22,600.00   23,600.93
+Bounced AUG/2026   0.00   52,777.89   16,049.45
 
 Date   Value Date   Particulars   DR (Rs)   CR (Rs)   Balance
+13-AUG-2026   13-AUG-2026
+R0000000~ Receipt No. R0000000   Bounced   Insufficient
+Balance   52,777.89   0.00   68,827.34
+15-AUG-2026   15-AUG-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+AUG/2026   0.00   29,027.84   39,799.50
+18-AUG-2026   18-AUG-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+AUG/2026   0.00   13,194.47   26,605.03
+21-AUG-2026   21-AUG-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   27   Clear AUG/2026   0.00   10,555.58   16,049.45
+31-AUG-2026   31-AUG-2026
+Late Payment Interest 03 AUG 26 Installment No : 27
+306.11   0.00   16,355.56
+03-SEP-2026   03-SEP-2026   Due For Instalment   28   52,777.89   0.00   69,133.45
+03-SEP-2026   03-SEP-2026
+Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
+Bounced SEP/2026   0.00   52,777.89   16,355.56
+03-SEP-2026   03-SEP-2026
+E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
+BALANCE   52,777.89   0.00   69,133.45
+03-SEP-2026   03-SEP-2026   Bounce Charges-Installment28- NA   1,770.00   0.00   70,903.45
+13-SEP-2026   13-SEP-2026
+Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
+Bounced SEP/2026   0.00   52,777.89   18,125.56
+13-SEP-2026   13-SEP-2026
+R0000000~ Receipt No. R0000000   Bounced   Insufficient
+Balance   52,777.89   0.00   70,903.45
+15-SEP-2026   15-SEP-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+SEP/2026   0.00   29,027.84   41,875.61
+18-SEP-2026   18-SEP-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+SEP/2026   0.00   13,194.47   28,681.14
+21-SEP-2026   21-SEP-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   28   Clear SEP/2026   0.00   10,555.58   18,125.56
 30-SEP-2026   30-SEP-2026
-Late Payment Interest 03 SEP 26 Installment No : 34
-1,143.11   0.00   24,744.04
-03-OCT-2026   03-OCT-2026   Due For Instalment   35   111,036.06   0.00   135,780.10
+Late Payment Interest 03 SEP 26 Installment No : 28
+242.78   0.00   18,368.34
+03-OCT-2026   03-OCT-2026   Due For Instalment   29   52,777.89   0.00   71,146.23
 03-OCT-2026   03-OCT-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced OCT/2026   0.00   111,036.06   24,744.04
+Bounced OCT/2026   0.00   52,777.89   18,368.34
 03-OCT-2026   03-OCT-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   135,780.10
-03-OCT-2026   03-OCT-2026   Bounce Charges-Installment35- NA   1,695.00   0.00   137,475.10
+BALANCE   52,777.89   0.00   71,146.23
+03-OCT-2026   03-OCT-2026   Bounce Charges-Installment29- NA   1,770.00   0.00   72,916.23
 13-OCT-2026   13-OCT-2026
 Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
-Bounced OCT/2026   0.00   111,036.06   26,439.04
+Bounced OCT/2026   0.00   52,777.89   20,138.34
 13-OCT-2026   13-OCT-2026
 R0000000~ Receipt No. R0000000   Bounced   Insufficient
-Balance   111,036.06   0.00   137,475.10
+Balance   52,777.89   0.00   72,916.23
+15-OCT-2026   15-OCT-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+OCT/2026   0.00   29,027.84   43,888.39
+18-OCT-2026   18-OCT-2026
+Online Pmnt Rcvd Vide ~ Receipt No.   O0000000 Clear
+OCT/2026   0.00   13,194.47   30,693.92
+21-OCT-2026   21-OCT-2026
+Online Pmnt Rcvd Vide ~ Receipt No   . O0000000 INR 10
+555.58 For Instalment   29   Clear OCT/2026   0.00   10,555.58   20,138.34
 31-OCT-2026   31-OCT-2026
-Late Payment Interest 03 OCT 26 Installment No : 35
-1,998.65   0.00   139,473.75
-31-OCT-2026   31-OCT-2026
-Cheque Pmnt Rcvd Vide 258192~ Receipt No.   FR0000000
-Clear OCT/2026   0.00   111,036.06   28,437.69
-03-NOV-2026   03-NOV-2026   Due For Instalment   36   111,036.06   0.00   139,473.75
+Late Payment Interest 03 OCT 26 Installment No : 29
+263.89   0.00   20,402.23
+03-NOV-2026   03-NOV-2026   Due For Instalment   30   52,777.89   0.00   73,180.12
 03-NOV-2026   03-NOV-2026
 Cheque Pmnt Rcvd Vide E0000000~ Receipt No.   E0000000
-Bounced NOV/2026   0.00   111,036.06   28,437.69
+Bounced NOV/2026   0.00   52,777.89   20,402.23
 03-NOV-2026   03-NOV-2026
 E0000000~ Receipt No. E0000000   Bounced   INSUFFICIENT
-BALANCE   111,036.06   0.00   139,473.75
-03-NOV-2026   03-NOV-2026   Bounce Charges-Installment36- NA   1,695.00   0.00   141,168.75
+BALANCE   52,777.89   0.00   73,180.12
+03-NOV-2026   03-NOV-2026   Bounce Charges-Installment30- NA   1,770.00   0.00   74,950.12
 13-NOV-2026   13-NOV-2026
 Cheque Pmnt Rcvd Vide R0000000~ Receipt No.   R0000000
-Bounced NOV/2026   0.00   111,036.06   30,132.69
+Bounced NOV/2026   0.00   52,777.89   22,172.23
 13-NOV-2026   13-NOV-2026
 R0000000~ Receipt No. R0000000   Bounced   Insufficient
-Balance   111,036.06   0.00   141,168.75
-24-NOV-2026   24-NOV-2026   Current Month Overdue-   1,554.51   0.00   142,723.26
+Balance   52,777.89   0.00   74,950.12
+24-NOV-2026   24-NOV-2026   Current Month Overdue-   738.89   0.00   75,689.01
 PART PAYMENT SUMMARY
 Repayment Effective Date   Part payment amount   Impact
 NA   NA   NA
@@ -453,28 +426,25 @@ The amounts reflected above do not include (i) payment bounce charges (ii) legal
 applicable taxes will be payable by the borrower at the time of loan foreclosure if any.
 BOUNCE SUMMARY
 Date of Bounce   Narration   Amount   REASON
-03-AUG-2024   EMI-9 - AUG/2024   98262   Miscellaneous KYC Doc Pending
-
-03-SEP-2024   EMI-10 - SEP/2024   98262   Misc-KYC documents pending
-03-OCT-2024   EMI-11 - OCT/2024   98262   Miscellaneous KYC Doc Pending
-03-JUL-2025   EMI-20 - JUL/2025   98262   INSUFFICIENT BALANCE
-03-SEP-2025   EMI-22 - SEP/2025   98262   INSUFFICIENT BALANCE
-03-OCT-2025   EMI-23 - OCT/2025   98262   INSUFFICIENT BALANCE
-03-JAN-2026   EMI-26 - JAN/2026   98262   INSUFFICIENT BALANCE
-03-FEB-2026   EMI-27 - FEB/2026   98262   INSUFFICIENT BALANCE
-03-MAR-2026   EMI-28 - MAR/2026   98262   INSUFFICIENT BALANCE
-03-APR-2026   EMI-29 - APR/2026   98262   INSUFFICIENT BALANCE
-03-JUN-2026   EMI-31 - JUN/2026   98262   INSUFFICIENT BALANCE
-03-JUL-2026   EMI-32 - JUL/2026   98262   INSUFFICIENT BALANCE
-14-JUL-2026   EMI-   98262   Insufficient Balance
-03-AUG-2026   EMI-33 - AUG/2026   98262   INSUFFICIENT BALANCE
-12-AUG-2026   EMI-33 - AUG/2026   98262   Insufficient Balance
-03-SEP-2026   EMI-34 - SEP/2026   98262   INSUFFICIENT BALANCE
-18-SEP-2026   EMI-34 - SEP/2026   20000   Insufficient Balance
-03-OCT-2026   EMI-35 - OCT/2026   98262   INSUFFICIENT BALANCE
-13-OCT-2026   EMI-35 - OCT/2026   98262   Insufficient Balance
-03-NOV-2026   EMI-36 - NOV/2026   98262   INSUFFICIENT BALANCE
-13-NOV-2026   EMI-36 - NOV/2026   98262   Insufficient Balance
+03-SEP-2024   EMI-4 - SEP/2024   46708   Miscellaneous KYC Doc Pending
+03-OCT-2024   EMI-5 - OCT/2024   46708   Misc-KYC documents pending
+03-NOV-2024   EMI-6 - NOV/2024   46708   Miscellaneous KYC Doc Pending
+03-AUG-2025   EMI-15 - AUG/2025   46708   INSUFFICIENT BALANCE
+03-OCT-2025   EMI-17 - OCT/2025   46708   INSUFFICIENT BALANCE
+03-JAN-2026   EMI-20 - JAN/2026   46708   INSUFFICIENT BALANCE
+03-FEB-2026   EMI-21 - FEB/2026   46708   INSUFFICIENT BALANCE
+03-MAR-2026   EMI-22 - MAR/2026   46708   INSUFFICIENT BALANCE
+03-MAY-2026   EMI-24 - MAY/2026   46708   INSUFFICIENT BALANCE
+03-JUL-2026   EMI-26 - JUL/2026   46708   INSUFFICIENT BALANCE
+13-JUL-2026   EMI-26 - JUL/2026   46708   Insufficient Balance
+03-AUG-2026   EMI-27 - AUG/2026   46708   INSUFFICIENT BALANCE
+13-AUG-2026   EMI-27 - AUG/2026   46708   Insufficient Balance
+03-SEP-2026   EMI-28 - SEP/2026   46708   INSUFFICIENT BALANCE
+13-SEP-2026   EMI-28 - SEP/2026   46708   Insufficient Balance
+03-OCT-2026   EMI-29 - OCT/2026   46708   INSUFFICIENT BALANCE
+13-OCT-2026   EMI-29 - OCT/2026   46708   Insufficient Balance
+03-NOV-2026   EMI-30 - NOV/2026   46708   INSUFFICIENT BALANCE
+13-NOV-2026   EMI-30 - NOV/2026   46708   Insufficient Balance
 The Company shall have a right to recover the bounce charges as per the below table.
 BOUNCE CHARGES
 A. Repayment/EMI Bounce Charges   Charges in Rs   Loan sanction amount in Rs.
@@ -487,21 +457,6 @@ Disclaimer:
 •   The information contained in this SOA is intended to provide a summary of personal data, payment details and loan particulars to
 the customer/borrower. It should be used by the customer/borrower only for the purpose of ascertaining the accounting status of
 the loan and not for any statutory or regulatory purpose.
-•   While providing all the information contained hereinabove, due care has been taken by L&T Finance Limited, (“LTF”) to record the
-loan particulars and customer/borrower payment details appropriately for accounting purposes as on the statement date as per
-the information and other documents made available by the customer/borrower to LTF, LTF shall not be responsible for any monetary
-losses or subsequent damages arising out of any accounting or reporting errors except for any clerical errors. Any error in the SOA
-will be rectified by LTF either suo moto or upon being intimated by the customer/borrower.
-•   All credits given in relation to the Loan with respect to Cheque / Other payment instruments are subject to clearance of the Cheque/
-Other payment instrument.
-•   LTF reserves the right to levy charges/ additional interest as per the terms of the loan agreement. The charges mentioned in this
-SOA are not exhaustive. Please refer to the loan agreement for an exhaustive list of applicable charges.
-•   All contents of this SOA will be deemed to be correct and accepted by you, unless you inform us of any discrepancies through a signed
-letter within 21 (twenty one) days from the date of this SOA. Delay in informing will be considered as a confirmation from you that
-the details provided in this SOA by LTF are correct and/or accurate.
 •   This SOA is a system generated document, hence no signature is required. Any unauthorized use, disclosure, dissemination or
 copying of this document is strictly prohibited and may be unlawful.
 •   Deposits are subject to realization.
-•   I/ We hereby declare that though our aggregate turnover in any preceding financial year from 2017-18 onwards is more than the
-aggregate turnover notified under sub-rule (4) of rule 48, we are not required to prepare an invoice in terms of the provisions of
-the said sub-rule.

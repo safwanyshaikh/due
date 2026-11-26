@@ -1,4 +1,4 @@
-/** Regression tests on an anonymised Union Bank of India savings statement (amounts ×1.13). */
+/** Regression tests on a synthetic Union Bank of India savings statement (scripts/generate-statement-fixtures.mjs). */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -52,9 +52,9 @@ function fixtureSums() {
 describe('Union Bank multi-line statement', () => {
   const lines = parseStatementText(UNION, 'bank');
 
-  it('reads all 540 rows; page headers and footers are ignored', () => {
-    expect(fixtureSums().rows).toBe(540);
-    expect(lines).toHaveLength(540);
+  it('reads all 240 rows; page headers and footers are ignored', () => {
+    expect(fixtureSums().rows).toBe(240);
+    expect(lines).toHaveLength(240);
     for (const l of lines)
       expect(l.narration).not.toMatch(
         /system generated|LOAN PRODUCTS|Page No|Tran Id|For any queries/i,
@@ -62,12 +62,12 @@ describe('Union Bank multi-line statement', () => {
     expect(lines[0]).toMatchObject({
       date: '2026-08-02',
       time: '18:56:36',
-      amountInr: 203.4,
-      balanceInr: 5604.87,
+      amountInr: 187.25,
+      balanceInr: 5925.15,
     });
     expect(lines[2]).toMatchObject({
       narration: 'MAND DR-Insufficient Balance-Service Charges',
-      amountInr: 533.36,
+      amountInr: 531.3,
       lineKind: 'fee',
     });
     // Tran Id split over two lines ("SMB8D170" / "0") is not part of the remarks.
@@ -88,9 +88,9 @@ describe('Union Bank multi-line statement', () => {
     const credits = lines.filter((l) => l.amountInr < 0).reduce((s, l) => s - l.amountInr, 0);
     expect(Math.round(debits * 100) / 100).toBe(sums.debits);
     expect(Math.round(credits * 100) / 100).toBe(sums.credits);
-    expect(lines.find((l) => /NEFT:PAYEE009/.test(l.narration))!.amountInr).toBe(-5650);
+    expect(lines.find((l) => /NEFT:PAYEE009/.test(l.narration))!.amountInr).toBe(-7080);
     expect(lines.find((l) => /NEFTO-PAYEE123/.test(l.narration))).toMatchObject({
-      amountInr: 141798.05,
+      amountInr: 78846.91,
       narration: 'NEFTO-PAYEE123 FINANCE LIMITED 000000',
     });
   });
@@ -128,7 +128,7 @@ describe('Union Bank multi-line statement', () => {
     expect(by.google_workspace).toMatchObject({
       cadence: 'monthly',
       kind: 'subscription',
-      averageInr: 866.71,
+      averageInr: 1185.5,
       occurrences: 4,
     });
     expect(by.gpay_bills.kind).toBe('usage_topup');
@@ -173,29 +173,29 @@ describe('bank summary: failed auto-debits, morning balances, price steps', () =
 
   it('counts failed auto-debit charges per month', () => {
     expect(s.bank).toBe('Union Bank of India');
-    expect([s.periodFrom, s.periodTo]).toEqual(['2026-08-01', '2026-11-24']);
+    expect([s.periodFrom, s.periodTo]).toEqual(['2026-08-01', '2026-11-21']);
     expect(s.failedAutoDebits).toEqual([
-      { month: '2026-08', count: 4, chargesInr: 2133.44 },
-      { month: '2026-09', count: 3, chargesInr: 1600.08 },
-      { month: '2026-10', count: 4, chargesInr: 2133.44 },
-      { month: '2026-11', count: 4, chargesInr: 2133.44 },
+      { month: '2026-08', count: 3, chargesInr: 1593.9 },
+      { month: '2026-09', count: 2, chargesInr: 1062.6 },
+      { month: '2026-10', count: 3, chargesInr: 1593.9 },
+      { month: '2026-11', count: 4, chargesInr: 2125.2 },
     ]);
     // A prorated first Workspace month (₹56 → ₹867) is not a price rise.
     expect(s.priceSteps).toEqual([]);
   });
 
   it('incomeTiming: balance at 09:00 on the 3rd vs the EMIs', () => {
-    const months = incomeTiming(parseStatementText(UNION, 'bank'), 3, 141798.05);
+    const months = incomeTiming(parseStatementText(UNION, 'bank'), 3, 78846.91);
     expect(months.map((m) => [m.date, m.balanceInr])).toEqual([
-      ['2026-08-03', 4482.22],
-      ['2026-09-03', 8442.74],
-      ['2026-10-03', 6114.84],
-      ['2026-11-03', 8201.2],
+      ['2026-08-03', 4800.4],
+      ['2026-09-03', 951.96],
+      ['2026-10-03', 941.38],
+      ['2026-11-03', 3032.08],
     ]);
-    expect(months[0].shortfallInr).toBe(137315.83);
-    expect(incomeTiming(s, 3, 141798.05)).toEqual(months);
-    expect(timingSentence(s, 3, 141798.05)).toBe(
-      'On the 3rd your balance was ₹6,810 against ₹1,41,798 of EMIs in 4 of 4 months.',
+    expect(months[0].shortfallInr).toBe(74046.51);
+    expect(incomeTiming(s, 3, 78846.91)).toEqual(months);
+    expect(timingSentence(s, 3, 78846.91)).toBe(
+      'On the 3rd your balance was ₹2,431 against ₹78,847 of EMIs in 4 of 4 months.',
     );
   });
 
@@ -236,8 +236,8 @@ describe('bank summary: failed auto-debits, morning balances, price steps', () =
     const m = computeMoves(data, catalogWith(), NOW).moves.find((x) => x.kind === 'fee_leak')!;
     expect(m).toMatchObject({
       id: 'fee_leak:failed_debit:bank-union-bank-of-india',
-      title: 'Your bank charged ₹8,000 for 15 failed auto-debits',
-      monthlySavingInr: 2000,
+      title: 'Your bank charged ₹6,376 for 12 failed auto-debits',
+      monthlySavingInr: 1594,
     });
   });
 
@@ -253,9 +253,9 @@ describe('bank summary: failed auto-debits, morning balances, price steps', () =
     );
     expect(moves).toHaveLength(1);
     expect(moves[0].why).toBe(
-      'EMI bounced 15 times in 12 months: ₹16,950 in bounce charges + ₹13,183 late interest. Your bank charged ₹8,000 for 15 failed auto-debits. On the 3rd your balance was ₹6,810 against ₹1,37,105 of EMIs in 4 of 4 months. Or ask the lender to move the EMI date nearer your income date.',
+      'EMI bounced 14 times in 12 months: ₹15,930 in bounce charges + ₹2,702 late interest. Your bank charged ₹6,376 for 12 failed auto-debits. On the 3rd your balance was ₹2,431 against ₹78,847 of EMIs in 4 of 4 months. Or ask the lender to move the EMI date nearer your income date.',
     );
-    // (₹16,950 + ₹13,183.16) / 12 + ₹8,000.40 over 4 months
-    expect(moves[0].monthlySavingInr).toBe(4511);
+    // (₹15,930 + ₹2,702.23) / 12 + ₹6,375.60 over 4 months
+    expect(moves[0].monthlySavingInr).toBe(3147);
   });
 });

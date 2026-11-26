@@ -1,4 +1,4 @@
-/** Precision fixes (synthetic lines) and new formats (anonymised fixtures, amounts ×1.13). */
+/** Precision fixes (synthetic lines) and new formats (synthetic fixtures). */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -319,12 +319,12 @@ describe('B. JioFiber bill', () => {
 describe('C. Google Pay statement', () => {
   const lines = parseStatementText(fx('gpay-statement.txt'), 'bank');
   it('reads rows (the cut-off last row is skipped) with kinds and payment source', () => {
-    expect(lines).toHaveLength(132);
+    expect(lines).toHaveLength(105);
     expect(lines[0]).toMatchObject({
-      date: '2026-05-01',
-      time: '06:46:00',
-      narration: 'Paid to DARGAH HOTEL',
-      amountInr: 118.65,
+      date: '2026-05-03',
+      time: '07:13:00',
+      narration: 'Paid to SAMPLE MART',
+      amountInr: 684.3,
       source: 'card',
       paidBy: 'State Bank of India 0000 | RuPay credit card',
     });
@@ -347,7 +347,7 @@ describe('C. Google Pay statement', () => {
         {
           paidBy: 'State Bank of India 0000 | RuPay credit card',
           last4: '0000',
-          totalInr: 15040.59,
+          totalInr: 17930.35,
           months: 1,
         },
       ],
@@ -366,7 +366,7 @@ describe('C. Google Pay statement', () => {
     expect(m).toMatchObject({
       title:
         'Paying daily UPI with card ending 0000 while it carries a balance: these start costing ~3.75%/month at once',
-      monthlySavingInr: 564,
+      monthlySavingInr: 672,
       confidence: 'low',
       kind: 'fee_leak',
     });
@@ -419,8 +419,8 @@ describe('D. SBI Gold Loan OD', () => {
     expect(x).toMatchObject({
       title:
         'Card debt costs ~45%/yr, your gold loan ~9.7%: ask your bank whether a gold revaluation can raise the drawing power to clear the card',
-      // card finance charge ₹13,244.58 − ₹3,52,153.20 × 9.7% / 12
-      monthlySavingInr: 10398,
+      // card finance charge ₹14,310.62 − ₹3,89,760.97 × 9.7% / 12
+      monthlySavingInr: 11160,
       confidence: 'low',
       effort: 'paperwork',
       legalNote: "Information only. Check your bank's own offer.",

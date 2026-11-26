@@ -30,7 +30,7 @@ describe('QA regressions', () => {
     const r1 = addCardBill(dataWith(), newer, { now: NOW });
     const r2 = addCardBill(r1.data, older, { now: NOW });
     expect(r2.data.commitments).toHaveLength(1);
-    expect(r2.data.commitments[0]).toMatchObject({ amountPaise: 679130, nextDue: '2026-12-05' });
+    expect(r2.data.commitments[0]).toMatchObject({ amountPaise: 243582, nextDue: '2026-12-02' });
     expect(r2.data.savings.statements).toHaveLength(2);
   });
 
