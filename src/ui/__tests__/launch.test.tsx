@@ -223,6 +223,35 @@ describe('legal pages', () => {
     await screen.findByText('Render');
   });
 
+  it('refund, delivery, contact and cookies pages render from the legal data; incomplete data hides them', async () => {
+    const full = {
+      ...LEGAL,
+      complete: true,
+      refundPolicyMd: '## Cancel any time\n\nNo refund on used months.',
+      deliveryPolicyMd: '## Digital service\n\nNothing is shipped.',
+      contactMd: '## Reach us\n\nEmail support.',
+      cookiesMd: '## Local storage\n\nStored on your device.',
+    };
+    fakePlatform({ 'GET /api/public/legal': full, 'GET /api/public/status': STATUS() });
+    for (const [doc, h] of [
+      ['refund', 'Cancel any time'],
+      ['delivery', 'Digital service'],
+      ['contact', 'Reach us'],
+      ['cookies', 'Local storage'],
+    ]) {
+      renderApp({ hash: `#/legal/${doc}` });
+      await screen.findByRole('heading', { name: h });
+      cleanup();
+    }
+    fakePlatform({
+      'GET /api/public/legal': { ...full, complete: false },
+      'GET /api/public/status': STATUS(),
+    });
+    renderApp({ hash: '#/legal/refund' });
+    await screen.findByText(/Legal details are being finalised/);
+    expect(document.body.textContent).not.toContain('No refund on used months');
+  });
+
   it('shows the incident banner from /api/public/status', async () => {
     fakePlatform({
       'GET /api/public/status': STATUS(
@@ -316,8 +345,10 @@ describe('Gmail connect', () => {
   });
 
   it('asks a signed-out person to sign in instead of redirecting', async () => {
+    fakePlatform({ 'GET /api/public/status': STATUS({ gmail: 'test_mode' }) });
     setAccountWrappers(gmailFake(), null);
     renderApp({ hash: '#/start' });
+    await waitFor(() => expect(document.querySelector('[data-choice="gmail"]')).toBeTruthy());
     fireEvent.click(document.querySelector('[data-choice="gmail"]') as HTMLElement);
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('link', { name: 'Sign in to connect Gmail' })).toBeTruthy();

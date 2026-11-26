@@ -198,3 +198,16 @@ describe('native helpers', () => {
     expect(signInTarget(new URL(`https://due.karigarai.com/other?token=${t}`))).toBeNull();
   });
 });
+
+describe('opened files (round-2 mobile)', () => {
+  it("never reads Due's own private files or file:// on Android; iOS only from Documents/Inbox", async () => {
+    const { openedFileAllowed } = await import('../native');
+    expect(openedFileAllowed('content://com.android.providers.downloads.documents/document/12', 'android')).toBe(true);
+    expect(openedFileAllowed('file:///data/data/com.karigarai.due/shared_prefs/x.xml', 'android')).toBe(false);
+    expect(openedFileAllowed('content://com.karigarai.due.fileprovider/my_cache/a.pdf', 'android')).toBe(false);
+    expect(openedFileAllowed('file:///var/mobile/Containers/Data/Application/ABC/Documents/Inbox/Bill.pdf', 'ios')).toBe(true);
+    expect(openedFileAllowed('file:///var/mobile/Containers/Data/Application/ABC/Library/Cookies/x', 'ios')).toBe(false);
+    expect(openedFileAllowed('file:///var/mobile/x/Documents/Inbox/../../Library/a.pdf', 'ios')).toBe(false);
+    expect(openedFileAllowed('content://evil', 'ios')).toBe(false);
+  });
+});

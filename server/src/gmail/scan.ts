@@ -3,8 +3,10 @@ import { addMinutes } from '../clock.js';
 import { computeEntitlement } from '../consumer/entitlements.js';
 import { one, withTransaction } from '../db.js';
 import { encryptText } from '../intake/crypto.js';
+import { hasConsent } from '../consumer/consents.js';
 import { parseMessage } from '../intake/parser.js';
-import { activeTemplates } from '../intake/service.js';
+import { activeTemplates, rawTextContext } from '../intake/service.js';
+import { randomUUID } from 'node:crypto';
 import type { IdentityRow } from '../identities/service.js';
 import { sha256 } from '../util.js';
 import { getAttachment, getMessage, GoogleError, listMessages } from './google.js';
@@ -102,6 +104,13 @@ export async function runGmailScan(deps: GmailDeps, rawPayload: unknown): Promis
       WHERE id = $1 AND kind = 'gmail' AND status = 'active' AND (scan_running_since IS NULL OR scan_running_since < $3) RETURNING *`,
     [payload.identityId, startedAt, new Date(startedAt.getTime() - SCAN_LOCK_STALE_MS)],
   );
+  // M-D: a withdrawn (or never recorded) Gmail consent stops every scan, even one queued before the withdrawal.
+  if (ident && !(await hasConsent(pool, ident.account_id, 'gmail'))) {
+    await pool.query('UPDATE email_identities SET scan_running_since = NULL WHERE id = $1', [ident.id]);
+    const s: ScanSummary = { ...summary, status: 'cancelled', code: 'consent_withdrawn' };
+    await finishRun(s);
+    return s;
+  }
   if (!ident) {
     const cur = await one<{ status: string }>(pool, 'SELECT status FROM email_identities WHERE id = $1', [payload.identityId]);
     const s: ScanSummary = cur?.status === 'active' ? { ...summary, status: 'skipped', code: 'scan_in_progress' } : { ...summary, status: 'cancelled', code: 'identity_not_active' };
@@ -219,7 +228,8 @@ export async function runGmailScan(deps: GmailDeps, rawPayload: unknown): Promis
         );
         if (dup) return 'duplicate';
         const excerpt = parsed.redactedText.trim().slice(0, EXCERPT_CHARS);
-        const raw = key && excerpt ? encryptText(key, excerpt) : null;
+        const eventId = randomUUID();
+        const raw = key && excerpt ? encryptText(key, excerpt, rawTextContext(eventId)) : null;
         const internal = Number(msg.internalDate);
         const sourceMeta = {
           source: 'gmail',
@@ -233,9 +243,9 @@ export async function runGmailScan(deps: GmailDeps, rawPayload: unknown): Promis
           attachmentsSkipped: ident.attachments_enabled ? ex.attachmentCount - ex.readableAttachments.length : ex.attachmentCount,
         };
         await c.query(
-          `INSERT INTO user_events (account_id, identity_id, intake_type, message_fingerprint, message_id_hash, source_domain, extracted_fields,
+          `INSERT INTO user_events (id, account_id, identity_id, intake_type, message_fingerprint, message_id_hash, source_domain, extracted_fields,
               confidence, review_status, raw_text, raw_retention_until, parser_version, source_meta, created_at, updated_at)
-           VALUES ($1,$2,'gmail',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)`,
+           VALUES ($14,$1,$2,'gmail',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)`,
           [
             ident.account_id,
             ident.id,
@@ -250,6 +260,7 @@ export async function runGmailScan(deps: GmailDeps, rawPayload: unknown): Promis
             parsed.parserVersion,
             JSON.stringify(sourceMeta),
             now,
+            eventId,
           ],
         );
         return 'created';

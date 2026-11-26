@@ -43,6 +43,12 @@ const EnvSchema = z.object({
   TRUST_PROXY_HOPS: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().int().min(0).max(5).optional()),
   /** Optional comma-separated IPs/CIDRs allowed to reach the admin console and admin API. Unset: any IP. */
   ADMIN_ALLOWED_IPS: z.string().optional(),
+  /**
+   * Optional header the platform proxy sets to the client IP and overwrites on every request (e.g. Cloudflare's
+   * `cf-connecting-ip`). Set it only when the platform documents that guarantee; otherwise clients could spoof it.
+   * When set, it replaces the TRUST_PROXY_HOPS derivation. See docs/production/SECURITY.md (Client IP).
+   */
+  CLIENT_IP_HEADER: z.string().optional(),
   ADMIN_DIST: z.string().optional(),
   APP_DIST: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().optional(),
@@ -177,6 +183,8 @@ export interface AppConfig {
   smtpFrom: string | null;
   /** Trusted proxy hop count (0 = ignore X-Forwarded-For). */
   trustProxyHops: number;
+  /** Lower-case header name carrying the client IP (CLIENT_IP_HEADER), or null to use TRUST_PROXY_HOPS. */
+  clientIpHeader: string | null;
   /** Admin console/API IP allowlist (IPs or CIDRs); empty = no restriction. */
   adminAllowedIps: string[];
   adminDist: string | null;
@@ -293,6 +301,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     smtpFrom: e.SMTP_FROM?.trim() ? e.SMTP_FROM.trim() : null,
     trustProxyHops: e.TRUST_PROXY_HOPS ?? (isProduction ? 1 : 0),
     adminAllowedIps: parseIpList(e.ADMIN_ALLOWED_IPS),
+    clientIpHeader: /^[a-z0-9-]{3,64}$/i.test(e.CLIENT_IP_HEADER?.trim() ?? '') ? e.CLIENT_IP_HEADER!.trim().toLowerCase() : null,
     adminDist: e.ADMIN_DIST ?? null,
     appDist: e.APP_DIST ?? null,
     sessionIdleMs: 60 * 60 * 1000,

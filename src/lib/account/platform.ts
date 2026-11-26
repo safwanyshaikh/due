@@ -37,6 +37,10 @@ export interface LegalContent {
   privacyPolicyMd: string;
   termsMd: string;
   deletionPolicyMd: string;
+  refundPolicyMd?: string;
+  deliveryPolicyMd?: string;
+  contactMd?: string;
+  cookiesMd?: string;
   subprocessors: { name: string; purpose: string; region: string }[];
   effectiveDate: string | null;
   /** False while any required field is empty or placeholder: show "Legal details incomplete". */

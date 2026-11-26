@@ -85,7 +85,7 @@ for (const [width, height] of [
     await targets48(page, '[data-testid="entity-question"] button');
 
     await card.getByRole('button', { name: /Yes, I own\/run it/ }).click();
-    await expect(card.getByText(/A Private Limited’s loans are the company’s/)).toBeVisible();
+    await expect(card.getByText(/A registered company .* Its loans are the company’s/)).toBeVisible();
     await card.getByText('LLP', { exact: true }).click();
     await card.getByText('Designated partner', { exact: true }).click();
     await card

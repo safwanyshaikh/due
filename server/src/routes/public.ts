@@ -25,17 +25,11 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     return cache.body;
   });
 
-  // Cross-calculation: possible included benefits for a plan the user added (nothing is stored). The app POSTs the
-  // provider and price in the body so they never appear in URLs, access logs or caches (M5). The older GET form
-  // still answers, with its query values masked in logs (redactUrl).
+  // Cross-calculation: possible included benefits for a plan the user added (nothing is stored). Only POST: the
+  // provider and price travel in the body, never in URLs, access logs or caches (M5; the GET form was removed).
   const matchLimit = { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } };
   app.post('/api/public/offers/match', matchLimit, async (req, reply) => {
     const q = parse(MatchQuery.strict(), req.body ?? {});
-    reply.header('Cache-Control', 'no-store');
-    return matchOffers(pool, q, clock());
-  });
-  app.get('/api/public/offers/match', matchLimit, async (req, reply) => {
-    const q = parse(MatchQuery, req.query);
     reply.header('Cache-Control', 'no-store');
     return matchOffers(pool, q, clock());
   });

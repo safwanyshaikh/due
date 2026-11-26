@@ -9,6 +9,8 @@ import { Glyph, type GlyphName } from '../components/Glyph';
 import { download } from '../common';
 import { AppLockPanel } from '../components/AppLockPanel';
 import { setTelemetryOptOut, telemetryOptedOut } from '../lib/telemetrySink';
+import { LANGS, type Lang } from '../../content/i18n';
+import { setLang, useLang } from '../lib/lang';
 import type { ThemeChoice } from '../lib/motion';
 
 const LINKS: { href: string; icon: GlyphName; label: string }[] = [
@@ -19,12 +21,13 @@ const LINKS: { href: string; icon: GlyphName; label: string }[] = [
   { href: '#/connections', icon: 'link', label: 'Connections and email identities' },
   { href: '#/import', icon: 'upload', label: 'Import' },
   { href: '#/all', icon: 'grid', label: 'All items list' },
-  { href: '#/legal', icon: 'info', label: 'Legal: privacy, terms, deletion, grievance' },
+  { href: '#/legal', icon: 'info', label: 'Legal: privacy, terms, refunds, contact, deletion' },
 ];
 
 export function SettingsScreen() {
   const { data, wipe } = useApp();
   const { reduceMotion, setReduceMotion, theme, setTheme } = useUiPrefs();
+  const lang = useLang();
   const [optOut, setOptOut] = useState(() => telemetryOptedOut());
   return (
     <div className="page2">
@@ -75,6 +78,19 @@ export function SettingsScreen() {
             <option value="system">Match my device</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
+          </select>
+        </Field>
+        <Field
+          label="Language"
+          htmlFor="st-lang"
+          hint="Hindi covers the welcome page, Home summary and Savings headline. Everything else stays in English for now."
+        >
+          <select id="st-lang" value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+            {LANGS.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.label}
+              </option>
+            ))}
           </select>
         </Field>
         <label className="switch-row">

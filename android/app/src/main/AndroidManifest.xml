@@ -3,6 +3,8 @@
 
     <application
         android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -27,8 +29,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <!-- content:// only: file:// URIs can point at Due's own private files (readOpenedFile also refuses them). -->
                 <data android:scheme="content" />
-                <data android:scheme="file" />
                 <data android:mimeType="application/pdf" />
             </intent-filter>
 

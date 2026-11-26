@@ -13,10 +13,11 @@ import { StartChoices } from '../components/StartChoices';
 import { Icon } from '../Icon';
 import { useCatalog } from '../offers/catalogStore';
 import { offersTileText } from '../lib/offersTile';
-import { greeting, homeTiles, type HomeTile } from '../lib/homeTiles';
+import { useT } from '../lib/lang';
+import { greeting, homeTiles, summaryHeadline, type HomeTile } from '../lib/homeTiles';
 import { inr, weekdayDate } from '../lib/format';
 import { readJsonPref, writeJsonPref } from '../lib/prefs';
-import { HomeSavingsEntry } from '../savings/HomeSavingsEntry';
+import { HomeSavingsEntry, HomeSavingsHero, useFoundSummary } from '../savings/HomeSavingsEntry';
 import { activeObligations } from '../../lib/obligations';
 import { findProfile, scopeData } from '../../lib/profiles';
 import { ENTITY_EXPLAIN, ENTITY_LABEL } from '../../content/profiles';
@@ -29,14 +30,19 @@ function SummaryCard({
   monthLabel,
   unknown,
   next,
+  next30,
   onWhy,
 }: {
   monthTotal: number;
   monthLabel: string;
   unknown: number;
   next: ObligationView | null;
+  next30: { totalPaise: number; unknownAmountCount: number };
   onWhy: () => void;
 }) {
+  const { found } = useFoundSummary();
+  const t = useT();
+  const head = summaryHeadline(monthTotal, unknown, monthLabel, next30);
   const [sheet, setSheet] = useState<null | 'review' | 'snooze'>(null);
   const risk = next?.status === 'overdue';
   return (
@@ -48,15 +54,17 @@ function SummaryCard({
       <div className="summary-top">
         <div className="summary-month">
           <h2 id="summary-title" className="eyebrow">
-            Planned in {monthLabel}
+            {head.next30 ? t('home.next30') : t('home.planned', { m: monthLabel })}
           </h2>
-          <p className="summary-total amt">
-            {inr(monthTotal)}
-            {unknown > 0 && <span className="muted small"> + {unknown} without amount</span>}
+          <p className="summary-total amt" data-testid="summary-total">
+            {inr(head.paise)}
+            {head.unknown > 0 && (
+              <span className="muted small"> + {head.unknown} without amount</span>
+            )}
           </p>
         </div>
         <div className="summary-top-actions">
-          <HomeSavingsEntry />
+          {!found && <HomeSavingsEntry />}
           <button
             type="button"
             className="text-btn press"
@@ -67,6 +75,7 @@ function SummaryCard({
           </button>
         </div>
       </div>
+      <HomeSavingsHero />
       {next ? (
         <>
           <div className="summary-next" data-testid="summary-next">
@@ -186,7 +195,18 @@ export function Home() {
   );
   const success = useTileSuccess(tiles);
   const [why, setWhy] = useState(false);
-  const hi = greeting(new Date(), tz || 'Asia/Kolkata');
+  const tt = useT();
+  const hi0 = greeting(new Date(), tz || 'Asia/Kolkata');
+  const hi = {
+    ...hi0,
+    hello: tt(
+      hi0.hello === 'Good morning'
+        ? 'home.morning'
+        : hi0.hello === 'Good afternoon'
+          ? 'home.afternoon'
+          : 'home.evening',
+    ),
+  };
   const empty =
     (sel === 'all' ? views.length === 0 : activeObligations(all).length === 0) &&
     pendingImports(all).length === 0;
@@ -217,6 +237,7 @@ export function Home() {
         monthLabel={monthName(t.y, t.m).split(' ')[0]}
         unknown={month.unknownAmountCount}
         next={s.next}
+        next30={s.next30}
         onWhy={() => setWhy(true)}
       />
 
@@ -280,7 +301,14 @@ export function Home() {
                 estimated={s.next30.estimatedCount}
               />
             </p>
-            <CashCalendar data={data} />
+            {s.next30.count >= 3 ? (
+              <CashCalendar data={data} />
+            ) : (
+              <details className="more" data-testid="calendar-collapsed">
+                <summary className="press">Show the month calendar</summary>
+                <CashCalendar data={data} />
+              </details>
+            )}
           </section>
 
           <nav className="more-links" aria-label="More">
@@ -304,10 +332,12 @@ export function Home() {
         <Sheet title="How this summary works" onClose={() => setWhy(false)}>
           <dl className="why">
             <div>
-              <dt>Planned this month</dt>
+              <dt>Planned this month, or the next 30 days</dt>
               <dd>
-                Every unpaid due date in {monthName(t.y, t.m)} from what you entered or approved,
-                totalling {inr(month.totalPaise)}.
+                When this month has nothing left to pay but a bill falls in the next 30 days, the
+                big number shows those 30 days instead. Otherwise it is every unpaid due date in{' '}
+                {monthName(t.y, t.m)} from what you entered or approved, totalling{' '}
+                {inr(month.totalPaise)}.
                 {month.unknownAmountCount
                   ? ` ${month.unknownAmountCount} without an amount are not counted as zero.`
                   : ''}

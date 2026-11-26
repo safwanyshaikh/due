@@ -57,10 +57,11 @@ export const SOURCE_KIND_LABEL: Record<SourceRef['kind'], string> = {
   user_shared: 'Shared by a user',
 };
 
-export function lastChecked(s: SourceRef): string {
-  if (!s.lastVerifiedAt) return 'Not checked yet';
+/** "Price checked 3 Nov 2026", or null: an unchecked source shows no status rather than "Not checked yet". */
+export function lastChecked(s: SourceRef): string | null {
+  if (!s.lastVerifiedAt) return null;
   const d = s.lastVerifiedAt.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? `Last checked ${formatDate(d)}` : 'Not checked yet';
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? `Price checked ${formatDate(d)}` : null;
 }
 
 export const MODE_LABEL: Record<TransportMode, string> = {

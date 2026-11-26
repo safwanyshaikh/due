@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Narrow FileProvider: only the cache's exports/ folder (CSV/JSON exports the person chose to share) and the
+     app-specific Pictures folder the WebView uses for a camera capture. No shared external storage, no other
+     cache or private files. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <cache-path name="exports" path="exports/" />
+    <external-files-path name="captures" path="Pictures/" />
 </paths>

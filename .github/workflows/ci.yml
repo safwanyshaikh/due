@@ -27,6 +27,8 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test
       - run: npm run build
+      # The native app has no server to send a CSP header: its build must carry the meta-tag policy.
+      - run: npx vite build --mode native --outDir dist-native && node scripts/check-native-csp.mjs dist-native
 
   admin:
     name: Admin - lint, typecheck, unit tests, build

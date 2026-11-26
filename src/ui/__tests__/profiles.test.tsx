@@ -90,7 +90,9 @@ describe('“Is this your business?” after a statement import', () => {
     const card = importStatement();
     fireEvent.click(within(card).getByRole('button', { name: /Yes, I own\/run it/ }));
     const llp = within(card).getByRole('radio', { name: /^LLP/ });
-    expect(within(card).getByText(/A Private Limited’s loans are the company’s/)).toBeVisible();
+    expect(
+      within(card).getByText(/A registered company .* Its loans are the company’s/),
+    ).toBeVisible();
     // Nothing is chosen for the person.
     expect(
       within(card)

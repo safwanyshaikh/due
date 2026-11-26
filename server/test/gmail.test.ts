@@ -459,7 +459,7 @@ describe('gmail scan', () => {
     const e = (await pool.query(`SELECT * FROM user_events WHERE intake_type = 'gmail'`)).rows[0];
     expect(e.extracted_fields.amountInr).toBe(15000);
     expect(e.source_meta.messageClass).toBe('school_fee');
-    expect(e.raw_text).toMatch(/^v2:k0:/);
+    expect(e.raw_text).toMatch(/^v3:k0:/);
     expect(e.raw_retention_until.getTime() - clock.now.getTime()).toBe(3 * 86400_000);
     assertReadOnly();
   });

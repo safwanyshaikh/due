@@ -8,12 +8,16 @@ import {
 } from '../../content/savings';
 import { Badge } from '../components/ui';
 import { Glyph } from '../components/Glyph';
+import { useT } from '../lib/lang';
 import { useSavings } from './SavingsProvider';
 import { MoveSheet } from './MoveSheet';
 import { CommuteSetup } from './CommuteSetup';
 import { loadCommunity, profileEdits, sendResearch, unsent, type CommunityRow } from './engine';
 import { CONFIDENCE_LABEL, CONFIDENCE_TONE, perMonth, rupees } from './format';
 import { useApp } from '../store';
+import { runRate } from '../../lib/totals';
+import { useToast } from '../components/Toast';
+import { buildShareText } from './shareCard';
 import { findProfile, gstNoteFor, profilesOf, PERSONAL_PROFILE_ID } from '../../lib/profiles';
 import { ProfileSwitcher } from '../profiles/ProfileSwitcher';
 import { useProfileSelection } from '../profiles/useProfileSelection';
@@ -89,6 +93,36 @@ function useResearchSender() {
   }, [research, state, cityPack, edit]);
 }
 
+/** Aha: one sentence with two rounded numbers, no names, shared only when the person taps. */
+function ShareNumber({ found }: { found: number }) {
+  const { data } = useApp();
+  const toast = useToast();
+  const yearly = (runRate(data).totalPaise / 100) * 12;
+  if (yearly < 1) return null;
+  const text = buildShareText(yearly, found);
+  const share = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({ text });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      toast.show({ message: 'Copied. Paste it anywhere.', tone: 'success' });
+    } catch {
+      /* cancelled or blocked: nothing is sent */
+    }
+  };
+  return (
+    <section className="panel2 stack-8" aria-labelledby="sv-share-num-h" data-testid="share-number">
+      <h2 id="sv-share-num-h">Share your number</h2>
+      <p className="muted small">{text}</p>
+      <button type="button" className="btn btn-secondary press align-start" onClick={share}>
+        Share, no names
+      </button>
+    </section>
+  );
+}
+
 function Community() {
   const { state } = useSavings();
   const cityPack = state.profile.cityPack;
@@ -123,6 +157,7 @@ function Community() {
 
 export function SavingsScreen() {
   const s = useSavings();
+  const t = useT();
   const { data } = useApp();
   const [sel, setSel] = useProfileSelection(data);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -167,7 +202,7 @@ export function SavingsScreen() {
   return (
     <div className="page2 sv-page">
       <header className="page-head">
-        <h1>Savings</h1>
+        <h1>{t('savings.title')}</h1>
         <p className="muted">
           Moves worked out on this device from your own items. Each one shows what it’s based on.
         </p>
@@ -175,20 +210,26 @@ export function SavingsScreen() {
 
       <ProfileSwitcher data={data} value={sel} onChange={setSel} />
 
-      <section className="sv-totals" aria-label="Savings totals" data-testid="savings-totals">
-        <div className="sv-total">
-          <h2 className="eyebrow">Found</h2>
+      <section
+        className={`sv-totals ${open.length > 0 && foundMonthlyInr > 0 ? 'sv-totals-hero' : ''}`}
+        aria-label="Savings totals"
+        data-testid="savings-totals"
+      >
+        <div className="sv-total sv-total-found">
+          <h2 className="eyebrow">{t('savings.found')}</h2>
           <p className="sv-big amt" data-testid="found-total">
-            {perMonth(foundMonthlyInr)}
+            {rupees(foundMonthlyInr)}
+            <span className="per">{t('home.perMonth')}</span>
           </p>
           <p className="muted small">
             {open.length} move{open.length === 1 ? '' : 's'} to look at
           </p>
         </div>
         <div className="sv-total">
-          <h2 className="eyebrow">Saved</h2>
+          <h2 className="eyebrow">{t('savings.saved')}</h2>
           <p className="sv-big amt" data-testid="saved-total">
-            {perMonth(savedMonthlyInr)}
+            {rupees(savedMonthlyInr)}
+            <span className="per">{t('home.perMonth')}</span>
           </p>
           <p className="muted small">Counted once your bills show the change</p>
         </div>
@@ -235,7 +276,11 @@ export function SavingsScreen() {
 
       {s.research.length > 0 && (
         <section className="panel2" aria-labelledby="sv-research-h" data-testid="research">
-          <h2 id="sv-research-h">We’re studying these bills</h2>
+          <h2 id="sv-research-h">No cheaper plan found yet</h2>
+          <p className="muted small" data-testid="research-lead">
+            No cheaper plan found for {s.research.map((r) => r.providerLabel).join(', ')} yet. That
+            is not a judgement on your plan: these are being added to Due’s price list.
+          </p>
           <ul className="chip-row" aria-label="Bills being studied">
             {s.research.map((r) => (
               <li key={r.providerLabel}>
@@ -289,6 +334,8 @@ export function SavingsScreen() {
           </ul>
         </details>
       )}
+
+      <ShareNumber found={foundMonthlyInr} />
 
       <Community />
 

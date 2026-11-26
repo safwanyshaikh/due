@@ -140,6 +140,12 @@ export function PlansScreen() {
     const m = st.state === 'ok' ? st.value.integrations[needs] : 'unknown';
     return m === 'live' ? null : `Not included yet: ${modeLabel(m).toLowerCase()}`;
   };
+  // A feature whose integration is off (or unknown) is not sold: it is listed as "coming soon", not "not configured".
+  const comingSoon = (needs?: 'gmail' | 'inbound' | 'smtp') => {
+    if (!needs) return false;
+    const m = st.state === 'ok' ? st.value.integrations[needs] : 'unknown';
+    return m === 'not_configured' || m === 'unknown';
+  };
   // Free public beta: Plus is free, nothing can be bought. Driven by /api/public/status (or the plans payload).
   const beta =
     st.state === 'ok' && st.value.beta.plusFree
@@ -244,7 +250,7 @@ export function PlansScreen() {
             </p>
             {p.id === 'plus' ? (
               <ul className="feat-list" data-testid="plus-features">
-                {PLUS_FEATURES.map((f) => {
+                {PLUS_FEATURES.filter((f) => !comingSoon(f.needs)).map((f) => {
                   const blocked = featureState(f.needs);
                   return (
                     <li key={f.key}>
@@ -252,6 +258,15 @@ export function PlansScreen() {
                     </li>
                   );
                 })}
+                {PLUS_FEATURES.some((f) => comingSoon(f.needs)) && (
+                  <li className="muted" data-testid="plus-coming-soon">
+                    More Plus features are coming soon:{' '}
+                    {PLUS_FEATURES.filter((f) => comingSoon(f.needs))
+                      .map((f) => f.label.replace(/ \(.*\)$/, ''))
+                      .join(', ')}
+                    .
+                  </li>
+                )}
               </ul>
             ) : (
               <ul className="feat-list">

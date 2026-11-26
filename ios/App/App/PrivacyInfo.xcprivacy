@@ -4,7 +4,9 @@
   Due app privacy manifest (M11). Keep in step with docs/launch/STORE_LISTING.md ("App Privacy").
   No tracking, no tracking domains. Collected types are only those that leave the device, and only when the
   person turns the feature on: email (sign-in), user content and financial info (backup/sync), emails
-  (Gmail / forwarding), product interaction (opt-in usage analytics). None is used for tracking or ads.
+  (Gmail / forwarding), product interaction (opt-in usage analytics), purchase history (plan and subscription
+  records) and phone number (asked by the payment provider at checkout and passed to Due's billing records).
+  None is used for tracking or ads.
   Required-reason APIs: UserDefaults (Capacitor Preferences stores app settings for this app only) and file
   timestamps (Capacitor Filesystem reads metadata of files the person picks or the app itself wrote).
   Capacitor and its plugins ship their own manifests for their internal use.
@@ -75,6 +77,30 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhoneNumber</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
 	</array>

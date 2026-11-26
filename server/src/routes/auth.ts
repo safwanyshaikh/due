@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import QRCode from 'qrcode';
 import { z } from 'zod';
+import { createAlert } from '../alerts.js';
 import { writeAudit } from '../audit.js';
 import { getDummyHash, hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from '../auth/password.js';
 import type { Role } from '../auth/roles.js';
@@ -36,6 +37,9 @@ export const LOGIN_MAX_PER_IP = 50;
 export const MFA_CHALLENGE_MINUTES = 5;
 export const MFA_CHALLENGE_ATTEMPTS = 5;
 export const TOTP_ISSUER = 'Due Admin';
+/** Wrong 2-step codes per user per hour: alert owners at the first number, lock the second step at the second. */
+export const MFA_ALERT_AT = 5;
+export const MFA_LOCK_AT = 8;
 
 export function adminCookieName(app: FastifyInstance): string {
   return cookieName(SESSION_COOKIE, app.deps.config.isProduction);
@@ -284,7 +288,40 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       [challengeHash(config.sessionSecret, token), MFA_CHALLENGE_ATTEMPTS, now],
     );
     await logEvent(pool, req, user.email, user.id, false, reason, now);
+    await alertOnCodeGuessing(user, now);
     throw unauthorized('That code did not work. Check the time on your phone and try again.');
+  }
+
+  /**
+   * Wrong 2-step codes for one user (sign-in, enrolment, re-authentication): an important alert at
+   * MFA_ALERT_AT failures in an hour (someone may hold the password), and the second step locks at MFA_LOCK_AT.
+   */
+  async function mfaFailures(userId: string, now: Date): Promise<number> {
+    return (await one<{ n: number }>(
+      pool,
+      `SELECT count(*)::int AS n FROM login_events WHERE user_id = $1 AND NOT success AND reason IN ('bad_mfa','bad_mfa_enrol','bad_reauth') AND at > $2`,
+      [userId, addMinutes(now, -60)],
+    ))!.n;
+  }
+  async function alertOnCodeGuessing(user: UserRow, now: Date): Promise<void> {
+    if ((await mfaFailures(user.id, now)) !== MFA_ALERT_AT) return;
+    await createAlert(
+      pool,
+      {
+        level: 'important',
+        title: `Repeated wrong 2-step codes for ${user.email}`,
+        body: `${MFA_ALERT_AT} wrong codes in the last hour after a correct password. If this was not them, reset their password and revoke their sessions.`,
+        entityType: 'user',
+        entityId: user.id,
+      },
+      app.deps.mailer,
+    );
+  }
+  async function assertMfaNotLocked(reply: FastifyReply, user: UserRow, now: Date): Promise<void> {
+    if ((await mfaFailures(user.id, now)) >= MFA_LOCK_AT) {
+      reply.header('Retry-After', '3600');
+      throw new AppError(429, 'mfa_locked', 'Too many wrong codes. Try again in an hour, or ask an owner to help.');
+    }
   }
 
   /** Step 2: a code from the authenticator app (or a recovery code). Opens the session. */
@@ -293,10 +330,15 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const now = clock();
     const { user } = await openChallenge(body.challengeToken, 'verify', now);
     await assertNotThrottled(req, reply, user.email, now);
+    await assertMfaNotLocked(reply, user, now);
     const result = await withTransaction(pool, async (c) => {
       const check = await checkSecondFactor(app, c, user, body.code, now);
       if (!check.ok) return null;
-      await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE token_hash = $1', [challengeHash(config.sessionSecret, body.challengeToken), now]);
+      const claimed = await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE token_hash = $1 AND used_at IS NULL', [
+        challengeHash(config.sessionSecret, body.challengeToken),
+        now,
+      ]);
+      if (!claimed.rowCount) throw new AppError(400, 'invalid_challenge', 'This sign-in step has expired. Enter your email and password again.');
       if (!check.secretReadable) {
         // The stored secret cannot be read any more (SESSION_SECRET rotated): a recovery code proves the
         // person, and they set up the authenticator app again before getting a session.
@@ -321,11 +363,17 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const now = clock();
     const { ch, user } = await openChallenge(body.challengeToken, 'enrol', now);
     await assertNotThrottled(req, reply, user.email, now);
+    await assertMfaNotLocked(reply, user, now);
     const secret = decryptTotpSecret(config.sessionSecret, ch.pending_secret_enc);
     const step = secret ? verifyTotp(secret, body.code, now, null) : null;
     if (!secret || step === null) return failChallenge(req, body.challengeToken, user, now, 'bad_mfa_enrol');
     const out = await withTransaction(pool, async (c) => {
-      await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE token_hash = $1', [challengeHash(config.sessionSecret, body.challengeToken), now]);
+      // Claim the challenge first: of two concurrent enrolments with the same challenge only one gets a session.
+      const claimed = await c.query('UPDATE admin_mfa_challenges SET used_at = $2 WHERE token_hash = $1 AND used_at IS NULL', [
+        challengeHash(config.sessionSecret, body.challengeToken),
+        now,
+      ]);
+      if (!claimed.rowCount) throw new AppError(400, 'invalid_challenge', 'This sign-in step has expired. Enter your email and password again.');
       await c.query(
         'UPDATE users SET totp_secret_enc = $2, totp_enrolled_at = $3, totp_last_step = $4, last_login_at = $3 WHERE id = $1',
         [user.id, ch.pending_secret_enc, now, step],
@@ -349,6 +397,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const now = clock();
     await assertNotThrottled(req, reply, u.email, now);
     const user = (await one<UserRow>(pool, `${USER_SELECT} WHERE id = $1`, [u.id]))!;
+    await assertMfaNotLocked(reply, user, now);
     const ok = await withTransaction(pool, async (c) => {
       const check = await checkSecondFactor(app, c, user, body.code, now);
       if (!check.ok) return false;
@@ -358,6 +407,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     });
     if (!ok) {
       await logEvent(pool, req, user.email, user.id, false, 'bad_reauth', now);
+      await alertOnCodeGuessing(user, now);
       throw unauthorized('That code did not work. Check the time on your phone and try again.');
     }
     return { ok: true, validForSeconds: Math.floor(config.adminReauthMs / 1000) };

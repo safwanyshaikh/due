@@ -19,8 +19,20 @@ export function computeCashfreeSignature(secret: string, timestamp: string, rawB
   return createHmac('sha256', secret).update(timestamp + rawBody, 'utf8').digest('base64');
 }
 
-export function verifyCashfreeSignature(secret: string, timestamp: string | undefined, rawBody: string, signature: string | undefined): boolean {
-  if (!timestamp || !signature) return false;
+/** Webhook deliveries older or newer than this are refused (replay window, round-2 Low). */
+export const CASHFREE_WEBHOOK_WINDOW_MS = 5 * 60 * 1000;
+
+export function verifyCashfreeSignature(
+  secret: string,
+  timestamp: string | undefined,
+  rawBody: string,
+  signature: string | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!timestamp || !signature || !/^\d{9,16}$/.test(timestamp)) return false;
+  // Cashfree sends epoch milliseconds; seconds are accepted too.
+  const ms = timestamp.length <= 10 ? Number(timestamp) * 1000 : Number(timestamp);
+  if (Math.abs(now.getTime() - ms) > CASHFREE_WEBHOOK_WINDOW_MS) return false;
   const expected = Buffer.from(computeCashfreeSignature(secret, timestamp, rawBody));
   const given = Buffer.from(signature);
   return expected.length === given.length && timingSafeEqual(expected, given);

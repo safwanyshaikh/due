@@ -265,7 +265,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     const raw = req.rawBody ?? '';
     const sig = req.headers[CASHFREE.webhook.signatureHeader];
     const ts = req.headers[CASHFREE.webhook.timestampHeader];
-    if (!verifyCashfreeSignature(config.cashfree.webhookSecret, typeof ts === 'string' ? ts : undefined, raw, typeof sig === 'string' ? sig : undefined)) {
+    if (!verifyCashfreeSignature(config.cashfree.webhookSecret, typeof ts === 'string' ? ts : undefined, raw, typeof sig === 'string' ? sig : undefined, clock())) {
       metrics.inc('billing.webhook', { outcome: 'invalid_signature', provider: 'cashfree' });
       throw new AppError(400, 'invalid_signature', 'Webhook signature verification failed');
     }

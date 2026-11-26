@@ -2,7 +2,9 @@ package com.karigarai.due;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
 /**
@@ -14,6 +16,21 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         normalise(getIntent());
         super.onCreate(savedInstanceState);
+        // App-switcher privacy: the recent-apps thumbnail never shows bills, balances or amounts.
+        if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false);
+    }
+
+    @Override
+    public void onPause() {
+        // Before Android 13 there is no per-app switch: hide the window content while Due is in the background.
+        if (Build.VERSION.SDK_INT < 33) getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (Build.VERSION.SDK_INT < 33) getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }
 
     @Override

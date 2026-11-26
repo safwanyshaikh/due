@@ -32,3 +32,4 @@ ios/DerivedData/
 *.ipa
 *.p12
 *.mobileprovision
+dist-native

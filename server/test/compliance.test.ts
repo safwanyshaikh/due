@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import type { Pool } from '../src/db.js';
-import { AGE, AppClient, BASE, freshDb, grantPlan, loggedIn, makeApp, RecordingMailer, testConfig, TestClock } from './helpers.js';
+import { AGE, AppClient, BASE, Client, createUser, freshDb, grantPlan, loggedIn, makeApp, RecordingMailer, testConfig, TestClock } from './helpers.js';
 
 let pool: Pool;
 let app: FastifyInstance;
@@ -33,6 +33,10 @@ export const FULL_LEGAL: Record<string, unknown> = {
   'legal.privacy_policy_md': '# Privacy notice\nWe process...',
   'legal.terms_md': '# Terms\n...',
   'legal.deletion_policy_md': '# Deletion\n...',
+  'legal.refund_policy_md': '# refund_policy_md\n...',
+  'legal.delivery_policy_md': '# delivery_policy_md\n...',
+  'legal.contact_md': '# contact_md\n...',
+  'legal.cookies_md': '# cookies_md\n...',
   'legal.subprocessors': [{ name: 'Render', purpose: 'Hosting', region: 'US' }],
   'legal.effective_date': '2026-11-01',
 };
@@ -178,7 +182,7 @@ describe('H4: retention, breach notices and log shipping', () => {
     expect((await pool.query('SELECT count(*)::int AS n FROM telemetry_events')).rows[0].n).toBe(1);
   });
 
-  it('emails affected accounts one by one (admin, fresh 2-step), audit-logged without addresses, idempotent per incident', async () => {
+  it('breach notices: open incident, fixed template, owners alerted, another owner approves, one email per account (M-B)', async () => {
     await completeLegal(pool);
     const ids: string[] = [];
     for (const e of ['one@example.com', 'two@example.com']) {
@@ -188,25 +192,50 @@ describe('H4: retention, breach notices and log shipping', () => {
       ids.push((await pool.query('SELECT id FROM consumer_accounts WHERE email = $1', [e])).rows[0].id);
     }
     const viewer = await loggedIn(app, pool, 'viewer@example.com', 'viewer');
-    const body = {
-      incidentRef: 'INC-2026-11-01',
-      subject: 'Important: a security incident affecting your Due account',
-      message: 'On 24 November we found that a backup file was exposed. It held your email address and sync data. We closed the exposure and rotated keys. Please review your devices.',
-      accountIds: ids,
+    const fields = {
+      discoveredOn: '24 November 2026',
+      whatHappened: 'A backup file was readable by the public for two hours.',
+      dataAffected: 'Your email address and your synced items.',
+      whatWeDid: 'We closed the exposure and rotated the keys.',
+      whatYouCanDo: 'Sign out of devices you do not recognise in the Due app.',
     };
-    expect((await viewer.post('/api/admin/incident/notify-accounts', body)).statusCode).toBe(403);
+    const draft = { incidentRef: 'INC-2026-11-01', fields, accountIds: ids };
+    expect((await viewer.post('/api/admin/incident/notices', draft)).statusCode).toBe(403);
     const admin = await loggedIn(app, pool, 'admin@example.com', 'admin');
+    // No open incident record: refused.
+    expect((await admin.post('/api/admin/incident/notices', draft)).json().error.code).toBe('incident_not_open');
+    expect((await admin.post('/api/admin/incident/records', { incidentRef: 'INC-2026-11-01', title: 'Backup exposure' })).statusCode).toBe(201);
+    // Links, addresses and phone numbers are refused in every placeholder.
+    for (const bad of ['Verify at https://due-verify.example now', 'Visit due-login.com today', 'Write to help@due.example', 'Call 98765 43210 now please']) {
+      expect((await admin.post('/api/admin/incident/notices', { ...draft, fields: { ...fields, whatYouCanDo: bad } })).statusCode, bad).toBe(400);
+    }
+    await createUser(pool, 'owner1@example.com', 'owner');
+    await createUser(pool, 'owner2@example.com', 'owner');
     mailer.sent = [];
-    const dry = await admin.post('/api/admin/incident/notify-accounts', { ...body, dryRun: true });
+    const d = await admin.post('/api/admin/incident/notices', draft);
+    expect(d.statusCode).toBe(201);
+    // Every owner is alerted; nothing goes to the accounts yet.
+    expect(mailer.sent.map((m) => m.to[0]).sort()).toEqual(['owner1@example.com', 'owner2@example.com']);
+    const id = d.json().id;
+    // Admins cannot approve; the author cannot approve their own draft.
+    expect((await admin.post(`/api/admin/incident/notices/${id}/approve`)).statusCode).toBe(403);
+    const o1 = await new Client(app).login('owner1@example.com');
+    const own = await o1.post('/api/admin/incident/notices', draft);
+    expect((await o1.post(`/api/admin/incident/notices/${own.json().id}/approve`)).statusCode).toBe(403);
+    mailer.sent = [];
+    const dry = await o1.post(`/api/admin/incident/notices/${id}/approve`, { dryRun: true });
     expect(dry.json()).toMatchObject({ dryRun: true, wouldSend: 2 });
     expect(mailer.sent).toHaveLength(0);
-    const r = await admin.post('/api/admin/incident/notify-accounts', body);
+    const r = await o1.post(`/api/admin/incident/notices/${id}/approve`);
     expect(r.json()).toMatchObject({ sent: 2, failed: 0 });
-    expect(mailer.sent.map((m) => m.to)).toEqual([['one@example.com'], ['two@example.com']]);
-    expect(mailer.last().text).toContain('Grievance Officer: Grievance Officer <grievance@due.in>');
-    expect(mailer.last().text).toContain('Reference: INC-2026-11-01');
-    const again = await admin.post('/api/admin/incident/notify-accounts', body);
-    expect(again.json()).toMatchObject({ sent: 0, alreadyNotified: 2 });
+    const toAccounts = mailer.sent.filter((m) => m.subject.startsWith('Important: a security incident'));
+    expect(toAccounts.map((m) => m.to)).toEqual([['one@example.com'], ['two@example.com']]);
+    expect(toAccounts[0]!.text).toContain('Grievance Officer: Grievance Officer <grievance@due.in>');
+    expect(toAccounts[0]!.text).not.toMatch(/https?:/);
+    // A second approval of the same notice does nothing; the other draft skips accounts already notified.
+    expect((await o1.post(`/api/admin/incident/notices/${id}/approve`)).statusCode).toBe(409);
+    const o2 = await new Client(app).login('owner2@example.com');
+    expect((await o2.post(`/api/admin/incident/notices/${own.json().id}/approve`)).json()).toMatchObject({ sent: 0, alreadyNotified: 2 });
     const audit = (await pool.query(`SELECT after FROM audit_log WHERE action = 'incident.notify_accounts'`)).rows;
     expect(audit).toHaveLength(2);
     expect(JSON.stringify(audit)).not.toContain('@example.com');
@@ -223,16 +252,20 @@ describe('H4: retention, breach notices and log shipping', () => {
       return new Response('', { status: ok ? 200 : 500 });
     }) as unknown as typeof fetch;
     const sink = { url: 'https://logs.ap-south-1.example/ingest', token: 'sink-token', service: 'test', fetchImpl };
-    await pool.query(`INSERT INTO audit_log (action, entity_type, after, at) VALUES ('user.update', 'user', $1, now())`, [JSON.stringify({ email: 'person@example.com', name: 'N' })]);
+    await pool.query(`INSERT INTO audit_log (action, entity_type, after, at) VALUES ('user.update', 'user', $1, now())`, [JSON.stringify({ email: 'person@example.com', name: 'Sample Person', displayName: 'Sample Person' })]);
+    // Rows younger than 5 minutes wait (a lower id may still be committing).
+    expect((await shipAuditRows(pool, sink, new Date())).audit_log).toBe(0);
+    const later = new Date(Date.now() + 10 * 60 * 1000);
     ok = false;
-    expect((await shipAuditRows(pool, sink)).audit_log).toBe(-1);
+    expect((await shipAuditRows(pool, sink, later)).audit_log).toBe(-1);
     ok = true;
-    expect((await shipAuditRows(pool, sink)).audit_log).toBe(1);
-    expect((await shipAuditRows(pool, sink)).audit_log).toBe(0);
+    expect((await shipAuditRows(pool, sink, later)).audit_log).toBe(1);
+    expect((await shipAuditRows(pool, sink, later)).audit_log).toBe(0);
     const shipped = posts.filter((p) => p.kind === 'audit').at(-1)!;
     expect(shipped.auth).toBe('Bearer sink-token');
     expect(shipped.body).toContain('user.update');
     expect(shipped.body).not.toContain('person@example.com');
+    expect(shipped.body).not.toContain('Sample Person');
 
     const ls = new LogSink({ ...sink, flushMs: 10_000 });
     ls.write('{"level":30,"msg":"hello"}\n');

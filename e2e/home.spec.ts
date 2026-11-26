@@ -67,7 +67,7 @@ test.describe('Home first viewport at 390×844', () => {
     await page.reload();
     const first = await box(page, '[data-tile="subscription"]');
     expect(first.y + first.height).toBeLessThanOrEqual(844);
-    await expect(page.locator('[data-choice]')).toHaveCount(5);
+    await expect(page.locator('[data-choice]')).toHaveCount(4);
     await expect(page.locator('[data-tile="emi"]')).toContainText('Add an EMI');
   });
 

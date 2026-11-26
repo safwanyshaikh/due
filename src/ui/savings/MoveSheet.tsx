@@ -13,6 +13,7 @@ import {
   lastChecked,
   perMonth,
   rangeText,
+  rupees,
 } from './format';
 
 /** One assumption as a chip: "We assumed 8 rides a month · Change". Editing saves an override. */
@@ -186,7 +187,10 @@ export function MoveSheet({
             <>
               <p className="sv-big amt">{perMonth(move.monthlySavingInr)}</p>
               <p className="muted small">
-                Likely range {rangeText(move.rangeInr)} a month · {EFFORT_LABEL[move.effort]}
+                {Math.round(move.rangeInr[0]) === Math.round(move.rangeInr[1])
+                  ? `About ${rupees(move.monthlySavingInr * 12)} a year. Check any upfront price on the provider’s page first.`
+                  : `Likely range ${rangeText(move.rangeInr)} a month`}{' '}
+                · {EFFORT_LABEL[move.effort]}
               </p>
             </>
           )}
@@ -225,7 +229,7 @@ export function MoveSheet({
                     <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                   <span className="muted small">
-                    {SOURCE_KIND_LABEL[s.kind]} · {lastChecked(s)}
+                    {[SOURCE_KIND_LABEL[s.kind], lastChecked(s)].filter(Boolean).join(' · ')}
                   </span>
                 </li>
               ))}

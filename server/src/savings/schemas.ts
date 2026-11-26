@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { SERVER_ROOT } from '../paths.js';
 import { z } from 'zod';
 import { COMMUNITY_THRESHOLD, type ModuleCategory, type TransportMode, type ValueKind } from './types.js';
 
@@ -120,10 +123,22 @@ export function labelProblem(raw: string): string | null {
   return null;
 }
 
+/**
+ * M6 (round 2): research accepts only canonical provider names from Due's own merchant list (the app sends nothing
+ * else). Free text such as a person's name ("Ramesh Kumar tuition") is refused even when it is letters only.
+ * Keep server/src/seed/research-providers.json in step with src/lib/merchants.ts (a client test checks it).
+ */
+export const RESEARCH_PROVIDERS: readonly string[] = JSON.parse(readFileSync(join(SERVER_ROOT, 'src', 'seed', 'research-providers.json'), 'utf8')) as string[];
+const KNOWN = new Set(RESEARCH_PROVIDERS.map((p) => p.toLowerCase()));
+
+export function knownResearchProvider(label: string): boolean {
+  return KNOWN.has(label.trim().replace(/\s+/g, ' ').toLowerCase());
+}
+
 export const researchBody = z
   .object({
     providerLabel: z.string().max(200).superRefine((v, ctx) => {
-      const p = labelProblem(v);
+      const p = labelProblem(v) ?? (knownResearchProvider(v) ? null : 'Only known provider names are accepted');
       if (p) ctx.addIssue({ code: 'custom', message: p });
     }),
     category: z.enum([...CATEGORIES, 'unknown']),

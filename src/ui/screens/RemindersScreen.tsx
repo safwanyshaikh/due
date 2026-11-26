@@ -26,6 +26,7 @@ import {
   type ReminderConsent,
 } from '../lib/reminderConsent';
 import { download } from '../common';
+import { isNative } from '../../lib/platform';
 import { DeviceNotificationsPanel } from '../components/DeviceNotificationsPanel';
 import { localDateTime } from '../lib/format';
 
@@ -111,6 +112,22 @@ export function RemindersScreen() {
       )}
 
       <DeviceNotificationsPanel />
+
+      {!isNative() && (
+        <Panel title="Get alerts on your phone" id="rm-calendar-first">
+          <p className="muted" data-testid="calendar-first">
+            A web page can’t buzz your phone by itself. The simplest way to get alerts: add your
+            dates to Google or Apple Calendar, which will notify you.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary btn-wrap press align-start"
+            onClick={() => downloadIcs(plan)}
+          >
+            Add dues to my calendar
+          </button>
+        </Panel>
+      )}
 
       <ChannelsPanel
         server={server}
@@ -232,24 +249,7 @@ export function RemindersScreen() {
             })}
           </ul>
         )}
-        <button
-          type="button"
-          className="btn btn-quiet press"
-          onClick={() =>
-            download(
-              'due-reminders.ics',
-              buildICS(
-                plan.map((r) => ({
-                  uid: r.key.replace(/[^a-zA-Z0-9]/g, '-'),
-                  date: r.localDate,
-                  summary: r.title,
-                  description: r.body,
-                })),
-              ),
-              'text/calendar',
-            )
-          }
-        >
+        <button type="button" className="btn btn-quiet press" onClick={() => downloadIcs(plan)}>
           Download calendar file (.ics)
         </button>
       </Panel>
@@ -288,6 +288,21 @@ export function RemindersScreen() {
         Season and offer reminders (calendar file)
       </a>
     </div>
+  );
+}
+
+function downloadIcs(plan: ReturnType<typeof planReminders>) {
+  download(
+    'due-reminders.ics',
+    buildICS(
+      plan.map((r) => ({
+        uid: r.key.replace(/[^a-zA-Z0-9]/g, '-'),
+        date: r.localDate,
+        summary: r.title,
+        description: r.body,
+      })),
+    ),
+    'text/calendar',
   );
 }
 
@@ -374,7 +389,12 @@ function ChannelsPanel({
     hint: string;
     blocked: string | null;
   }[] = [
-    { value: 'in_app', label: 'In the app', hint: 'Shown when you open Due.', blocked: null },
+    {
+      value: 'in_app',
+      label: 'In the app',
+      hint: 'Shown only when you open Due. It will not buzz your phone.',
+      blocked: null,
+    },
     {
       value: 'email',
       label: 'Email',

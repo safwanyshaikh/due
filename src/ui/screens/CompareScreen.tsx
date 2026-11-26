@@ -159,6 +159,11 @@ export function CompareScreen() {
         )}{' '}
         “Not stated” means we have not found it in public information. Names belong to their owners.
       </p>
+      <p className="muted small" data-testid="compare-sources">
+        Sources: Due’s research notes of 23 Nov 2026 (competitor audit; “our rating” is Due’s own 0
+        to 5 judgment from public information, not a measurement) and a first-run check of each app
+        on 26 Nov 2026, using public pages, store listings and press reviews.
+      </p>
 
       <section className="why-grid" aria-labelledby="why-h">
         <h2 id="why-h">Why Due</h2>

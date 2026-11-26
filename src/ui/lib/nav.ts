@@ -29,7 +29,17 @@ const SIMPLE = [
 ] as const;
 type SimpleName = (typeof SIMPLE)[number];
 
-export const LEGAL_DOCS = ['privacy', 'terms', 'deletion', 'subprocessors', 'grievance'] as const;
+export const LEGAL_DOCS = [
+  'privacy',
+  'terms',
+  'refund',
+  'delivery',
+  'contact',
+  'cookies',
+  'deletion',
+  'subprocessors',
+  'grievance',
+] as const;
 export type LegalDoc = (typeof LEGAL_DOCS)[number];
 
 export type Route =

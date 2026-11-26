@@ -1,3 +1,4 @@
+import { requestPath } from './paths.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError } from './errors.js';
 
@@ -77,7 +78,7 @@ export function registerMobileCors(app: FastifyInstance, mobileOrigins: readonly
     if (req.method !== 'OPTIONS') return;
     const origin = req.headers.origin;
     if (!isMobileOrigin(origin, mobileOrigins)) return;
-    const methods = methodsFor(req.url.split('?')[0]!);
+    const methods = methodsFor(requestPath(req));
     const asked = req.headers['access-control-request-method'];
     if (!methods || typeof asked !== 'string' || !methods.split(', ').includes(asked.toUpperCase())) return;
     return reply
@@ -93,7 +94,7 @@ export function registerMobileCors(app: FastifyInstance, mobileOrigins: readonly
   app.addHook('onSend', async (req: FastifyRequest, reply: FastifyReply, payload) => {
     const origin = req.headers.origin;
     if (!isMobileOrigin(origin, mobileOrigins) || reply.hasHeader('Access-Control-Allow-Origin')) return payload;
-    const methods = methodsFor(req.url.split('?')[0]!);
+    const methods = methodsFor(requestPath(req));
     if (!methods) return payload;
     if (req.method === 'OPTIONS') return payload;
     reply.header('Access-Control-Allow-Origin', origin!);
@@ -129,7 +130,7 @@ export function registerCsrfGuard(
   if (publicBaseUrl) allowed.add(new URL(publicBaseUrl).origin);
   app.addHook('onRequest', async (req: FastifyRequest) => {
     if (!MUTATING.has(req.method)) return;
-    const path = req.url.split('?')[0]!;
+    const path = requestPath(req);
     const rule = CSRF_PREFIXES.find(([prefix]) => path === prefix || path.startsWith(`${prefix}/`));
     if (!rule) return;
     if (req.headers['x-requested-with'] !== rule[1]) {
@@ -157,7 +158,7 @@ export function registerSecurityHeaders(app: FastifyInstance, isProduction: bool
     // L7: two years, subdomains, preload-list eligible (submit the domain at hstspreload.org once it is stable).
     if (isProduction) reply.header('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
     reply.header('X-Permitted-Cross-Domain-Policies', 'none');
-    const path = req.url.split('?')[0]!;
+    const path = requestPath(req);
     // Admin SPA and the consumer app are both self-contained; API responses get the strict policy.
     // L7: in production pages never load anything over plain HTTP (not in development, which runs on http://localhost).
     const policy = cspFor(path);
