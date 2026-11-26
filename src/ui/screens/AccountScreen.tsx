@@ -6,6 +6,7 @@ import type {
   DeleteRequest,
   DeviceSession,
   HouseholdResponse,
+  NominationResponse,
 } from '../../lib/account/types';
 import {
   EMAIL_INTAKE_CONSENT_VERSION,
@@ -209,6 +210,8 @@ function SignedIn() {
         </div>
         <p className="muted small">Signing out keeps the data on this device.</p>
       </Panel>
+
+      <NominationPanel />
 
       <DataPanel />
     </div>
@@ -623,6 +626,85 @@ function ConsentsPanel() {
           })}
         </ul>
       )}
+    </Panel>
+  );
+}
+
+function NominationPanel() {
+  const { client } = useAccount();
+  const toast = useToast();
+  const [info, setInfo] = useState<NominationResponse | null>(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [relationship, setRelationship] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const load = useCallback(() => {
+    client
+      .getNomination()
+      .then((r) => {
+        setInfo(r);
+        setName(r.nominee?.name ?? '');
+        setEmail(r.nominee?.email ?? '');
+        setRelationship(r.nominee?.relationship ?? '');
+      })
+      .catch(() => setInfo(null));
+  }, [client]);
+  useEffect(load, [load]);
+  if (!info) return null;
+  const save = (e: FormEvent) => {
+    e.preventDefault();
+    client
+      .setNomination({ name, email, relationship: relationship || undefined })
+      .then(() => {
+        toast.show({ message: 'Nominee saved.' });
+        setAgreed(false);
+        load();
+      })
+      .catch((err) => toast.show({ message: describeApiError(err), tone: 'error' }));
+  };
+  return (
+    <Panel title="Nominee" id="acc-nominee">
+      <p className="muted small">{info.notice}</p>
+      {info.nominee && (
+        <p>
+          Current nominee: <strong>{info.nominee.name}</strong> ({info.nominee.email}
+          {info.nominee.relationship ? `, ${info.nominee.relationship}` : ''})
+        </p>
+      )}
+      <form className="stack-8" onSubmit={save}>
+        <Field label="Nominee’s name" htmlFor="nom-name">
+          <input id="nom-name" value={name} maxLength={100} required onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Field label="Nominee’s email" htmlFor="nom-email">
+          <input id="nom-email" type="email" value={email} maxLength={254} required onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label="Relationship (optional)" htmlFor="nom-rel">
+          <input id="nom-rel" value={relationship} maxLength={50} onChange={(e) => setRelationship(e.target.value)} />
+        </Field>
+        <label className="check">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} /> I have read the note above and I
+          want to name this person as my nominee.
+        </label>
+        <div className="btn-row">
+          <button type="submit" className="btn btn-secondary press" disabled={!agreed || !name.trim() || !email.trim()}>
+            {info.nominee ? 'Update nominee' : 'Save nominee'}
+          </button>
+          {info.nominee && (
+            <ConfirmButton
+              label="Remove nominee"
+              confirmLabel="Yes, remove nominee"
+              className="btn btn-secondary press"
+              message="This removes your nominee from Due."
+              onConfirm={() =>
+                void client
+                  .removeNomination()
+                  .then(load)
+                  .catch((err) => toast.show({ message: describeApiError(err), tone: 'error' }))
+              }
+            />
+          )}
+        </div>
+      </form>
     </Panel>
   );
 }

@@ -228,3 +228,23 @@ Built to `SAVINGS_SPEC.md` with four agents (research, server/admin, engine, UI)
 - **UI:** Savings screen, move sheet, commute setup, statement import, Home "₹X/month found" entry, landing tagline "Same life. Smaller bills." No guarantee or minimum-saving wording.
 - **Tests:** app 445 unit + 28 e2e, server 184, admin 50; lint and typecheck clean.
 - **Open:** verify top prices against official pages; Gala Bus and Cityflo pass prices need owner screenshots; admin city-pack editing is JSON only.
+
+## Update: 26 Nov 2026
+
+**Now built**
+- Savings engine with 10 statement formats, profiles, and the savings ledger
+- Free beta flag, Cashfree plus Razorpay checkout, GST handling and invoices
+- Landing page, compare page and policy pages (Hindi beta copy included)
+- iOS and Android apps (Capacitor); native in-app checkout hidden
+- Offer inbox (research mailboxes feeding offer intelligence)
+- Two security rounds (audit and re-audit) with fixes
+- DPDP gaps closed: nominee (Account > Nominee, `NOMINATION.md`) and dormant-account retention with 30 and 7 day warnings
+
+**Still needs you**
+| Item | What is needed |
+| --- | --- |
+| Keys and accounts | SMTP, payment, Google, `DATA_ENCRYPTION_KEY`, backup keys; Apple and Google Play organisation accounts |
+| Lawyer review | Privacy notice, terms, billing terms, nominee and deletion wording |
+| Hosting region | Decide an India region for hosting and backups |
+| In-app billing | Decide how to sell on iOS and Android (store billing or web checkout) |
+| End-to-end sync | Release decision on `E2E_SYNC_PLAN.md` (today sync is sealed on the server, not end-to-end) |

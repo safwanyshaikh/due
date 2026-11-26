@@ -71,6 +71,20 @@ export interface DeviceSession {
   current: boolean;
 }
 
+export interface Nominee {
+  name: string;
+  email: string;
+  relationship: string | null;
+  noticeVersion: string;
+  savedAt: string;
+}
+
+export interface NominationResponse {
+  nominee: Nominee | null;
+  noticeVersion: string;
+  notice: string;
+}
+
 export interface DeleteRequest {
   confirmationToken: string;
   expiresAt: string;

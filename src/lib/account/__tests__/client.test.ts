@@ -153,4 +153,22 @@ describe('account client', () => {
     });
     expect(JSON.parse(calls[8]!.init.body as string)).toEqual({ confirmationToken: 'tok' });
   });
+
+  it('reads, saves and removes the nominee', async () => {
+    const { fetch, calls } = mockFetch([
+      json(200, { nominee: null, noticeVersion: 'v1', notice: 'n' }),
+      json(200, { nominee: { name: 'N', email: 'n@example.com' } }),
+      json(200, { ok: true }),
+    ]);
+    const c = createAccountClient({ base: '', fetch });
+    await c.getNomination();
+    await c.setNomination({ name: 'N', email: 'n@example.com' });
+    await c.removeNomination();
+    expect(calls.map((x) => `${x.init.method} ${x.url}`)).toEqual([
+      'GET /api/account/nomination',
+      'PUT /api/account/nomination',
+      'DELETE /api/account/nomination',
+    ]);
+    expect(JSON.parse(calls[1]!.init.body as string)).toEqual({ name: 'N', email: 'n@example.com', acknowledged: true });
+  });
 });

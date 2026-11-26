@@ -8,6 +8,7 @@ import { AGE_PURPOSE, hasConsent, recordConsentV2 } from '../consumer/consents.j
 import { getLegal, missingLegal } from '../legal/index.js';
 import { decryptText, type DataKeyRing } from '../intake/crypto.js';
 import { openDoc, sealDoc, sealedKid } from '../consumer/syncCrypto.js';
+import { readNomination } from '../consumer/nomination.js';
 import { requestDeletion, RETENTION_EXCEPTIONS } from '../consumer/deletion.js';
 import { computeEntitlement } from '../consumer/entitlements.js';
 import { cancelSubscriptionForDeletion } from './billing.js';
@@ -637,6 +638,7 @@ export async function exportAccount(q: Queryable, a: ConsumerAccount, now: Date,
     [a.id],
   );
   const deletions = await many(q, 'SELECT id, status, steps, requested_at, completed_at FROM deletion_requests WHERE account_id = $1', [a.id]);
+  const nomination = await readNomination(q, a.id, opts.dataKey ?? null);
   const breachNotices = await many(q, 'SELECT incident_ref, status, at FROM breach_notifications WHERE account_id = $1 ORDER BY at', [a.id]);
   return {
     exportedAt: now.toISOString(),
@@ -663,6 +665,7 @@ export async function exportAccount(q: Queryable, a: ConsumerAccount, now: Date,
     inboundMessages: camelAll(inbound),
     deletionRequests: camelAll(deletions),
     breachNotifications: camelAll(breachNotices),
+    nominee: nomination ? camel(nomination) : null,
   };
 }
 
@@ -696,6 +699,8 @@ export const EXPORT_COVERAGE: Record<string, string> = {
   inbound_messages: 'inboundMessages (metadata; bodies are wiped after parsing)',
   deletion_requests: 'deletionRequests',
   breach_notifications: 'breachNotifications',
+  account_nominations: 'nominee (decrypted; needs DATA_ENCRYPTION_KEY)',
+  dormant_notices: 'excluded: operational record of retention warning emails (dates only, no content)',
   oauth_states: 'excluded: 10-minute OAuth state with an encrypted PKCE verifier (secret, transient)',
   magic_links: 'excluded: sign-in link hashes (secret, 15 minutes)',
   jobs_queue: 'excluded: internal job queue rows hold only ids',

@@ -140,3 +140,7 @@ Webhooks signed with the old secret fail with 401/400 during the switch. Provide
 ### `BACKUP_ENCRYPTION_KEY`
 
 Old dumps need the old key. Keep the old key in the password manager until the last dump encrypted with it has expired (30 days), then delete it.
+
+## Dormant-account retention (DPDP storage limitation)
+
+Accounts with no sign-in, no session use and no synced backup for `retention.dormant_months` (Admin > Settings > Retention; default 24, minimum 12) get a warning email 30 days and again 7 days before deletion, then go through the normal `account.delete` job (the same steps and tombstone as a user-requested deletion). The daily `dormant_retention` job does this. Safeguards: without SMTP configured nothing is sent and nothing is deleted; deletion waits until the 7-day warning is at least 7 days old; any later sign-in or sync voids earlier warnings; an account with a live paid plan or active subscription is never deleted.

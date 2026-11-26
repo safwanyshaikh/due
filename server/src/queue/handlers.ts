@@ -11,6 +11,7 @@ import { shipAuditRows, shippedCursor } from '../observability/auditShip.js';
 import { purgeOfferInbox } from '../offerinbox/service.js';
 import { enqueue, PermanentJobError, registerHandler, type JobContext } from './index.js';
 import { readVersionedDoc } from '../routes/account.js';
+import { dormantSweep } from '../consumer/dormant.js';
 
 /** Minimal forwarded message kept until `inbound.parse` runs (always sealed with DATA_ENCRYPTION_KEY). */
 export interface SealedInbound {
@@ -206,5 +207,6 @@ export function registerPlatformHandlers(): void {
   registerHandler('audit.ship', auditShip);
   registerHandler('sync.seal_backfill', sealBackfill);
   registerHandler('account.delete', deleteAccountJob);
+  registerHandler('account.dormant_sweep', dormantSweep);
   registerHandler('billing.reconcile', reconcileBilling);
 }

@@ -40,3 +40,6 @@ Settings → Account → Export gives you a copy of your data.
 
 ## 7. Help
 [SUPPORT EMAIL] or the Grievance Officer in CONTACT.md. Complaints are answered within 90 days at most.
+
+## 8. Unused accounts
+If you do not sign in or sync for 24 months (an admin-set period, never less than 12 months), we email you 30 days and again 7 days before deleting the account, using the same process as a deletion you ask for. Signing in once, or syncing, keeps your account. We do not delete an account that has an active paid plan, and we do not delete if we cannot email you a warning.

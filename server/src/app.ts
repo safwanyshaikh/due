@@ -34,6 +34,7 @@ import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
 import { savingsPublicRoutes } from './routes/savings.js';
 import { deletionRoutes } from './consumer/deletion.js';
+import { nominationRoutes } from './consumer/nomination.js';
 import { notificationRoutes } from './consumer/notifications.js';
 import { uploadRoutes } from './consumer/uploads.js';
 import { healthRoutes } from './health/index.js';
@@ -258,6 +259,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   await app.register(inboundRoutes);
   await app.register(notificationRoutes);
   await app.register(deletionRoutes);
+  await app.register(nominationRoutes);
   await app.register(uploadRoutes);
   await app.register(identitiesRoutes);
   await app.register(gmailRoutes);

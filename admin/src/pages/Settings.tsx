@@ -255,6 +255,7 @@ function SettingsForms({ map, canEdit }: { map: SettingsMap; canEdit: boolean })
       <SettingCard title="Retention" settingKey="retention" meta={map.meta.retention} canEdit={canEdit} onSave={() => save('retention', retention)}>
         <NumberField label="Keep snapshots (days)" value={num(retention.snapshots_days)} onChange={(n) => setRetention((r) => ({ ...r, snapshots_days: n }))} />
         <NumberField label="Keep login history (days)" value={num(retention.login_events_days)} onChange={(n) => setRetention((r) => ({ ...r, login_events_days: n }))} />
+        <NumberField label="Delete accounts unused for (months, min 12)" value={num(retention.dormant_months ?? 24)} onChange={(n) => setRetention((r) => ({ ...r, dormant_months: n }))} />
       </SettingCard>
 
       <SettingCard

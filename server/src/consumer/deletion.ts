@@ -137,6 +137,8 @@ async function runStep(q: Queryable, step: DeletionStep, accountId: string, emai
       await q.query('DELETE FROM consent_records WHERE account_id = $1', [accountId]);
       return;
     case 'account_record':
+      await q.query('DELETE FROM account_nominations WHERE account_id = $1', [accountId]);
+      await q.query('DELETE FROM dormant_notices WHERE account_id = $1', [accountId]);
       await q.query('DELETE FROM consumer_accounts WHERE id = $1', [accountId]);
       // Queue rows keep no link to the deleted account (payloads only ever held ids).
       await q.query('UPDATE jobs_queue SET account_id = NULL WHERE account_id = $1', [accountId]);

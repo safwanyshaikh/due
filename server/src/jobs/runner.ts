@@ -19,6 +19,7 @@ export const JOB_IDS = [
   'offers_status',
   'audit_ship',
   'sync_seal',
+  'dormant_retention',
 ] as const;
 export type JobId = (typeof JOB_IDS)[number];
 
@@ -155,6 +156,9 @@ async function execute(ctx: MonitorContext, job: JobRow, jobRunId: number): Prom
     // M-E: seals plain or old-key sync documents (dormant accounts too); daily, self-continuing until done.
     case 'sync_seal':
       return enqueueScheduled(ctx, 'sync.seal_backfill', ctx.clock().toISOString().slice(0, 10));
+    // Dormant accounts: warning emails at 30 and 7 days, then the normal account-deletion job.
+    case 'dormant_retention':
+      return enqueueScheduled(ctx, 'account.dormant_sweep', ctx.clock().toISOString().slice(0, 10));
     // Copies new audit rows to LOG_SINK_URL (no-op without it); one job per 15-minute slot.
     case 'audit_ship': {
       const t = ctx.clock();

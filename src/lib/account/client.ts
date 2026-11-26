@@ -21,6 +21,8 @@ import type {
   IntakeRecordExport,
   IntakeSessionResponse,
   IntakeType,
+  NominationResponse,
+  Nominee,
   MagicLinkResponse,
   MeResponse,
   OfferMatch,
@@ -237,6 +239,10 @@ export function createAccountClient(opts: AccountClientOptions = {}) {
         statusToken: string;
         statusUrl: string;
       }>('DELETE', '/api/account', { confirmationToken }),
+    getNomination: () => request<NominationResponse>('GET', '/api/account/nomination'),
+    setNomination: (n: { name: string; email: string; relationship?: string }) =>
+      request<{ nominee: Nominee }>('PUT', '/api/account/nomination', { ...n, acknowledged: true }),
+    removeNomination: () => request<{ ok: true }>('DELETE', '/api/account/nomination'),
     exportAccount: () => request<Record<string, unknown>>('GET', '/api/account/export'),
 
     // ---- Backup / sync -------------------------------------------------------------------------
